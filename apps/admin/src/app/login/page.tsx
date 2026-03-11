@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/auth.store';
+import { useAuthStore } from '../../store/auth.store';
 import { motion } from 'framer-motion';
 
 export default function LoginPage() {

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import api from '@/lib/api';
+import api from '../../../../lib/api';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Commission {

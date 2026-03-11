@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import api from '@/lib/api';
+import api from '../../../../lib/api';
 import { Save, Loader2 } from 'lucide-react';
 
 interface Setting { key: string; value: string; description?: string }

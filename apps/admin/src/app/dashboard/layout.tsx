@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useAuthStore } from '@/store/auth.store';
+import { useAuthStore } from '../../store/auth.store';
 import {
   LayoutDashboard, Users, Briefcase, Settings, BarChart3,
   FileText, DollarSign, LogOut, Bell, Shield, ChevronRight,
