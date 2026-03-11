@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../../config/prisma';
-import { AppError } from '../../middleware/errorHandler';
-import { AuthRequest } from '../../middleware/auth';
-import { updateSettings, getAllSettings } from '../../services/settings.service';
+import { prisma } from '../config/prisma';
+import { AppError } from '../middleware/errorHandler';
+import { AuthRequest } from '../middleware/auth';
+import { updateSettings, getAllSettings } from '../services/settings.service';
 import { platformSettingsSchema } from '@tradelink/validators';
 import { z } from 'zod';
 
@@ -279,7 +279,7 @@ export async function adminBroadcast(req: AuthRequest, res: Response, next: Next
     });
 
     await prisma.notification.createMany({
-      data: users.map((u) => ({
+      data: users.map((u: { userId: string }) => ({
         userId: u.userId,
         type: 'announcement' as any,
         title, message,
