@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string().url(),
+  // Use .min(1) instead of .url() — Zod's .url() rejects redis:// and postgresql:// schemes
+  DATABASE_URL: z.string().min(1),
+  REDIS_URL: z.string().min(1),
 
   JWT_SECRET: z.string().min(20),
   JWT_REFRESH_SECRET: z.string().min(20),
@@ -10,7 +11,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   ADMIN_JWT_SECRET: z.string().min(20),
 
-  // Stripe — relaxed validation so server starts before real keys are set
+  // Stripe — relaxed until real keys are configured
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_PUBLISHABLE_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
@@ -20,15 +21,15 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1),
   EMAIL_FROM: z.string().min(1),
 
-  API_URL: z.string().url(),
-  WEB_URL: z.string().url(),
-  ADMIN_URL: z.string().url(),
+  API_URL: z.string().min(1),
+  WEB_URL: z.string().min(1),
+  ADMIN_URL: z.string().min(1),
 
   UPLOAD_DIR: z.string().default('./uploads'),
   MAX_FILE_SIZE_MB: z.coerce.number().default(5),
 
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(4000),
+  PORT: z.coerce.number().default(5000),
 });
 
 function validateEnv() {
