@@ -1,16 +1,16 @@
 import { Router } from 'express';
-import { requireAdmin } from '../../middleware/auth';
-import authRouter from './auth';
-import usersRouter from './users';
-import jobsRouter from './jobs';
-import commissionsRouter from './commissions';
-import paymentsRouter from './payments';
-import subscriptionsRouter from './subscriptions';
-import reviewsRouter from './reviews';
-import announcementsRouter from './announcements';
-import analyticsRouter from './analytics';
-import settingsRouter from './settings';
-import auditLogRouter from './audit-log';
+import { requireAdmin } from '../middleware/auth';
+import authRouter from './admin/auth';
+import usersRouter from './admin/users';
+import jobsRouter from './admin/jobs';
+import commissionsRouter from './admin/commissions';
+import paymentsRouter from './admin/payments';
+import subscriptionsRouter from './admin/subscriptions';
+import reviewsRouter from './admin/reviews';
+import announcementsRouter from './admin/announcements';
+import analyticsRouter from './admin/analytics';
+import settingsRouter from './admin/settings';
+import auditLogRouter from './admin/audit-log';
 
 const router = Router();
 
