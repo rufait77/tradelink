@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { requireAdmin } from '../../middleware/auth';
+import authRouter from './auth';
 import usersRouter from './users';
 import jobsRouter from './jobs';
 import commissionsRouter from './commissions';
@@ -8,16 +10,23 @@ import reviewsRouter from './reviews';
 import announcementsRouter from './announcements';
 import analyticsRouter from './analytics';
 import settingsRouter from './settings';
-import audit-logRouter from './audit-log';
+import auditLogRouter from './audit-log';
+
 const router = Router();
-router.use('/users', usersRouter);
-router.use('/jobs', jobsRouter);
-router.use('/commissions', commissionsRouter);
-router.use('/payments', paymentsRouter);
-router.use('/subscriptions', subscriptionsRouter);
-router.use('/reviews', reviewsRouter);
-router.use('/announcements', announcementsRouter);
-router.use('/analytics', analyticsRouter);
-router.use('/settings', settingsRouter);
-router.use('/audit-log', audit-logRouter);
+
+// Admin auth (no guard — needed to log in)
+router.use('/auth', authRouter);
+
+// All other admin routes require admin JWT
+router.use('/users', requireAdmin, usersRouter);
+router.use('/jobs', requireAdmin, jobsRouter);
+router.use('/commissions', requireAdmin, commissionsRouter);
+router.use('/payments', requireAdmin, paymentsRouter);
+router.use('/subscriptions', requireAdmin, subscriptionsRouter);
+router.use('/reviews', requireAdmin, reviewsRouter);
+router.use('/announcements', requireAdmin, announcementsRouter);
+router.use('/analytics', requireAdmin, analyticsRouter);
+router.use('/settings', requireAdmin, settingsRouter);
+router.use('/audit-log', requireAdmin, auditLogRouter);
+
 export default router;

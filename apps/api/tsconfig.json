@@ -1,13 +1,22 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
     "module": "CommonJS",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "../../prisma/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

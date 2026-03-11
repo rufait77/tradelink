@@ -1,9 +1,10 @@
-import { PlatformSetting } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
-const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
+  // ─── Platform Settings ──────────────────────────────────────────────────────
   console.log('🌱 Seeding platform settings...');
 
   const settings: { key: string; value: string; description: string }[] = [
@@ -48,6 +49,12 @@ async function main() {
       description: 'Show maintenance page to contractors when true',
     },
     {
+      key: 'developer_mode',
+      value: 'false',
+      description:
+        'When true, skips ALL payment requirements for contractors and customers — for testing only',
+    },
+    {
       key: 'featured_trade_categories',
       value: JSON.stringify(['Landscaping', 'Roofing', 'HVAC', 'Plumbing', 'Electrical']),
       description: 'Ordered list of featured trade categories shown on landing page',
@@ -63,7 +70,33 @@ async function main() {
     console.log(`  ✓ ${setting.key} = ${setting.value}`);
   }
 
-  console.log('✅ Seed complete!');
+  // ─── Admin User ─────────────────────────────────────────────────────────────
+  console.log('\n🔑 Seeding admin user...');
+
+  const adminPasswordHash = await bcrypt.hash('#VincentTradelink', 12);
+
+  await prisma.user.upsert({
+    where: { email: 'vincent@tradelink.admin' },
+    update: {
+      passwordHash: adminPasswordHash,
+      role: 'admin',
+      isVerified: true,
+      isActive: true,
+    },
+    create: {
+      name: 'Vincent',
+      email: 'vincent@tradelink.admin',
+      passwordHash: adminPasswordHash,
+      role: 'admin',
+      isVerified: true,
+      isActive: true,
+    },
+  });
+
+  console.log('  ✓ Admin user: vincent (email: vincent@tradelink.admin)');
+  console.log('  ✓ Password: #VincentTradelink');
+
+  console.log('\n✅ Seed complete!');
 }
 
 main()
