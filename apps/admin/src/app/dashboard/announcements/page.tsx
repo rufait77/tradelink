@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import api from '../../../../lib/api';
+import api from '../../../lib/api';
 import { Send, Loader2 } from 'lucide-react';
 
 export default function AnnouncementsPage() {

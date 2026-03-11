@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import api from '../../../../lib/api';
+import api from '../../../lib/api';
 import { Search, UserCheck, UserX, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface User {

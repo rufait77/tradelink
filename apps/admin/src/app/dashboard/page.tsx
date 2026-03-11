@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import api from '../../../lib/api';
+import api from '../../lib/api';
 import { Users, Briefcase, DollarSign, TrendingUp, Clock, CheckCircle, BarChart2, Zap } from 'lucide-react';
 
 interface Analytics {
