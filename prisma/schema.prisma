@@ -1,0 +1,328 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  contractor
+  admin
+}
+
+enum TradeType {
+  Landscaping
+  Roofing
+  HVAC
+  Plumbing
+  Electrical
+  Painting
+  Carpentry
+  Flooring
+  Masonry
+  Cleaning
+  GeneralContracting
+  Other
+}
+
+enum JobUrgency {
+  Low
+  Medium
+  High
+  Emergency
+}
+
+enum JobStatus {
+  Open
+  Claimed
+  InProgress
+  Completed
+  Cancelled
+  Expired
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum CommissionStatus {
+  pending
+  paid
+  failed
+}
+
+enum SubscriptionStatus {
+  active
+  past_due
+  cancelled
+  trialing
+  incomplete
+}
+
+enum StripeConnectStatus {
+  not_connected
+  pending
+  active
+}
+
+enum NotificationType {
+  job_claimed
+  job_started
+  job_completed
+  commission_paid
+  payout_failed
+  subscription_renewed
+  subscription_expiring
+  subscription_cancelled
+  review_received
+  message_received
+  announcement
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  passwordHash      String
+  role              UserRole  @default(contractor)
+  isVerified        Boolean   @default(false)
+  isActive          Boolean   @default(true)
+  stripeCustomerId  String?   @unique
+  stripeConnectId   String?   @unique
+  emailVerifyToken  String?
+  emailVerifyExpiry DateTime?
+  passwordResetToken  String?
+  passwordResetExpiry DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  profile           ContractorProfile?
+  postedJobs        Job[]              @relation("PostedJobs")
+  claimedJobs       Job[]              @relation("ClaimedJobs")
+  commissions       Commission[]
+  subscription      Subscription?
+  reviewsGiven      Review[]           @relation("ReviewsGiven")
+  reviewsReceived   Review[]           @relation("ReviewsReceived")
+  notifications     Notification[]
+  sentMessages      Message[]          @relation("SentMessages")
+  receivedMessages  Message[]          @relation("ReceivedMessages")
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model ContractorProfile {
+  id                  String              @id @default(uuid())
+  userId              String              @unique
+  tradeTypes          TradeType[]
+  bio                 String              @default("")
+  licenseNumber       String?
+  streetAddress       String              @default("")
+  city                String              @default("")
+  state               String              @default("") // US State abbreviation e.g. "TX"
+  zipCode             String              @default("") // 5-digit US ZIP
+  yearsExperience     Int                 @default(0)
+  avgRating           Float               @default(0)
+  totalEarned         Float               @default(0)
+  totalReferrals      Int                 @default(0)
+  totalJobsCompleted  Int                 @default(0)
+  photoUrl            String?
+  stripeConnectStatus StripeConnectStatus @default(not_connected)
+  onboardingComplete  Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("contractor_profiles")
+}
+
+model Job {
+  id           String     @id @default(uuid())
+  postedById   String
+  claimedById  String?
+  title        String
+  description  String
+  tradeType    TradeType
+  budgetMin    Float
+  budgetMax    Float
+  streetAddress String
+  city         String
+  state        String     // US State abbreviation e.g. "TX"
+  zipCode      String     // 5-digit US ZIP
+  urgency      JobUrgency @default(Low)
+  status       JobStatus  @default(Open)
+  clientName   String?
+  clientNote   String?
+  expiresAt    DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  postedBy  User          @relation("PostedJobs", fields: [postedById], references: [id])
+  claimedBy User?         @relation("ClaimedJobs", fields: [claimedById], references: [id])
+  payment   JobPayment?
+  commission Commission?
+  reviews   Review[]
+  messages  Message[]
+
+  @@index([status])
+  @@index([tradeType])
+  @@index([state])
+  @@index([zipCode])
+  @@index([createdAt])
+  @@index([postedById])
+  @@index([claimedById])
+  @@map("jobs")
+}
+
+model JobPayment {
+  id                      String        @id @default(uuid())
+  jobId                   String        @unique
+  stripePaymentIntentId   String        @unique
+  totalAmount             Float
+  platformFeePctSnapshot  Float         // Snapshot of fee % at time of payment
+  commissionPctSnapshot   Float         // Snapshot of commission % at time of payment
+  platformFeeAmount       Float
+  commissionAmount        Float
+  hiredAmount             Float
+  status                  PaymentStatus @default(pending)
+  paidAt                  DateTime?
+  createdAt               DateTime      @default(now())
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@map("job_payments")
+}
+
+model Commission {
+  id               String           @id @default(uuid())
+  jobId            String           @unique
+  referrerId       String
+  amount           Float
+  status           CommissionStatus @default(pending)
+  stripeTransferId String?
+  createdAt        DateTime         @default(now())
+  paidAt           DateTime?
+
+  job      Job  @relation(fields: [jobId], references: [id])
+  referrer User @relation(fields: [referrerId], references: [id])
+
+  @@index([referrerId])
+  @@index([status])
+  @@map("commissions")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  stripeSubscriptionId String             @unique
+  stripePriceId        String
+  status               SubscriptionStatus @default(incomplete)
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  jobId      String
+  reviewerId String
+  revieweeId String
+  rating     Int      // 1-5
+  text       String
+  isFlagged  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  job      Job  @relation(fields: [jobId], references: [id])
+  reviewer User @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee User @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  @@unique([jobId, reviewerId, revieweeId]) // One review per direction per job
+  @@index([revieweeId])
+  @@index([isFlagged])
+  @@map("reviews")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  jobId      String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  job      Job  @relation(fields: [jobId], references: [id])
+
+  @@index([jobId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("messages")
+}
+
+model PlatformSetting {
+  key         String   @id
+  value       String
+  description String   @default("")
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  action     String   // e.g. "UPDATE_SETTING", "SUSPEND_USER", "DELETE_JOB"
+  entityType String   // e.g. "User", "Job", "PlatformSetting"
+  entityId   String?
+  oldValue   String?  // JSON serialized
+  newValue   String?  // JSON serialized
+  createdAt  DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
