@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ToastProvider } from '../components/ui/toast-provider';
 
 export const metadata: Metadata = {
   title: {
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
     template: '%s | Tradelink',
   },
   description:
-    'Tradelink is the contractor referral platform that pays you. Refer a job, earn 20% commission when it's completed. Built for US contractors.',
+    'Tradelink is the contractor referral platform that pays you. Refer a job, earn 20% commission when it\'s completed. Built for US contractors.',
   keywords: ['contractor', 'referral', 'commission', 'landscaping', 'roofing', 'HVAC', 'plumbing'],
   openGraph: {
     title: 'Tradelink — Earn Commissions on Every Referral',
@@ -29,7 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ToastProvider />
+      </body>
     </html>
   );
 }
