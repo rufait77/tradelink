@@ -44,7 +44,7 @@ export async function getUnreadCount(req: AuthRequest, res: Response, next: Next
 export async function markRead(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     await prisma.notification.updateMany({
-      where: { id: req.params.id, userId: req.user!.userId },
+      where: { id: req.params.id as string, userId: req.user!.userId },
       data: { isRead: true },
     });
     res.json({ success: true, data: { message: 'Notification marked as read' } });
@@ -66,3 +66,69 @@ export async function markAllRead(req: AuthRequest, res: Response, next: NextFun
     next(err);
   }
 }
+
+// ─── GET /notifications/preferences ──────────────────────────────────────────
+
+const DEFAULT_PREFS = {
+  email_job_claimed: true,
+  email_job_completed: true,
+  email_commission_paid: true,
+  email_renewal_reminder: true,
+  inapp_messages: true,
+  inapp_job_updates: true,
+  inapp_announcements: true,
+};
+
+export async function getNotificationPreferences(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const profile = await prisma.contractorProfile.findUnique({
+      where: { userId: req.user!.userId },
+      select: { notificationPrefs: true },
+    });
+
+    const prefs = profile?.notificationPrefs
+      ? { ...DEFAULT_PREFS, ...(profile.notificationPrefs as object) }
+      : DEFAULT_PREFS;
+
+    res.json({ success: true, data: { preferences: prefs } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── PUT /notifications/preferences ──────────────────────────────────────────
+
+export async function updateNotificationPreferences(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const updates = req.body as Record<string, boolean>;
+
+    // Validate keys
+    const validKeys = Object.keys(DEFAULT_PREFS);
+    const invalidKeys = Object.keys(updates).filter((k) => !validKeys.includes(k));
+    if (invalidKeys.length > 0) {
+      return next(new AppError(`Invalid preference keys: ${invalidKeys.join(', ')}`, 400));
+    }
+
+    // Merge with existing
+    const profile = await prisma.contractorProfile.findUnique({
+      where: { userId: req.user!.userId },
+      select: { notificationPrefs: true },
+    });
+
+    const current = profile?.notificationPrefs
+      ? { ...DEFAULT_PREFS, ...(profile.notificationPrefs as object) }
+      : { ...DEFAULT_PREFS };
+
+    const merged = { ...current, ...updates };
+
+    await prisma.contractorProfile.update({
+      where: { userId: req.user!.userId },
+      data: { notificationPrefs: merged },
+    });
+
+    res.json({ success: true, data: { preferences: merged } });
+  } catch (err) {
+    next(err);
+  }
+}
+

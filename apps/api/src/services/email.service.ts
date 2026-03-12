@@ -228,3 +228,21 @@ export async function sendJobCompletedEmail(to: string, name: string, jobTitle: 
 
   return sendEmail({ to, subject: `Commission incoming — job completed!`, html: baseTemplate(content) });
 }
+
+// ─── Subscription Renewal Reminder ────────────────────────────────────────────
+
+export async function sendSubscriptionRenewalReminderEmail(to: string, name: string, daysLeft: string, expiryDate: string) {
+  const content = `
+    ${headingStyle('Your subscription is ending soon ⏰')}
+    ${paraStyle(`Hi ${name}, your Tradelink subscription will expire in <strong style="color:#f59e0b;">${daysLeft} day${daysLeft === '1' ? '' : 's'}</strong>.`)}
+    <table width="100%" style="background:#0a1628;border:1px solid #334155;border-radius:12px;padding:20px;margin:16px 0;">
+      <tr><td style="color:#64748b;font-size:13px;padding-bottom:8px;">Expiry Date</td><td align="right" style="color:#f1f5f9;font-size:14px;">${expiryDate}</td></tr>
+      <tr><td style="color:#64748b;font-size:13px;">Status</td><td align="right" style="color:#ef4444;font-weight:600;font-size:14px;">Cancelling</td></tr>
+    </table>
+    ${paraStyle('Renew your subscription to keep earning referral commissions and accessing the job board.')}
+    ${paraStyle('Without an active subscription, you won\'t be able to post referrals or claim jobs.')}
+    ${btnStyle(`${env.WEB_URL}/dashboard/billing`, 'Manage Subscription →')}`;
+
+  return sendEmail({ to, subject: `Your Tradelink subscription expires in ${daysLeft} day${daysLeft === '1' ? '' : 's'}`, html: baseTemplate(content) });
+}
+

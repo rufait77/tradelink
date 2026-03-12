@@ -137,8 +137,9 @@ export async function getMyClaimed(req: AuthRequest, res: Response, next: NextFu
 
 export async function getJob(req: Request, res: Response, next: NextFunction) {
   try {
+    const jobId = req.params.id as string;
     const job = await prisma.job.findUnique({
-      where: { id: req.params.id },
+      where: { id: jobId },
       include: {
         postedBy: { select: { id: true, name: true, profile: { select: { avgRating: true, photoUrl: true, tradeTypes: true, city: true, state: true } } } },
         claimedBy: { select: { id: true, name: true, profile: { select: { avgRating: true, photoUrl: true } } } },
@@ -155,14 +156,15 @@ export async function getJob(req: Request, res: Response, next: NextFunction) {
 
 export async function updateJob(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+    const jobId = req.params.id as string;
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (!job) return next(new AppError('Job not found', 404));
     if (job.postedById !== req.user!.userId) return next(new AppError('Not authorized', 403));
     if (job.status !== 'Open') return next(new AppError('Only open jobs can be edited', 400));
 
     const { title, description, budgetMin, budgetMax, urgency, clientName, clientNote } = req.body;
     const updated = await prisma.job.update({
-      where: { id: req.params.id },
+      where: { id: jobId },
       data: { title, description, budgetMin, budgetMax, urgency, clientName, clientNote },
     });
     res.json({ success: true, data: { job: updated } });
@@ -175,12 +177,13 @@ export async function updateJob(req: AuthRequest, res: Response, next: NextFunct
 
 export async function deleteJob(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+    const jobId = req.params.id as string;
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (!job) return next(new AppError('Job not found', 404));
     if (job.postedById !== req.user!.userId) return next(new AppError('Not authorized', 403));
     if (job.status !== 'Open') return next(new AppError('Only open jobs can be deleted', 400));
 
-    await prisma.job.update({ where: { id: req.params.id }, data: { status: 'Cancelled' } });
+    await prisma.job.update({ where: { id: jobId }, data: { status: 'Cancelled' } });
     await prisma.contractorProfile.update({
       where: { userId: req.user!.userId },
       data: { totalReferrals: { decrement: 1 } },
@@ -196,13 +199,14 @@ export async function deleteJob(req: AuthRequest, res: Response, next: NextFunct
 
 export async function claimJob(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+    const jobId = req.params.id as string;
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (!job) return next(new AppError('Job not found', 404));
     if (job.status !== 'Open') return next(new AppError('This job is no longer available', 400));
     if (job.postedById === req.user!.userId) return next(new AppError("You can't claim your own referral", 400));
 
     const updated = await prisma.job.update({
-      where: { id: req.params.id },
+      where: { id: jobId },
       data: { status: 'Claimed', claimedById: req.user!.userId },
     });
 
@@ -232,12 +236,13 @@ export async function claimJob(req: AuthRequest, res: Response, next: NextFuncti
 
 export async function startJob(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+    const jobId = req.params.id as string;
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (!job) return next(new AppError('Job not found', 404));
     if (job.claimedById !== req.user!.userId) return next(new AppError('Not authorized', 403));
     if (job.status !== 'Claimed') return next(new AppError('Job must be claimed to start', 400));
 
-    const updated = await prisma.job.update({ where: { id: req.params.id }, data: { status: 'InProgress' } });
+    const updated = await prisma.job.update({ where: { id: jobId }, data: { status: 'InProgress' } });
 
     await prisma.notification.create({
       data: {
@@ -259,8 +264,9 @@ export async function startJob(req: AuthRequest, res: Response, next: NextFuncti
 
 export async function completeJob(req: AuthRequest, res: Response, next: NextFunction) {
   try {
+    const jobId = req.params.id as string;
     const job = await prisma.job.findUnique({
-      where: { id: req.params.id },
+      where: { id: jobId },
       include: { postedBy: true },
     });
     if (!job) return next(new AppError('Job not found', 404));

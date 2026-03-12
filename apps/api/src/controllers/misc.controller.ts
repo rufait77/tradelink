@@ -168,7 +168,7 @@ export async function getConversations(req: AuthRequest, res: Response, next: Ne
 
 export async function getMessages(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { jobId } = req.params;
+    const jobId = req.params.jobId as string;
     const userId = req.user!.userId;
 
     // Verify user is involved in the job
@@ -230,6 +230,30 @@ export async function sendMessage(req: AuthRequest, res: Response, next: NextFun
     });
 
     res.status(201).json({ success: true, data: { message } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── PUT /messages/:jobId/read ────────────────────────────────────────────────
+
+export async function markThreadRead(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const jobId = req.params.jobId as string;
+    const userId = req.user!.userId;
+
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    if (!job) return next(new AppError('Job not found', 404));
+    if (job.postedById !== userId && job.claimedById !== userId) {
+      return next(new AppError('Not authorized', 403));
+    }
+
+    const updated = await prisma.message.updateMany({
+      where: { jobId, receiverId: userId, isRead: false },
+      data: { isRead: true },
+    });
+
+    res.json({ success: true, data: { message: `${updated.count} messages marked as read` } });
   } catch (err) {
     next(err);
   }

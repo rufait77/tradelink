@@ -99,19 +99,19 @@ export async function adminGetUsers(req: Request, res: Response, next: NextFunct
 
 export async function adminGetUserDetail(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
         id: true, name: true, email: true, role: true, isActive: true, isVerified: true,
-        createdAt: true, updatedAt: true,
+        createdAt: true, updatedAt: true, stripeConnectId: true,
         profile: {
           select: {
             tradeTypes: true, bio: true, licenseNumber: true, yearsExperience: true,
-            address: true, city: true, state: true, zip: true,
-            avgRating: true, totalJobs: true, totalEarned: true,
-            stripeConnectId: true, stripeConnectStatus: true,
-            profilePhotoUrl: true,
+            streetAddress: true, city: true, state: true, zipCode: true,
+            avgRating: true, totalJobsCompleted: true, totalEarned: true,
+            stripeConnectStatus: true,
+            photoUrl: true,
           },
         },
         subscription: {
@@ -122,8 +122,8 @@ export async function adminGetUserDetail(req: Request, res: Response, next: Next
             postedJobs: true,
             claimedJobs: true,
             commissions: true,
-            givenReviews: true,
-            receivedReviews: true,
+            reviewsGiven: true,
+            reviewsReceived: true,
             sentMessages: true,
           },
         },
@@ -158,7 +158,7 @@ export async function adminGetUserDetail(req: Request, res: Response, next: Next
 
 export async function adminSuspendUser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return next(new AppError('User not found', 404));
 
@@ -177,7 +177,7 @@ export async function adminSuspendUser(req: AuthRequest, res: Response, next: Ne
 
 export async function adminUnsuspendUser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await prisma.user.update({ where: { id }, data: { isActive: true } });
     await prisma.auditLog.create({
       data: { adminId: req.user!.userId, action: 'UNSUSPEND_USER', entityType: 'User', entityId: id },
@@ -192,7 +192,7 @@ export async function adminUnsuspendUser(req: AuthRequest, res: Response, next: 
 
 export async function adminDeleteUser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return next(new AppError('User not found', 404));
     if (user.role === 'admin') return next(new AppError('Cannot delete admin users', 403));
@@ -229,7 +229,7 @@ export async function adminDeleteUser(req: AuthRequest, res: Response, next: Nex
 
 export async function adminChangeUserRole(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { role } = req.body as { role: string };
 
     if (!['contractor', 'admin'].includes(role)) {
@@ -295,7 +295,7 @@ export async function adminGetJobs(req: Request, res: Response, next: NextFuncti
 
 export async function adminGetJobDetail(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const job = await prisma.job.findUnique({
       where: { id },
       include: {
@@ -341,7 +341,7 @@ export async function adminGetJobDetail(req: Request, res: Response, next: NextF
 
 export async function adminForceJobStatus(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status } = req.body as { status: string };
     const old = await prisma.job.findUnique({ where: { id } });
     if (!old) return next(new AppError('Job not found', 404));
@@ -360,7 +360,7 @@ export async function adminForceJobStatus(req: AuthRequest, res: Response, next:
 
 export async function adminDeleteJob(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const job = await prisma.job.findUnique({ where: { id } });
     if (!job) return next(new AppError('Job not found', 404));
 
@@ -420,7 +420,7 @@ export async function adminGetCommissions(req: Request, res: Response, next: Nex
 
 export async function adminMarkCommissionPaid(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const commission = await prisma.commission.findUnique({ where: { id } });
     if (!commission) return next(new AppError('Commission not found', 404));
     if (commission.status === 'paid') return next(new AppError('Commission already paid', 400));
@@ -433,7 +433,7 @@ export async function adminMarkCommissionPaid(req: AuthRequest, res: Response, n
     // Update contractor's totalEarned
     await prisma.contractorProfile.update({
       where: { userId: commission.referrerId },
-      data: { totalEarned: { increment: commission.amount.toNumber() } },
+      data: { totalEarned: { increment: commission.amount } },
     });
 
     await prisma.auditLog.create({
@@ -467,17 +467,19 @@ export async function adminMarkCommissionPaid(req: AuthRequest, res: Response, n
 
 export async function adminRetryCommissionPayout(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
-    const commission = await prisma.commission.findUnique({
-      where: { id },
-      include: { referrer: { select: { profile: { select: { stripeConnectId: true, stripeConnectStatus: true } } } } },
-    });
+    const id = req.params.id as string;
+    const commission = await prisma.commission.findUnique({ where: { id } });
     if (!commission) return next(new AppError('Commission not found', 404));
     if (commission.status === 'paid') return next(new AppError('Commission already paid', 400));
 
     // Check if referrer has Stripe Connect active
-    const connectId = commission.referrer?.profile?.stripeConnectId;
-    const connectStatus = commission.referrer?.profile?.stripeConnectStatus;
+    const referrerUser = await prisma.user.findUnique({
+      where: { id: commission.referrerId },
+      select: { stripeConnectId: true, profile: { select: { stripeConnectStatus: true } } },
+    });
+
+    const connectId = referrerUser?.stripeConnectId;
+    const connectStatus = referrerUser?.profile?.stripeConnectStatus;
 
     if (!connectId || connectStatus !== 'active') {
       return next(new AppError('Referrer does not have an active Stripe Connect account. Cannot process payout.', 400));
@@ -487,7 +489,7 @@ export async function adminRetryCommissionPayout(req: AuthRequest, res: Response
     try {
       const stripe = (await import('../config/stripe')).stripe;
       const transfer = await stripe.transfers.create({
-        amount: Math.round(commission.amount.toNumber() * 100), // cents
+        amount: Math.round(commission.amount * 100), // cents
         currency: 'usd',
         destination: connectId,
         description: `Commission payout for job ${commission.jobId}`,
@@ -500,7 +502,7 @@ export async function adminRetryCommissionPayout(req: AuthRequest, res: Response
 
       await prisma.contractorProfile.update({
         where: { userId: commission.referrerId },
-        data: { totalEarned: { increment: commission.amount.toNumber() } },
+        data: { totalEarned: { increment: commission.amount } },
       });
 
       await prisma.auditLog.create({
@@ -611,7 +613,7 @@ export async function adminAnalyticsDetailed(_req: Request, res: Response, next:
           month: m.label,
           jobsPosted: jobs,
           jobsCompleted: completed,
-          revenue: revenue._sum.platformFeeAmount?.toNumber() ?? 0,
+          revenue: revenue._sum.platformFeeAmount ?? 0,
           newUsers,
         };
       }),
@@ -635,7 +637,7 @@ export async function adminAnalyticsDetailed(_req: Request, res: Response, next:
       where: { totalEarned: { gt: 0 } },
       select: {
         user: { select: { id: true, name: true, email: true } },
-        totalEarned: true, totalJobs: true, avgRating: true, tradeTypes: true,
+        totalEarned: true, totalJobsCompleted: true, avgRating: true, tradeTypes: true,
       },
       orderBy: { totalEarned: 'desc' },
       take: 10,
@@ -656,9 +658,9 @@ export async function adminAnalyticsDetailed(_req: Request, res: Response, next:
         statusDistribution: statusDist.map((s: any) => ({ status: s.status, count: s._count.id })),
         topEarners,
         totals: {
-          allTimeRevenue: totalRevenue._sum.platformFeeAmount?.toNumber() ?? 0,
-          allTimeCommissionsPaid: totalCommissionsPaid._sum.amount?.toNumber() ?? 0,
-          pendingCommissions: totalCommissionsPending._sum.amount?.toNumber() ?? 0,
+          allTimeRevenue: totalRevenue._sum.platformFeeAmount ?? 0,
+          allTimeCommissionsPaid: totalCommissionsPaid._sum.amount ?? 0,
+          pendingCommissions: totalCommissionsPending._sum.amount ?? 0,
         },
       },
     });
@@ -807,10 +809,11 @@ export async function adminGetReviews(req: Request, res: Response, next: NextFun
 
 export async function adminDeleteReview(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const review = await prisma.review.findUnique({ where: { id: req.params.id } });
+    const reviewId = req.params.id as string;
+    const review = await prisma.review.findUnique({ where: { id: reviewId } });
     if (!review) return next(new AppError('Review not found', 404));
 
-    await prisma.review.delete({ where: { id: req.params.id } });
+    await prisma.review.delete({ where: { id: reviewId } });
 
     // Recalculate reviewee's average rating
     const agg = await prisma.review.aggregate({
@@ -824,7 +827,7 @@ export async function adminDeleteReview(req: AuthRequest, res: Response, next: N
     });
 
     await prisma.auditLog.create({
-      data: { adminId: req.user!.userId, action: 'DELETE_REVIEW', entityType: 'Review', entityId: req.params.id },
+      data: { adminId: req.user!.userId, action: 'DELETE_REVIEW', entityType: 'Review', entityId: reviewId },
     });
     res.json({ success: true, data: { message: 'Review deleted' } });
   } catch (err) {
@@ -836,18 +839,19 @@ export async function adminDeleteReview(req: AuthRequest, res: Response, next: N
 
 export async function adminFlagReview(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const review = await prisma.review.findUnique({ where: { id: req.params.id } });
+    const reviewId = req.params.id as string;
+    const review = await prisma.review.findUnique({ where: { id: reviewId } });
     if (!review) return next(new AppError('Review not found', 404));
 
     const newFlag = !review.isFlagged; // Toggle flag
-    await prisma.review.update({ where: { id: req.params.id }, data: { isFlagged: newFlag } });
+    await prisma.review.update({ where: { id: reviewId }, data: { isFlagged: newFlag } });
 
     await prisma.auditLog.create({
       data: {
         adminId: req.user!.userId,
         action: newFlag ? 'FLAG_REVIEW' : 'UNFLAG_REVIEW',
         entityType: 'Review',
-        entityId: req.params.id,
+        entityId: reviewId,
       },
     });
 

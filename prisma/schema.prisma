@@ -141,6 +141,7 @@ model ContractorProfile {
   totalJobsCompleted  Int                 @default(0)
   photoUrl            String?
   stripeConnectStatus StripeConnectStatus @default(not_connected)
+  notificationPrefs   Json                @default("{\"email_job_claimed\":true,\"email_job_completed\":true,\"email_commission_paid\":true,\"email_renewal_reminder\":true,\"inapp_messages\":true,\"inapp_job_updates\":true,\"inapp_announcements\":true}")
   onboardingComplete  Boolean             @default(false)
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt

@@ -75,6 +75,10 @@ app.use(errorHandler);
 // ─── Start server ─────────────────────────────────────────────────────────────
 app.listen(env.PORT, () => {
   logger.info(`🚀 Tradelink API running on port ${env.PORT} [${env.NODE_ENV}]`);
+
+  // Start background jobs
+  import('./jobs/commission-processor').catch((err) => logger.error('Failed to start commission processor:', err));
+  import('./jobs/cron').catch((err) => logger.error('Failed to start cron jobs:', err));
 });
 
 export default app;

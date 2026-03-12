@@ -96,7 +96,7 @@ export async function uploadProfilePhoto(req: AuthRequest, res: Response, next: 
 
 export async function getPublicProfile(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const profile = await prisma.contractorProfile.findUnique({
       where: { userId: id },
       include: {
@@ -115,7 +115,7 @@ export async function getPublicProfile(req: AuthRequest, res: Response, next: Ne
 
 export async function getContractorReviews(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const page = parseInt(req.query.page as string ?? '1');
     const pageSize = 10;
 
