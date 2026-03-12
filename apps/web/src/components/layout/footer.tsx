@@ -19,8 +19,9 @@ const FOOTER_LINKS = {
     { href: '/dashboard/jobs?trade=Plumbing', label: 'Plumbing' },
     { href: '/dashboard/jobs?trade=Electrical', label: 'Electrical' },
     { href: '/dashboard/jobs?trade=PressureWashing', label: 'Pressure Washing' },
-    { href: '/dashboard/jobs?trade=JunkRemoval', label: 'Junk Removal' },
-    { href: '/dashboard/jobs?trade=WindowInstallation', label: 'Window Installation' },
+    { href: '/dashboard/jobs?trade=Barber', label: 'Barber' },
+    { href: '/dashboard/jobs?trade=Cosmetologist', label: 'Cosmetologist' },
+    { href: '/dashboard/jobs?trade=Esthetician', label: 'Esthetician' },
   ],
 };
 
