@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { adminAnalyticsOverview } from '../../controllers/admin.controller';
+import { adminAnalyticsOverview, adminAnalyticsDetailed } from '../../controllers/admin.controller';
+
 const router = Router();
 router.get('/overview', adminAnalyticsOverview);
+router.get('/detailed', adminAnalyticsDetailed);
 export default router;

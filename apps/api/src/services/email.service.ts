@@ -6,7 +6,7 @@ const resend = new Resend(env.RESEND_API_KEY);
 
 // ─── Base email sender ────────────────────────────────────────────────────────
 
-async function sendEmail({
+export async function sendEmail({
   to,
   subject,
   html,

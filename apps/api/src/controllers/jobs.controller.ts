@@ -217,7 +217,7 @@ export async function claimJob(req: AuthRequest, res: Response, next: NextFuncti
           link: `/dashboard/my-referrals`,
         },
       }),
-      prisma.user.findUnique({ where: { id: job.postedById } }).then((referrer) => {
+      prisma.user.findUnique({ where: { id: job.postedById } }).then((referrer: any) => {
         if (referrer) return sendJobClaimedEmail(referrer.email, referrer.name, job.title);
       }),
     ]);

@@ -150,7 +150,7 @@ export async function getConversations(req: AuthRequest, res: Response, next: Ne
 
     // Attach unread count per thread
     const threads = await Promise.all(
-      messages.map(async (msg) => {
+      messages.map(async (msg: any) => {
         const unread = await prisma.message.count({
           where: { jobId: msg.jobId, receiverId: userId, isRead: false },
         });
