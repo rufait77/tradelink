@@ -1,13 +1,14 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '../../store/auth.store';
 import {
   LayoutDashboard, Users, Briefcase, Settings, BarChart3,
-  FileText, DollarSign, LogOut, Bell, Shield, ChevronRight,
+  FileText, DollarSign, LogOut, Bell, Shield, ChevronRight, AlertTriangle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import api from '../../lib/api';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
@@ -24,10 +25,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { admin, token, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const [devMode, setDevMode] = useState(false);
 
   useEffect(() => {
     if (!token) router.push('/login');
   }, [token, router]);
+
+  // Fetch developer_mode status on mount and poll every 30s
+  useEffect(() => {
+    if (!token) return;
+    const fetchDevMode = () => {
+      api.get('/admin/settings').then((r) => {
+        setDevMode(r.data.data.settings?.developer_mode === 'true');
+      }).catch(() => {});
+    };
+    fetchDevMode();
+    const interval = setInterval(fetchDevMode, 30_000);
+    return () => clearInterval(interval);
+  }, [token]);
 
   if (!token) return null;
 
@@ -92,6 +107,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main */}
       <main className="flex-1 ml-64 min-h-screen">
+        {/* Developer Mode Banner */}
+        {devMode && (
+          <div className="sticky top-0 z-20 bg-amber-500 text-[#050d1a] px-4 py-2 flex items-center justify-center gap-2 text-sm font-bold shadow-lg">
+            <AlertTriangle size={16} />
+            Developer Mode ON — All payments are bypassed
+            <AlertTriangle size={16} />
+          </div>
+        )}
         <motion.div
           key={pathname}
           initial={{ opacity: 0, y: 8 }}
@@ -105,3 +128,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
+

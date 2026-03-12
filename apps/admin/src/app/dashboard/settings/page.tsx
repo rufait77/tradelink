@@ -3,13 +3,16 @@ import { useEffect, useState } from 'react';
 import api from '../../../lib/api';
 import { Save, Loader2 } from 'lucide-react';
 
-interface Setting { key: string; value: string; description?: string }
+interface SettingDef { key: string; label: string; description: string; type: 'number' | 'boolean' }
 
-const SETTING_DEFS: { key: string; label: string; description: string; type: 'number' | 'boolean' }[] = [
+const SETTING_DEFS: SettingDef[] = [
   { key: 'signup_fee', label: 'Signup Fee ($)', description: 'One-time fee for contractors to register', type: 'number' },
   { key: 'subscription_fee', label: 'Subscription Fee ($/month)', description: 'Monthly subscription fee for contractors', type: 'number' },
-  { key: 'commission_rate', label: 'Commission Rate (%)', description: 'Percentage referral commission earned per completed job', type: 'number' },
-  { key: 'platform_fee_percent', label: 'Platform Fee (%)', description: 'Platform fee deducted from each job payment', type: 'number' },
+  { key: 'commission_pct', label: 'Commission Rate (%)', description: 'Percentage referral commission earned per completed job', type: 'number' },
+  { key: 'platform_fee_pct', label: 'Platform Fee (%)', description: 'Platform fee deducted from each job payment', type: 'number' },
+  { key: 'min_job_budget', label: 'Min Job Budget ($)', description: 'Minimum budget a job can be posted with', type: 'number' },
+  { key: 'max_job_budget', label: 'Max Job Budget ($)', description: 'Maximum budget a job can be posted with', type: 'number' },
+  { key: 'job_expiry_days', label: 'Job Expiry (days)', description: 'Days before an open job automatically expires', type: 'number' },
   { key: 'developer_mode', label: 'Developer Mode', description: 'When ON — all payments bypassed for testing', type: 'boolean' },
 ];
 
@@ -29,13 +32,19 @@ export default function SettingsPage() {
   async function handleSave() {
     setSaving(true);
     try {
-      const payload: Record<string, string | number | boolean> = {};
-      SETTING_DEFS.forEach(({ key, type }) => {
+      const payload: Record<string, string> = {};
+      SETTING_DEFS.forEach(({ key }) => {
         if (settings[key] !== undefined) {
-          payload[key] = type === 'boolean' ? settings[key] === 'true' : Number(settings[key]);
+          payload[key] = settings[key]; // Send as strings — API handles conversion
         }
       });
-      await api.put('/admin/settings', payload);
+      const r = await api.put('/admin/settings', payload);
+      // Refresh local state from API response
+      if (r.data.data?.settings) {
+        const s: Record<string, string> = {};
+        Object.entries(r.data.data.settings as Record<string, string>).forEach(([k, v]) => { s[k] = String(v); });
+        setSettings(s);
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) { console.error(e); }
@@ -97,3 +106,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

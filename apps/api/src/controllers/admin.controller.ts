@@ -11,8 +11,10 @@ import { z } from 'zod';
 export async function adminGetSettings(_req: Request, res: Response, next: NextFunction) {
   try {
     const rows = await prisma.platformSetting.findMany({ orderBy: { key: 'asc' } });
-    const settings = await getAllSettings();
-    res.json({ success: true, data: { settings, raw: rows } });
+    // Return raw key-value map so admin frontend can read ALL settings (including developer_mode)
+    const settings: Record<string, string> = {};
+    for (const row of rows) settings[row.key] = row.value;
+    res.json({ success: true, data: { settings } });
   } catch (err) {
     next(err);
   }
@@ -48,7 +50,10 @@ export async function adminUpdateSettings(req: AuthRequest, res: Response, next:
       },
     });
 
-    const settings = await getAllSettings();
+    // Return updated settings as raw key-value map
+    const rows = await prisma.platformSetting.findMany({ orderBy: { key: 'asc' } });
+    const settings: Record<string, string> = {};
+    for (const row of rows) settings[row.key] = row.value;
     res.json({ success: true, data: { settings, message: 'Settings updated successfully' } });
   } catch (err) {
     next(err);
