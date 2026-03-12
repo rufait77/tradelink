@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Tradelink — Earn Commissions on Every Referral',
     description: 'The contractor referral platform that pays you 20% commission on every completed job.',
-    url: 'https://tradelink.rufaitlabs.cloud',
+    url: 'https://tradelinkpro.net',
     siteName: 'Tradelink',
     type: 'website',
   },
