@@ -15,7 +15,7 @@ import { MapPin, Clock, Search, Briefcase, ChevronLeft, ChevronRight } from 'luc
 
 const TRADE_OPTIONS = [
   { label: 'All Trades', value: '' },
-  ...['Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Other']
+  ...['Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Barber','Cosmetologist','Esthetician','Other']
     .map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t })),
 ];
 

@@ -16,7 +16,7 @@ const TRADE_OPTIONS = [
   'Landscaping', 'Roofing', 'HVAC', 'Plumbing', 'Electrical',
   'Painting', 'Carpentry', 'Flooring', 'Masonry', 'Cleaning',
   'PressureWashing', 'JunkRemoval', 'WindowInstallation', 'Siding', 'Clearing',
-  'GeneralContracting', 'Other',
+  'GeneralContracting', 'Barber', 'Cosmetologist', 'Esthetician', 'Other',
 ].map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t }));
 
 const US_STATES = [

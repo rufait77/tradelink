@@ -28,7 +28,15 @@ enum TradeType {
   Flooring
   Masonry
   Cleaning
+  PressureWashing
+  JunkRemoval
+  WindowInstallation
+  Siding
+  Clearing
   GeneralContracting
+  Barber
+  Cosmetologist
+  Esthetician
   Other
 }
 

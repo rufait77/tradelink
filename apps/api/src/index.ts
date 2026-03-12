@@ -25,6 +25,7 @@ import webhookRoutes from './routes/webhooks';
 import adminRoutes from './routes/admin';
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Nginx)
 
 // ─── Security & Compression ───────────────────────────────────────────────────
 app.use(helmet());
