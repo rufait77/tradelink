@@ -13,8 +13,8 @@ import { toast } from 'sonner';
 import { Send, ArrowLeft } from 'lucide-react';
 
 const TRADE_OPTIONS = [
-  'Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','GeneralContracting','Other',
-].map((t) => ({ label: t === 'GeneralContracting' ? 'General Contracting' : t, value: t }));
+  'Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Other',
+].map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t }));
 
 const URGENCY_OPTIONS = [
   { label: 'Low', value: 'Low' },

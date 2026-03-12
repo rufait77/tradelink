@@ -15,8 +15,9 @@ import { ArrowRight, ArrowLeft, CheckCircle2, Wrench, MapPin, User, CreditCard }
 const TRADE_OPTIONS = [
   'Landscaping', 'Roofing', 'HVAC', 'Plumbing', 'Electrical',
   'Painting', 'Carpentry', 'Flooring', 'Masonry', 'Cleaning',
+  'PressureWashing', 'JunkRemoval', 'WindowInstallation', 'Siding', 'Clearing',
   'GeneralContracting', 'Other',
-].map((t) => ({ label: t === 'GeneralContracting' ? 'General Contracting' : t, value: t }));
+].map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t }));
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',

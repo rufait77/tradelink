@@ -15,8 +15,8 @@ import { MapPin, Clock, Search, Briefcase, ChevronLeft, ChevronRight } from 'luc
 
 const TRADE_OPTIONS = [
   { label: 'All Trades', value: '' },
-  ...['Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','GeneralContracting','Other']
-    .map((t) => ({ label: t === 'GeneralContracting' ? 'General Contracting' : t, value: t })),
+  ...['Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Other']
+    .map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t })),
 ];
 
 const URGENCY_OPTIONS = [
@@ -112,7 +112,7 @@ function JobBoardContent() {
             <Link key={job.id} href={`/dashboard/jobs/${job.id}`}>
               <Card hover className="h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
-                  <Badge variant="amber">{job.tradeType === 'GeneralContracting' ? 'General' : job.tradeType}</Badge>
+                  <Badge variant="amber">{job.tradeType.replace(/([A-Z])/g, ' $1').trim()}</Badge>
                   <Badge variant="status" statusClass={getUrgencyClass(job.urgency)}>{job.urgency}</Badge>
                 </div>
                 <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2">{job.title}</h3>

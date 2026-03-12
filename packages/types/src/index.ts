@@ -27,6 +27,11 @@ export const TRADE_TYPES = [
   'Flooring',
   'Masonry',
   'Cleaning',
+  'Pressure Washing',
+  'Junk Removal',
+  'Window Installation',
+  'Siding',
+  'Clearing',
   'General Contracting',
   'Other',
 ] as const;
