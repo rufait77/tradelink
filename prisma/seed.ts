@@ -96,6 +96,94 @@ async function main() {
   console.log('  ✓ Admin user: vincent (email: vincent@tradelink.admin)');
   console.log('  ✓ Password: #VincentTradelink');
 
+  // ─── Test Contractors ───────────────────────────────────────────────────────
+  console.log('\n👷 Seeding test contractor accounts...');
+
+  const testPassword = await bcrypt.hash('Test@1234', 12);
+
+  // 1. Fully onboarded contractor
+  const contractor1 = await prisma.user.upsert({
+    where: { email: 'john@test.com' },
+    update: { passwordHash: testPassword, isVerified: true, isActive: true },
+    create: {
+      name: 'John Smith',
+      email: 'john@test.com',
+      passwordHash: testPassword,
+      role: 'contractor',
+      isVerified: true,
+      isActive: true,
+    },
+  });
+
+  await prisma.contractorProfile.upsert({
+    where: { userId: contractor1.id },
+    update: {},
+    create: {
+      userId: contractor1.id,
+      tradeTypes: ['Plumbing', 'HVAC'],
+      bio: 'Licensed plumber and HVAC tech with 12 years of experience in the greater Austin area.',
+      licenseNumber: 'TX-PLU-12345',
+      streetAddress: '123 Oak Street',
+      city: 'Austin',
+      state: 'TX',
+      zipCode: '78701',
+      yearsExperience: 12,
+      onboardingComplete: true,
+    },
+  });
+
+  console.log('  ✓ Contractor: John Smith (john@test.com) — fully onboarded, Plumbing + HVAC');
+
+  // 2. New contractor (not yet onboarded)
+  await prisma.user.upsert({
+    where: { email: 'sarah@test.com' },
+    update: { passwordHash: testPassword, isVerified: true, isActive: true },
+    create: {
+      name: 'Sarah Johnson',
+      email: 'sarah@test.com',
+      passwordHash: testPassword,
+      role: 'contractor',
+      isVerified: true,
+      isActive: true,
+    },
+  });
+
+  console.log('  ✓ Contractor: Sarah Johnson (sarah@test.com) — not onboarded, will see onboarding flow');
+
+  // 3. Active contractor with different trades
+  const contractor3 = await prisma.user.upsert({
+    where: { email: 'mike@test.com' },
+    update: { passwordHash: testPassword, isVerified: true, isActive: true },
+    create: {
+      name: 'Mike Williams',
+      email: 'mike@test.com',
+      passwordHash: testPassword,
+      role: 'contractor',
+      isVerified: true,
+      isActive: true,
+    },
+  });
+
+  await prisma.contractorProfile.upsert({
+    where: { userId: contractor3.id },
+    update: {},
+    create: {
+      userId: contractor3.id,
+      tradeTypes: ['Barber', 'Cosmetologist'],
+      bio: 'Professional barber and cosmetologist serving the Miami area for 8 years.',
+      licenseNumber: 'FL-COS-67890',
+      streetAddress: '456 Palm Ave',
+      city: 'Miami',
+      state: 'FL',
+      zipCode: '33101',
+      yearsExperience: 8,
+      onboardingComplete: true,
+    },
+  });
+
+  console.log('  ✓ Contractor: Mike Williams (mike@test.com) — fully onboarded, Barber + Cosmetologist');
+  console.log('\n  📋 All test passwords: Test@1234');
+
   console.log('\n✅ Seed complete!');
 }
 
