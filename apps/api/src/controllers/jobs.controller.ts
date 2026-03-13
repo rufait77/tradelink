@@ -207,7 +207,7 @@ export async function claimJob(req: AuthRequest, res: Response, next: NextFuncti
 
     const updated = await prisma.job.update({
       where: { id: jobId },
-      data: { status: 'Claimed', claimedById: req.user!.userId },
+      data: { status: 'Assigned', claimedById: req.user!.userId },
     });
 
     // Notify referrer
@@ -240,7 +240,7 @@ export async function startJob(req: AuthRequest, res: Response, next: NextFuncti
     const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (!job) return next(new AppError('Job not found', 404));
     if (job.claimedById !== req.user!.userId) return next(new AppError('Not authorized', 403));
-    if (job.status !== 'Claimed') return next(new AppError('Job must be claimed to start', 400));
+    if (job.status !== 'Assigned') return next(new AppError('Job must be assigned to start', 400));
 
     const updated = await prisma.job.update({ where: { id: jobId }, data: { status: 'InProgress' } });
 

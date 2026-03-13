@@ -12,13 +12,21 @@ interface Job {
 
 const STATUS_COLORS: Record<string, string> = {
   Open: 'bg-emerald-500/15 text-emerald-400',
-  Claimed: 'bg-blue-500/15 text-blue-400',
+  InterestClosed: 'bg-teal-500/15 text-teal-400',
+  Assigned: 'bg-blue-500/15 text-blue-400',
+  QuoteSent: 'bg-cyan-500/15 text-cyan-400',
+  QuoteApproved: 'bg-sky-500/15 text-sky-400',
+  EscrowFunded: 'bg-indigo-500/15 text-indigo-400',
+  InProgress: 'bg-yellow-500/15 text-yellow-400',
+  ContractorDone: 'bg-lime-500/15 text-lime-400',
+  ClientConfirmed: 'bg-green-500/15 text-green-400',
   Completed: 'bg-purple-500/15 text-purple-400',
-  Cancelled: 'bg-red-500/15 text-red-400',
   Disputed: 'bg-orange-500/15 text-orange-400',
+  Cancelled: 'bg-red-500/15 text-red-400',
+  Expired: 'bg-slate-500/15 text-slate-400',
 };
 
-const ALL_STATUSES = ['Open', 'Claimed', 'Completed', 'Cancelled', 'Disputed'];
+const ALL_STATUSES = ['Open', 'InterestClosed', 'Assigned', 'QuoteSent', 'QuoteApproved', 'EscrowFunded', 'InProgress', 'ContractorDone', 'ClientConfirmed', 'Completed', 'Disputed', 'Cancelled', 'Expired'];
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);

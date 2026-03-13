@@ -31,9 +31,16 @@ export function formatRelativeTime(dateStr: string): string {
 export function getStatusClass(status: string): string {
   const map: Record<string, string> = {
     Open: 'status-open',
-    Claimed: 'status-claimed',
+    InterestClosed: 'status-open',
+    Assigned: 'status-claimed',
+    QuoteSent: 'status-inprogress',
+    QuoteApproved: 'status-inprogress',
+    EscrowFunded: 'status-inprogress',
     InProgress: 'status-inprogress',
+    ContractorDone: 'status-inprogress',
+    ClientConfirmed: 'status-completed',
     Completed: 'status-completed',
+    Disputed: 'status-expired',
     Cancelled: 'status-cancelled',
     Expired: 'status-expired',
   };

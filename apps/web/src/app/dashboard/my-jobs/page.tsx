@@ -80,7 +80,7 @@ export default function MyJobsPage() {
               </Link>
               <div className="flex items-center gap-2 shrink-0">
                 <p className="text-sm font-semibold text-emerald-400 mr-2">{formatCurrency(job.budgetMin)} – {formatCurrency(job.budgetMax)}</p>
-                {job.status === 'Claimed' && (
+                {job.status === 'Assigned' && (
                   <Button size="sm" loading={actionLoading === job.id} onClick={() => handleAction(job.id, 'start')}>
                     <Play className="w-3 h-3" /> Start
                   </Button>

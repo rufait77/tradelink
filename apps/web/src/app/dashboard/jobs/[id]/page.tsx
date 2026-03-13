@@ -186,7 +186,7 @@ export default function JobDetailPage() {
               <CheckCircle2 className="w-4 h-4" /> Claim This Job
             </Button>
           )}
-          {job.status === 'Claimed' && isClaimer && (
+          {job.status === 'Assigned' && isClaimer && (
             <Button onClick={handleStart} loading={actionLoading}>
               <Play className="w-4 h-4" /> Start Job
             </Button>
