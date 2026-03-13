@@ -30,13 +30,22 @@ export default function EarningsPage() {
     async function load() {
       try {
         const [sumRes, comRes, conRes] = await Promise.all([
-          api.get('/earnings/summary'),
-          api.get('/commissions?pageSize=20'),
+          api.get('/earnings/summary').catch(() => ({ data: { data: null } })),
+          api.get('/commissions?pageSize=20').catch(() => ({ data: { data: { items: [] } } })),
           api.get('/payments/connect/status').catch(() => ({ data: { data: { status: 'not_connected' } } })),
         ]);
-        setSummary(sumRes.data.data);
-        setCommissions(comRes.data.data.items || comRes.data.data || []);
-        setConnectStatus(conRes.data.data.status || 'not_connected');
+        const s = sumRes.data.data;
+        if (s) {
+          setSummary({
+            totalEarned: s.totalEarned ?? 0,
+            pendingAmount: s.pending ?? s.pendingAmount ?? 0,
+            thisMonthEarned: s.thisMonth ?? s.thisMonthEarned ?? 0,
+            allTimeJobs: s.totalReferrals ?? s.allTimeJobs ?? 0,
+          });
+        }
+        const comData = comRes.data.data;
+        setCommissions(comData?.items || comData?.commissions || []);
+        setConnectStatus(conRes.data.data?.status || 'not_connected');
       } catch { /* ignore */ }
       finally { setLoading(false); }
     }

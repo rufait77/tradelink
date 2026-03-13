@@ -1,49 +1,141 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Card } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
-import { formatCurrency, formatDate } from '../../../lib/utils';
-import { CreditCard, Calendar, AlertTriangle, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { formatDate } from '../../../lib/utils';
+import { CreditCard, Calendar, AlertTriangle, ExternalLink, CheckCircle2, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK || '');
+
 interface SubData {
-  status: string; currentPeriodEnd: string; cancelAtPeriodEnd: boolean;
-  stripePriceId?: string;
+  subscription: {
+    status: string;
+    currentPeriodEnd: string;
+    cancelAtPeriodEnd: boolean;
+    stripePriceId?: string;
+  } | null;
+  invoices?: Array<{
+    id: string;
+    amount: number;
+    status: string;
+    date: string;
+    pdf?: string;
+  }>;
 }
 
+// ─── Subscribe form with card input ──────────────────────────────────────────
+function SubscribeForm({ onSuccess }: { onSuccess: () => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubscribe(e: React.FormEvent) {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setLoading(true);
+
+    try {
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        toast.error('Card element not found');
+        return;
+      }
+
+      // Create a payment method from card details
+      const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (error) {
+        toast.error(error.message || 'Invalid card details');
+        return;
+      }
+
+      // Send to our API
+      const res = await api.post('/payments/create-subscription', {
+        paymentMethodId: paymentMethod.id,
+      });
+
+      if (res.data.data?.devMode) {
+        toast.success('Subscription activated (dev mode)!');
+        onSuccess();
+        return;
+      }
+
+      // If requires confirmation (3D Secure etc.)
+      if (res.data.data?.clientSecret) {
+        const { error: confirmError } = await stripe.confirmCardPayment(res.data.data.clientSecret);
+        if (confirmError) {
+          toast.error(confirmError.message || 'Payment failed');
+          return;
+        }
+      }
+
+      toast.success('Subscription created successfully!');
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to create subscription');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubscribe} className="space-y-4">
+      <div className="rounded-xl border border-surface-border bg-navy-900 p-4">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#f1f5f9',
+                '::placeholder': { color: '#64748b' },
+                iconColor: '#f59e0b',
+              },
+              invalid: { color: '#ef4444' },
+            },
+          }}
+        />
+      </div>
+      <p className="text-xs text-surface-muted flex items-center gap-1">
+        <CreditCard className="w-3 h-3" /> Test card: 4242 4242 4242 4242 — any future date, any CVC
+      </p>
+      <Button type="submit" loading={loading} disabled={!stripe} className="w-full">
+        Subscribe — $9.99/mo
+      </Button>
+    </form>
+  );
+}
+
+// ─── Main billing page ───────────────────────────────────────────────────────
 export default function BillingPage() {
-  const [sub, setSub] = useState<SubData | null>(null);
+  const [subData, setSubData] = useState<SubData | null>(null);
   const [connectStatus, setConnectStatus] = useState('not_connected');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [subRes, conRes] = await Promise.all([
-          api.get('/payments/subscription-status').catch(() => ({ data: { data: null } })),
-          api.get('/payments/connect/status').catch(() => ({ data: { data: { status: 'not_connected' } } })),
-        ]);
-        setSub(subRes.data.data);
-        setConnectStatus(conRes.data.data?.status || 'not_connected');
-      } catch { /* ignore */ }
-      finally { setLoading(false); }
-    }
-    load();
+  const loadData = useCallback(async () => {
+    try {
+      const [subRes, conRes] = await Promise.all([
+        api.get('/payments/subscription-status').catch(() => ({ data: { data: null } })),
+        api.get('/payments/connect/status').catch(() => ({ data: { data: { status: 'not_connected' } } })),
+      ]);
+      setSubData(subRes.data.data);
+      setConnectStatus(conRes.data.data?.status || 'not_connected');
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
   }, []);
 
-  async function handleSubscribe() {
-    setActionLoading(true);
-    try {
-      const res = await api.post('/payments/create-subscription');
-      if (res.data.data?.url) window.location.href = res.data.data.url;
-      else toast.success('Subscription created!');
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Failed'); }
-    finally { setActionLoading(false); }
-  }
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const sub = subData?.subscription;
 
   async function handleCancel() {
     if (!confirm('Are you sure you want to cancel your subscription? You\'ll retain access until the end of your billing period.')) return;
@@ -51,8 +143,7 @@ export default function BillingPage() {
     try {
       await api.post('/payments/cancel-subscription');
       toast.success('Subscription will cancel at period end.');
-      const res = await api.get('/payments/subscription-status');
-      setSub(res.data.data);
+      await loadData();
     } catch (err: any) { toast.error(err.response?.data?.error || 'Failed'); }
     finally { setActionLoading(false); }
   }
@@ -75,11 +166,9 @@ export default function BillingPage() {
       {/* Subscription */}
       <Card>
         <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-heading font-semibold text-white flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-amber-500" /> Subscription
-            </h2>
-          </div>
+          <h2 className="text-lg font-heading font-semibold text-white flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-amber-500" /> Subscription
+          </h2>
           {sub?.status === 'active' && <Badge variant="green">Active</Badge>}
           {sub?.status === 'past_due' && <Badge variant="red">Past Due</Badge>}
           {sub?.status === 'cancelled' && <Badge variant="red">Cancelled</Badge>}
@@ -106,10 +195,25 @@ export default function BillingPage() {
           </div>
         ) : (
           <div>
-            <p className="text-sm text-surface-muted mb-4">Subscribe to unlock all Tradelink features including posting referrals and claiming jobs.</p>
-            <Button onClick={handleSubscribe} loading={actionLoading}>
-              Subscribe — $9.99/mo
-            </Button>
+            <p className="text-sm text-surface-muted mb-4">
+              Subscribe to unlock all Tradelink features including posting referrals and claiming jobs.
+            </p>
+            <Elements
+              stripe={stripePromise}
+              options={{
+                appearance: {
+                  theme: 'night',
+                  variables: {
+                    colorPrimary: '#f59e0b',
+                    colorBackground: '#0f172a',
+                    colorText: '#f1f5f9',
+                    borderRadius: '12px',
+                  },
+                },
+              }}
+            >
+              <SubscribeForm onSuccess={() => loadData()} />
+            </Elements>
           </div>
         )}
       </Card>
@@ -117,11 +221,9 @@ export default function BillingPage() {
       {/* Stripe Connect */}
       <Card>
         <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-heading font-semibold text-white flex items-center gap-2">
-              <DollarSignIcon className="w-5 h-5 text-emerald-400" /> Payout Account
-            </h2>
-          </div>
+          <h2 className="text-lg font-heading font-semibold text-white flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-emerald-400" /> Payout Account
+          </h2>
           {connectStatus === 'active' ? (
             <Badge variant="green"><CheckCircle2 className="w-3 h-3 mr-1" /> Connected</Badge>
           ) : connectStatus === 'pending' ? (
@@ -141,10 +243,31 @@ export default function BillingPage() {
           </Button>
         )}
       </Card>
+
+      {/* Invoice History */}
+      {subData?.invoices && subData.invoices.length > 0 && (
+        <Card>
+          <h2 className="text-lg font-heading font-semibold text-white mb-4">Invoice History</h2>
+          <div className="space-y-2">
+            {subData.invoices.map((inv) => (
+              <div key={inv.id} className="flex items-center justify-between py-2 border-b border-surface-border last:border-b-0">
+                <div>
+                  <p className="text-sm text-slate-200">${inv.amount.toFixed(2)}</p>
+                  <p className="text-xs text-surface-muted">{formatDate(inv.date)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={inv.status === 'paid' ? 'green' : 'amber'}>{inv.status}</Badge>
+                  {inv.pdf && (
+                    <a href={inv.pdf} target="_blank" rel="noopener noreferrer" className="text-xs text-amber-400 hover:underline">
+                      PDF
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
-}
-
-function DollarSignIcon(props: { className?: string }) {
-  return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={props.className}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
 }

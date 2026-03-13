@@ -59,6 +59,7 @@ app.use('/contractors', contractorRoutes);
 app.use('/jobs', jobRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/commissions', commissionRoutes);
+app.use('/earnings', commissionRoutes); // alias so /earnings/summary also works
 app.use('/notifications', notificationRoutes);
 app.use('/messages', messageRoutes);
 app.use('/reviews', reviewRoutes);
