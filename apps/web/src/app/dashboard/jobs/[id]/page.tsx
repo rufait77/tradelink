@@ -44,7 +44,7 @@ export default function JobDetailPage() {
     async function load() {
       try {
         const res = await api.get(`/jobs/${id}`);
-        setJob(res.data.data);
+        setJob(res.data.data?.job || res.data.data);
         // Load messages
         const msgRes = await api.get(`/messages/${id}`).catch(() => ({ data: { data: [] } }));
         setMessages(msgRes.data.data || []);
@@ -64,7 +64,7 @@ export default function JobDetailPage() {
       await api.post(`/jobs/${id}/claim`);
       toast.success('Job claimed! You can now start working.');
       const res = await api.get(`/jobs/${id}`);
-      setJob(res.data.data);
+      setJob(res.data.data?.job || res.data.data);
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to claim job');
     } finally {
@@ -78,7 +78,7 @@ export default function JobDetailPage() {
       await api.post(`/jobs/${id}/start`);
       toast.success('Job marked as In Progress!');
       const res = await api.get(`/jobs/${id}`);
-      setJob(res.data.data);
+      setJob(res.data.data?.job || res.data.data);
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to start job');
     } finally {
@@ -92,7 +92,7 @@ export default function JobDetailPage() {
       await api.post(`/jobs/${id}/complete`);
       toast.success('Job completed! Commission will be processed.');
       const res = await api.get(`/jobs/${id}`);
-      setJob(res.data.data);
+      setJob(res.data.data?.job || res.data.data);
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to complete job');
     } finally {
