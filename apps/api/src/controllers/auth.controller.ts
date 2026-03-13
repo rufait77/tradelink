@@ -105,8 +105,21 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       });
     }
 
-    // Send verification email (regardless of dev mode)
-    await sendVerificationEmail(email, name, verifyToken);
+    if (devMode) {
+      // Dev mode: skip email, auto-verify
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { isVerified: true },
+      });
+    } else {
+      // Production: send verification email (non-fatal if it fails)
+      try {
+        await sendVerificationEmail(email, name, verifyToken);
+      } catch (emailErr) {
+        console.error('Failed to send verification email:', emailErr);
+        // User is still created — they can request resend later
+      }
+    }
 
     res.status(201).json({
       success: true,
