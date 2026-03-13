@@ -4,6 +4,8 @@ import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { forwardRef } from 'react';
 
+const EMPTY_SENTINEL = '__none__';
+
 interface SelectOption {
   label: string;
   value: string;
@@ -21,15 +23,26 @@ interface SelectProps {
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
   ({ label, error, placeholder = 'Select...', options, value, onChange, className }, ref) => {
+    // Radix doesn't allow empty-string values — map to sentinel
+    const safeValue = value === '' || value === undefined ? EMPTY_SENTINEL : value;
+    const safeOptions = options.map((opt) => ({
+      ...opt,
+      value: opt.value === '' ? EMPTY_SENTINEL : opt.value,
+    }));
+
+    function handleChange(v: string) {
+      onChange?.(v === EMPTY_SENTINEL ? '' : v);
+    }
+
     return (
       <div className="space-y-1.5">
         {label && <label className="label">{label}</label>}
-        <SelectPrimitive.Root value={value} onValueChange={onChange}>
+        <SelectPrimitive.Root value={safeValue} onValueChange={handleChange}>
           <SelectPrimitive.Trigger
             ref={ref}
             className={cn(
               'input-field flex items-center justify-between',
-              !value && 'text-surface-muted',
+              safeValue === EMPTY_SENTINEL && 'text-surface-muted',
               error && 'border-red-500/50',
               className
             )}
@@ -46,7 +59,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
               sideOffset={4}
             >
               <SelectPrimitive.Viewport className="p-1">
-                {options.map((opt) => (
+                {safeOptions.map((opt) => (
                   <SelectPrimitive.Item
                     key={opt.value}
                     value={opt.value}
@@ -73,3 +86,4 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 );
 
 Select.displayName = 'Select';
+

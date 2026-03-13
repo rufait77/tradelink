@@ -27,7 +27,7 @@ export default function MessagesPage() {
     async function load() {
       try {
         const res = await api.get('/messages/conversations');
-        setConversations(res.data.data || []);
+        setConversations(res.data.data?.conversations || []);
       } catch {
         setConversations([]);
       } finally {
