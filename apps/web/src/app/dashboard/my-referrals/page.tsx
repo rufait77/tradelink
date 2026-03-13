@@ -27,8 +27,9 @@ export default function MyReferralsPage() {
       setLoading(true);
       try {
         const res = await api.get(`/jobs/my-referrals?page=${page}&pageSize=10`);
-        setJobs(res.data.data.items || []);
-        setTotal(res.data.data.total || 0);
+        const allJobs = res.data.data?.jobs || res.data.data?.items || [];
+        setJobs(allJobs);
+        setTotal(res.data.data?.total || allJobs.length);
       } catch { setJobs([]); }
       finally { setLoading(false); }
     }
