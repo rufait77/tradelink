@@ -11,6 +11,7 @@ import announcementsRouter from './admin/announcements';
 import analyticsRouter from './admin/analytics';
 import settingsRouter from './admin/settings';
 import auditLogRouter from './admin/audit-log';
+import disputesRouter from './admin/disputes';
 
 const router = Router();
 
@@ -28,5 +29,7 @@ router.use('/announcements', requireAdmin, announcementsRouter);
 router.use('/analytics', requireAdmin, analyticsRouter);
 router.use('/settings', requireAdmin, settingsRouter);
 router.use('/audit-log', requireAdmin, auditLogRouter);
+router.use('/disputes', requireAdmin, disputesRouter);
 
 export default router;
+

@@ -23,6 +23,9 @@ import reviewRoutes from './routes/reviews';
 import settingsRoutes from './routes/settings';
 import webhookRoutes from './routes/webhooks';
 import adminRoutes from './routes/admin';
+import quoteRoutes from './routes/quotes';
+import clientRoutes from './routes/client';
+import escrowRoutes from './routes/escrow';
 
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy (Nginx)
@@ -66,6 +69,9 @@ app.use('/reviews', reviewRoutes);
 app.use('/settings', settingsRoutes);
 app.use('/webhooks', webhookRoutes);
 app.use('/admin', adminRoutes);
+app.use('/quotes', quoteRoutes);
+app.use('/client', clientRoutes);
+app.use('/escrow', escrowRoutes);
 
 // ─── Static uploads ───────────────────────────────────────────────────────────
 app.use('/uploads', express.static(env.UPLOAD_DIR));

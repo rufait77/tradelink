@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { addDays } from 'date-fns';
+import { addDays, addHours } from 'date-fns';
 import { prisma } from '../config/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
@@ -13,6 +13,10 @@ export async function createJob(req: AuthRequest, res: Response, next: NextFunct
     const {
       title, description, tradeType, budgetMin, budgetMax,
       streetAddress, city, state, zipCode, urgency, clientName, clientNote,
+      // New fields
+      estimatedValue, serviceRadiusMiles,
+      clientFirstName, clientLastName, clientEmail, clientPhone,
+      clientStreetAddress, clientCity, clientState, clientZipCode, clientNotes,
     } = req.body;
 
     const [minBudget, maxBudget, expiryDays] = await Promise.all([
@@ -29,16 +33,40 @@ export async function createJob(req: AuthRequest, res: Response, next: NextFunct
     }
 
     const expiresAt = addDays(new Date(), parseInt(expiryDays ?? '30'));
+    const interestWindowEnd = addHours(new Date(), 24); // 24-hour interest window
 
     const job = await prisma.job.create({
       data: {
         postedById: req.user!.userId,
         title, description, tradeType, budgetMin, budgetMax,
         streetAddress, city, state, zipCode, urgency,
-        clientName, clientNote, expiresAt,
+        clientName: clientName ?? (clientFirstName ? `${clientFirstName} ${clientLastName ?? ''}`.trim() : null),
+        clientNote, expiresAt,
+        estimatedValue: estimatedValue ? parseFloat(estimatedValue) : null,
+        serviceRadiusMiles: serviceRadiusMiles ? parseInt(serviceRadiusMiles) : null,
+        interestWindowEnd,
       },
       include: { postedBy: { select: { id: true, name: true, profile: { select: { avgRating: true, photoUrl: true } } } } },
     });
+
+    // Create ClientLead if client contact info is provided
+    if (clientEmail) {
+      await prisma.clientLead.create({
+        data: {
+          jobId: job.id,
+          firstName: clientFirstName ?? clientName?.split(' ')[0] ?? 'Client',
+          lastName: clientLastName ?? clientName?.split(' ').slice(1).join(' ') ?? '',
+          email: clientEmail,
+          phone: clientPhone ?? null,
+          streetAddress: clientStreetAddress ?? streetAddress,
+          city: clientCity ?? city,
+          state: clientState ?? state,
+          zipCode: clientZipCode ?? zipCode,
+          notes: clientNotes ?? null,
+          tokenExpiry: addDays(new Date(), 90), // 90-day client portal access
+        },
+      });
+    }
 
     // Increment referrer's total referrals
     await prisma.contractorProfile.update({
