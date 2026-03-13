@@ -56,8 +56,8 @@ function JobBoardContent() {
         if (trade) q.set('tradeType', trade);
         if (urgency) q.set('urgency', urgency);
         const res = await api.get(`/jobs?${q.toString()}`);
-        setJobs(res.data.data.items || []);
-        setTotal(res.data.data.total || 0);
+        setJobs(res.data.data?.jobs || res.data.data?.items || []);
+        setTotal(res.data.data?.total || 0);
       } catch {
         setJobs([]);
       } finally {
