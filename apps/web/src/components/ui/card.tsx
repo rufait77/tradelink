@@ -8,7 +8,7 @@ interface CardProps {
   onClick?: () => void;
 }
 
-export function Card({ children, className, hover, glow }: CardProps) {
+export function Card({ children, className, hover, glow, onClick }: CardProps) {
   return (
     <div
       className={cn(
@@ -17,6 +17,7 @@ export function Card({ children, className, hover, glow }: CardProps) {
         glow && 'glow-amber',
         className
       )}
+      onClick={onClick}
     >
       {children}
     </div>
