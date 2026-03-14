@@ -30,7 +30,7 @@ export default function PaymentPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/client/${token}`);
+        const res = await clientApi.get(`/client/${token}`);
         setData(res.data.data);
       } catch {
         toast.error('Invalid or expired link');
@@ -44,7 +44,7 @@ export default function PaymentPage() {
   async function handlePay() {
     setPayLoading(true);
     try {
-      const res = await api.get(`/client/${token}/pay`);
+      const res = await clientApi.get(`/client/${token}/pay`);
       const url = res.data.data?.url || res.data.data?.paymentLink;
       if (url) {
         window.location.href = url;

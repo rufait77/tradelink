@@ -30,7 +30,7 @@ export default function DisputePage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/client/${token}`);
+        const res = await clientApi.get(`/client/${token}`);
         setJobStatus(res.data.data.job.status);
         if (res.data.data.job.status === 'Disputed') setSubmitted(true);
       } catch {
@@ -49,7 +49,7 @@ export default function DisputePage() {
     setSubmitLoading(true);
     try {
       const reasonLabel = DISPUTE_REASONS.find(r => r.value === selectedReason)?.label || selectedReason;
-      await api.post(`/client/${token}/dispute`, {
+      await clientApi.post(`/client/${token}/dispute`, {
         reason: `${reasonLabel}: ${description}`,
       });
       toast.success('Dispute filed successfully. An admin will review your case.');

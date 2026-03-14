@@ -24,7 +24,7 @@ export default function RatePage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/client/${token}`);
+        const res = await clientApi.get(`/client/${token}`);
         const d = res.data.data;
         setContractorName(d.contractor?.name || 'Contractor');
         setJobTitle(d.job.title);
@@ -43,7 +43,7 @@ export default function RatePage() {
 
     setSubmitLoading(true);
     try {
-      await api.post(`/client/${token}/rate`, {
+      await clientApi.post(`/client/${token}/rate`, {
         rating,
         text: reviewText || undefined,
       });

@@ -32,7 +32,7 @@ export default function ConfirmCompletionPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/client/${token}`);
+        const res = await clientApi.get(`/client/${token}`);
         setData(res.data.data);
       } catch {
         toast.error('Invalid or expired link');
@@ -46,7 +46,7 @@ export default function ConfirmCompletionPage() {
   async function handleConfirm() {
     setActionLoading(true);
     try {
-      await api.post(`/client/${token}/confirm`);
+      await clientApi.post(`/client/${token}/confirm`);
       toast.success('Job confirmed as complete! Payment is being released.');
       router.push(`/client/${token}`);
     } catch (err: any) {

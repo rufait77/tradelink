@@ -29,7 +29,7 @@ export default function ReportPage() {
 
     setSubmitLoading(true);
     try {
-      await api.post(`/client/${token}/report`, {
+      await clientApi.post(`/client/${token}/report`, {
         type: selectedType,
         description,
       });

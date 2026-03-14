@@ -84,7 +84,7 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/client/${token}`);
+        const res = await clientApi.get(`/client/${token}`);
         setData(res.data.data);
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Invalid or expired access link';

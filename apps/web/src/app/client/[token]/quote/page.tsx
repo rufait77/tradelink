@@ -37,7 +37,7 @@ export default function QuoteApprovalPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/client/${token}`);
+        const res = await clientApi.get(`/client/${token}`);
         setData(res.data.data);
       } catch {
         toast.error('Invalid or expired link');
@@ -52,7 +52,7 @@ export default function QuoteApprovalPage() {
     if (!data?.activeQuote) return;
     setActionLoading(true);
     try {
-      await api.post(`/client/${token}/quote/${data.activeQuote.id}/approve`);
+      await clientApi.post(`/client/${token}/quote/${data.activeQuote.id}/approve`);
       toast.success('Quote approved! You will receive a payment link shortly.');
       router.push(`/client/${token}`);
     } catch (err: any) {
@@ -66,7 +66,7 @@ export default function QuoteApprovalPage() {
     if (!data?.activeQuote) return;
     setActionLoading(true);
     try {
-      await api.post(`/client/${token}/quote/${data.activeQuote.id}/reject`, {
+      await clientApi.post(`/client/${token}/quote/${data.activeQuote.id}/reject`, {
         reason: rejectReason || undefined,
       });
       toast.success('Quote rejected. The contractor can submit a revised quote.');
