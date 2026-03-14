@@ -108,6 +108,7 @@ export async function getJobs(req: Request, res: Response, next: NextFunction) {
         where,
         include: {
           postedBy: { select: { id: true, name: true, profile: { select: { avgRating: true, photoUrl: true, tradeTypes: true } } } },
+          _count: { select: { interests: true } },
         },
         orderBy: [{ urgency: 'desc' }, { createdAt: 'desc' }],
         skip,
@@ -134,6 +135,8 @@ export async function getMyReferrals(req: AuthRequest, res: Response, next: Next
       include: {
         claimedBy: { select: { id: true, name: true, profile: { select: { photoUrl: true, avgRating: true } } } },
         commission: true,
+        escrow: true,
+        _count: { select: { interests: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -171,10 +174,19 @@ export async function getJob(req: Request, res: Response, next: NextFunction) {
       include: {
         postedBy: { select: { id: true, name: true, profile: { select: { avgRating: true, photoUrl: true, tradeTypes: true, city: true, state: true } } } },
         claimedBy: { select: { id: true, name: true, profile: { select: { avgRating: true, photoUrl: true } } } },
+        clientLead: true,
+        escrow: true,
+        _count: { select: { interests: true } },
       },
     });
     if (!job) return next(new AppError('Job not found', 404));
-    res.json({ success: true, data: { job } });
+
+    // Strip clientLead unless user is poster or assigned contractor
+    const userId = (req as any).user?.userId;
+    const canSeeClient = userId && (userId === job.postedById || userId === job.claimedById);
+    const safeJob = canSeeClient ? job : { ...job, clientLead: null };
+
+    res.json({ success: true, data: { job: safeJob } });
   } catch (err) {
     next(err);
   }
