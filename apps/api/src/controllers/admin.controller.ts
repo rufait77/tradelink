@@ -369,12 +369,20 @@ export async function adminDeleteJob(req: AuthRequest, res: Response, next: Next
     const job = await prisma.job.findUnique({ where: { id } });
     if (!job) return next(new AppError('Job not found', 404));
 
-    // Cascade: remove messages, reviews, payment, commission, then job
+    // Cascade: remove all related Phase 1 + Phase 2 records, then job
     await prisma.$transaction([
       prisma.message.deleteMany({ where: { jobId: id } }),
       prisma.review.deleteMany({ where: { jobId: id } }),
       prisma.commission.deleteMany({ where: { jobId: id } }),
       prisma.jobPayment.deleteMany({ where: { jobId: id } }),
+      // Phase 2 models
+      prisma.escrowPayment.deleteMany({ where: { jobId: id } }),
+      prisma.quote.deleteMany({ where: { jobId: id } }),
+      prisma.dispute.deleteMany({ where: { jobId: id } }),
+      prisma.jobInterest.deleteMany({ where: { jobId: id } }),
+      prisma.contractorStrike.deleteMany({ where: { jobId: id } }),
+      prisma.clientLead.deleteMany({ where: { jobId: id } }),
+      prisma.notification.deleteMany({ where: { link: { contains: id } } }),
       prisma.job.delete({ where: { id } }),
     ]);
 

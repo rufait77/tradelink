@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createQuote, reviseQuote, getQuote, getJobQuotes } from '../controllers/quote.controller';
+import { getQuote, reviseQuote } from '../controllers/quote.controller';
 import { requireAuth } from '../middleware/auth';
 
 const router = Router();
