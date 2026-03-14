@@ -6,7 +6,7 @@ import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { PageLoader } from '../../../components/ui/spinner';
 import { formatCurrency, getStatusClass } from '../../../lib/utils';
-import api from '../../../lib/api';
+import clientApi from '../../../lib/clientApi';
 import { toast } from 'sonner';
 import {
   Briefcase, User, Star, MapPin, Shield, Clock,

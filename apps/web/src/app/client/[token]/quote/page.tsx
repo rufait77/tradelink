@@ -7,7 +7,7 @@ import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
 import { PageLoader } from '../../../../components/ui/spinner';
 import { formatCurrency, formatDate } from '../../../../lib/utils';
-import api from '../../../../lib/api';
+import clientApi from '../../../../lib/clientApi';
 import { toast } from 'sonner';
 import {
   FileText, CheckCircle2, X, DollarSign,

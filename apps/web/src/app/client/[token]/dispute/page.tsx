@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
 import { PageLoader } from '../../../../components/ui/spinner';
-import api from '../../../../lib/api';
+import clientApi from '../../../../lib/clientApi';
 import { toast } from 'sonner';
 import { ArrowLeft, AlertTriangle, ShieldAlert, Send } from 'lucide-react';
 

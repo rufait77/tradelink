@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
-import api from '../../../../lib/api';
+import clientApi from '../../../../lib/clientApi';
 import { toast } from 'sonner';
 import { ArrowLeft, AlertTriangle, Send, CheckCircle2 } from 'lucide-react';
 
