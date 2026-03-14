@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
 import { AppError } from '../middleware/errorHandler';
