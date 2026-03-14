@@ -367,3 +367,42 @@ export async function reportIssue(req: ClientRequest, res: Response, next: NextF
     next(err);
   }
 }
+
+// ─── GET /client/:token/pay ─────────────────────────────────────────────────
+// Returns payment link for the client to pay via Stripe
+
+export async function getPaymentPage(req: ClientRequest, res: Response, next: NextFunction) {
+  try {
+    const job = req.clientJob;
+
+    if (job.status !== 'QuoteApproved' && job.status !== 'EscrowFunded') {
+      return next(new AppError('Payment is not available at this stage', 400));
+    }
+
+    // If escrow already exists and has a payment link, return it
+    const escrow = await prisma.escrowPayment.findUnique({ where: { jobId: job.id } });
+
+    if (escrow && escrow.paymentLink) {
+      return res.json({
+        success: true,
+        data: {
+          url: escrow.paymentLink,
+          amount: escrow.totalAmount,
+          status: escrow.status,
+        },
+      });
+    }
+
+    // No escrow / payment link yet — the escrow creation happens on quote approval
+    // Return a status indicating the payment link is being generated
+    res.json({
+      success: true,
+      data: {
+        url: null,
+        message: 'Payment link is being generated. Please check back in a moment.',
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
