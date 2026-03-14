@@ -10,8 +10,8 @@ import { Input } from '../../../components/ui/input';
 import { EmptyState } from '../../../components/ui/empty-state';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
-import { formatCurrency, formatRelativeTime, getStatusClass, getUrgencyClass } from '../../../lib/utils';
-import { MapPin, Clock, Search, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatCurrency, formatRelativeTime } from '../../../lib/utils';
+import { MapPin, Clock, Search, Briefcase, ChevronLeft, ChevronRight, Users, Timer } from 'lucide-react';
 
 const TRADE_OPTIONS = [
   { label: 'All Trades', value: '' },
@@ -27,11 +27,33 @@ const URGENCY_OPTIONS = [
   { label: 'Emergency', value: 'Emergency' },
 ];
 
+function getUrgencyClass(u: string) {
+  switch (u) {
+    case 'Emergency': return 'text-red-400 bg-red-500/10 border-red-500/20';
+    case 'High': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    case 'Medium': return 'text-sky-400 bg-sky-500/10 border-sky-500/20';
+    default: return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+  }
+}
+
 interface Job {
   id: string; title: string; description: string; tradeType: string;
-  budgetMin: number; budgetMax: number; city: string; state: string;
+  budgetMin: number; budgetMax: number; city: string; state: string; zipCode: string;
   urgency: string; status: string; createdAt: string;
+  estimatedValue?: number | null;
+  interestWindowEnd?: string | null;
+  _count?: { interests?: number };
   postedBy?: { name: string };
+}
+
+function getInterestWindowLabel(end: string | null | undefined): { text: string; urgent: boolean } | null {
+  if (!end) return null;
+  const diff = new Date(end).getTime() - Date.now();
+  if (diff <= 0) return { text: 'Window closed', urgent: false };
+  const hrs = Math.floor(diff / (1000 * 60 * 60));
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (hrs > 0) return { text: `${hrs}h ${mins}m left`, urgent: hrs < 4 };
+  return { text: `${mins}m left`, urgent: true };
 }
 
 function JobBoardContent() {
@@ -78,7 +100,7 @@ function JobBoardContent() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-heading font-bold text-white">Job Board</h1>
-          <p className="text-sm text-surface-muted">{total} open jobs available</p>
+          <p className="text-sm text-surface-muted">{total} open referrals available</p>
         </div>
         <Link href="/dashboard/post-job">
           <Button size="sm">Post a Referral</Button>
@@ -89,7 +111,7 @@ function JobBoardContent() {
       <div className="glass-card p-4 flex flex-col sm:flex-row gap-3">
         <div className="flex-1">
           <Input
-            placeholder="Search jobs by title or city..."
+            placeholder="Search by title or city..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
@@ -108,29 +130,54 @@ function JobBoardContent() {
         <EmptyState icon={Briefcase} title="No jobs found" description="Try adjusting your filters or check back later." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredJobs.map((job) => (
-            <Link key={job.id} href={`/dashboard/jobs/${job.id}`}>
-              <Card hover className="h-full flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <Badge variant="amber">{job.tradeType.replace(/([A-Z])/g, ' $1').trim()}</Badge>
-                  <Badge variant="status" statusClass={getUrgencyClass(job.urgency)}>{job.urgency}</Badge>
-                </div>
-                <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2">{job.title}</h3>
-                <p className="text-xs text-surface-muted line-clamp-2 mb-3 flex-1">{job.description}</p>
-                <div className="flex items-center justify-between text-xs text-surface-muted pt-3 border-t border-surface-border/50">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> {job.city}, {job.state}
-                  </span>
-                  <span className="font-medium text-emerald-400">
-                    {formatCurrency(job.budgetMin)} – {formatCurrency(job.budgetMax)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-surface-muted mt-2">
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatRelativeTime(job.createdAt)}</span>
-                </div>
-              </Card>
-            </Link>
-          ))}
+          {filteredJobs.map((job) => {
+            const interestCount = job._count?.interests ?? 0;
+            const windowInfo = getInterestWindowLabel(job.interestWindowEnd);
+            const displayValue = job.estimatedValue || ((job.budgetMin + job.budgetMax) / 2);
+
+            return (
+              <Link key={job.id} href={`/dashboard/jobs/${job.id}`}>
+                <Card hover className="h-full flex flex-col">
+                  {/* Header badges */}
+                  <div className="flex items-start justify-between mb-3">
+                    <Badge variant="amber">{job.tradeType.replace(/([A-Z])/g, ' $1').trim()}</Badge>
+                    <Badge variant="status" statusClass={getUrgencyClass(job.urgency)}>{job.urgency}</Badge>
+                  </div>
+
+                  {/* Title + description */}
+                  <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2">{job.title}</h3>
+                  <p className="text-xs text-surface-muted line-clamp-2 mb-3 flex-1">{job.description}</p>
+
+                  {/* Location + Value */}
+                  <div className="flex items-center justify-between text-xs text-surface-muted pt-3 border-t border-surface-border/50">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {job.city}, {job.state}
+                    </span>
+                    <span className="font-medium text-emerald-400">
+                      ~{formatCurrency(displayValue)}
+                    </span>
+                  </div>
+
+                  {/* Interest count + window timer */}
+                  <div className="flex items-center justify-between text-xs text-surface-muted mt-2">
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3 h-3 text-amber-400" />
+                      <span className={interestCount > 0 ? 'text-amber-400' : ''}>
+                        {interestCount} interested
+                      </span>
+                    </span>
+                    {windowInfo ? (
+                      <span className={`flex items-center gap-1 ${windowInfo.urgent ? 'text-red-400' : 'text-sky-400'}`}>
+                        <Timer className="w-3 h-3" /> {windowInfo.text}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatRelativeTime(job.createdAt)}</span>
+                    )}
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
 
