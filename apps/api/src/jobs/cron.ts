@@ -1,5 +1,4 @@
 import { prisma } from '../config/prisma';
-import { getSetting } from '../services/settings.service';
 import { logger } from '../config/logger';
 
 // ─── Intervals ────────────────────────────────────────────────────────────────
@@ -76,7 +75,7 @@ async function checkSubscriptionRenewals() {
         await prisma.notification.create({
           data: {
             userId: sub.userId,
-            type: 'subscription_reminder' as any,
+            type: 'subscription_expiring' as any,
             title: 'Subscription Ending Soon',
             message: `Your Tradelink subscription ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Renew to keep access to the job board.`,
             link: '/dashboard/billing',

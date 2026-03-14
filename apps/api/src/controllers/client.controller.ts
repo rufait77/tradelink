@@ -2,7 +2,6 @@ import { Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { ClientRequest } from '../middleware/clientAuth';
-import { addDays } from 'date-fns';
 
 // ─── GET /client/:token ─────────────────────────────────────────────────────
 // Client dashboard — overview of job status, assigned contractor, current quote

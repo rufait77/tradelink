@@ -301,10 +301,17 @@ export async function completeJob(req: AuthRequest, res: Response, next: NextFun
     if (job.claimedById !== req.user!.userId) return next(new AppError('Not authorized', 403));
     if (job.status !== 'InProgress') return next(new AppError('Job must be In Progress to complete', 400));
 
-    await prisma.contractorProfile.update({
-      where: { userId: req.user!.userId },
-      data: { totalJobsCompleted: { increment: 1 } },
-    });
+    // Update job status to Completed + increment contractor stats
+    const [updatedJob] = await Promise.all([
+      prisma.job.update({
+        where: { id: jobId },
+        data: { status: 'Completed' },
+      }),
+      prisma.contractorProfile.update({
+        where: { userId: req.user!.userId },
+        data: { totalJobsCompleted: { increment: 1 } },
+      }),
+    ]);
 
     // Get commission pct for email
     const commissionPct = await getSetting('commission_pct');
@@ -323,7 +330,7 @@ export async function completeJob(req: AuthRequest, res: Response, next: NextFun
       sendJobCompletedEmail(job.postedBy.email, job.postedBy.name, job.title, commissionAmount.toFixed(2)),
     ]);
 
-    res.json({ success: true, data: { message: 'Job marked as complete. Payment processing initiated via job payment flow.' } });
+    res.json({ success: true, data: { job: updatedJob, message: 'Job marked as complete. Payment processing initiated via job payment flow.' } });
   } catch (err) {
     next(err);
   }

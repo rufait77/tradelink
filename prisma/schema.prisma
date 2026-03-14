@@ -503,7 +503,7 @@ model Review {
   reviewer User @relation("ReviewsGiven", fields: [reviewerId], references: [id])
   reviewee User @relation("ReviewsReceived", fields: [revieweeId], references: [id])
 
-  @@unique([jobId, reviewerId, revieweeId]) // One review per direction per job
+  @@unique([jobId, reviewerId, revieweeId, dimension]) // One review per direction per dimension per job
   @@index([revieweeId])
   @@index([isFlagged])
   @@map("reviews")

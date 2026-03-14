@@ -68,6 +68,12 @@ export const contractorProfileSchema = z.object({
 
 // ─── Job Validators ───────────────────────────────────────────────────────────
 
+const ALL_JOB_STATUSES = [
+  'Open', 'InterestClosed', 'Assigned', 'QuoteSent', 'QuoteApproved',
+  'EscrowFunded', 'InProgress', 'ContractorDone', 'ClientConfirmed',
+  'Completed', 'Disputed', 'Cancelled', 'Expired',
+] as const;
+
 export const createJobSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(150),
   description: z.string().min(20, 'Description must be at least 20 characters').max(2000),
@@ -81,6 +87,18 @@ export const createJobSchema = z.object({
   urgency: z.enum(['Low', 'Medium', 'High', 'Emergency']),
   clientName: z.string().max(100).optional(),
   clientNote: z.string().max(500).optional(),
+  // ─── New Phase 2 fields ───
+  estimatedValue: z.union([z.number().positive(), z.string()]).optional(),
+  serviceRadiusMiles: z.union([z.number().int().positive(), z.string()]).optional(),
+  clientFirstName: z.string().max(100).optional(),
+  clientLastName: z.string().max(100).optional(),
+  clientEmail: z.string().email('Invalid client email').optional().or(z.literal('')),
+  clientPhone: z.string().max(20).optional(),
+  clientStreetAddress: z.string().max(200).optional(),
+  clientCity: z.string().max(100).optional(),
+  clientState: z.enum(US_STATES).optional().or(z.literal('')),
+  clientZipCode: z.string().regex(/^\d{5}$/).optional().or(z.literal('')),
+  clientNotes: z.string().max(1000).optional(),
 });
 
 export const jobFiltersSchema = z.object({
@@ -91,9 +109,30 @@ export const jobFiltersSchema = z.object({
   budgetMin: z.number().optional(),
   budgetMax: z.number().optional(),
   urgency: z.enum(['Low', 'Medium', 'High', 'Emergency']).optional(),
-  status: z.enum(['Open', 'Claimed', 'InProgress', 'Completed', 'Cancelled', 'Expired']).optional(),
+  status: z.enum(ALL_JOB_STATUSES).optional(),
   page: z.number().int().positive().default(1),
   pageSize: z.number().int().min(1).max(50).default(20),
+});
+
+// ─── Quote Validator ──────────────────────────────────────────────────────────
+
+export const createQuoteSchema = z.object({
+  amount: z.union([z.number().positive(), z.string()]),
+  scope: z.string().min(10, 'Scope must be at least 10 characters').max(2000),
+  scheduledDate: z.string().min(1, 'Scheduled date is required'),
+});
+
+// ─── Interest Validator ───────────────────────────────────────────────────────
+
+export const expressInterestSchema = z.object({
+  message: z.string().max(500).optional(),
+});
+
+// ─── Dispute Validator ────────────────────────────────────────────────────────
+
+export const raiseDisputeSchema = z.object({
+  reason: z.string().min(10, 'Please provide a detailed reason').max(2000),
+  evidence: z.any().optional(),
 });
 
 // ─── Review Validator ─────────────────────────────────────────────────────────
@@ -157,3 +196,6 @@ export type CreateReviewInput = z.infer<typeof createReviewSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type PlatformSettingsInput = z.infer<typeof platformSettingsSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type CreateQuoteInput = z.infer<typeof createQuoteSchema>;
+export type ExpressInterestInput = z.infer<typeof expressInterestSchema>;
+export type RaiseDisputeInput = z.infer<typeof raiseDisputeSchema>;

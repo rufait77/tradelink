@@ -27,16 +27,43 @@ export const TRADE_TYPES = [
   'Flooring',
   'Masonry',
   'Cleaning',
-  'Pressure Washing',
-  'Junk Removal',
-  'Window Installation',
+  'PressureWashing',
+  'JunkRemoval',
+  'WindowInstallation',
   'Siding',
   'Clearing',
-  'General Contracting',
+  'GeneralContracting',
+  'Barber',
+  'Cosmetologist',
+  'Esthetician',
   'Other',
 ] as const;
 
 export type TradeType = (typeof TRADE_TYPES)[number];
+
+// Display-friendly labels for trade types
+export const TRADE_TYPE_LABELS: Record<TradeType, string> = {
+  Landscaping: 'Landscaping',
+  Roofing: 'Roofing',
+  HVAC: 'HVAC',
+  Plumbing: 'Plumbing',
+  Electrical: 'Electrical',
+  Painting: 'Painting',
+  Carpentry: 'Carpentry',
+  Flooring: 'Flooring',
+  Masonry: 'Masonry',
+  Cleaning: 'Cleaning',
+  PressureWashing: 'Pressure Washing',
+  JunkRemoval: 'Junk Removal',
+  WindowInstallation: 'Window Installation',
+  Siding: 'Siding',
+  Clearing: 'Clearing',
+  GeneralContracting: 'General Contracting',
+  Barber: 'Barber',
+  Cosmetologist: 'Cosmetologist',
+  Esthetician: 'Esthetician',
+  Other: 'Other',
+};
 
 export const US_STATES = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -53,42 +80,161 @@ export type ContractorProfile = {
   tradeTypes: TradeType[];
   bio: string;
   licenseNumber?: string;
+  licenseFileUrl?: string;
+  insuranceUrl?: string;
+  certifications?: any;
   streetAddress: string;
   city: string;
   state: USState;
   zipCode: string;
   yearsExperience: number;
   avgRating: number;
+  avgResponseTime?: number;
   totalEarned: number;
   totalReferrals: number;
   totalJobsCompleted: number;
   photoUrl?: string;
   stripeConnectStatus: 'not_connected' | 'pending' | 'active';
+  onboardingComplete: boolean;
+  isAdminVerified: boolean;
+  ghostStrikes: number;
+  bypassWarnings: number;
+  isSuspended: boolean;
+  suspendedUntil?: string;
+  isBanned: boolean;
 };
 
 // ─── Jobs ─────────────────────────────────────────────────────────────────────
 
 export type JobUrgency = 'Low' | 'Medium' | 'High' | 'Emergency';
-export type JobStatus = 'Open' | 'Claimed' | 'InProgress' | 'Completed' | 'Cancelled' | 'Expired';
+
+export type JobStatus =
+  | 'Open'
+  | 'InterestClosed'
+  | 'Assigned'
+  | 'QuoteSent'
+  | 'QuoteApproved'
+  | 'EscrowFunded'
+  | 'InProgress'
+  | 'ContractorDone'
+  | 'ClientConfirmed'
+  | 'Completed'
+  | 'Disputed'
+  | 'Cancelled'
+  | 'Expired';
 
 export type Job = {
   id: string;
-  postedBy: string;
-  claimedBy?: string;
+  postedById: string;
+  claimedById?: string;
   title: string;
   description: string;
   tradeType: TradeType;
   budgetMin: number;
   budgetMax: number;
+  estimatedValue?: number;
   streetAddress: string;
   city: string;
   state: USState;
   zipCode: string;
+  serviceRadiusMiles?: number;
   urgency: JobUrgency;
   status: JobStatus;
   clientName?: string;
   clientNote?: string;
   expiresAt: string;
+  interestWindowEnd?: string;
+  assignedAt?: string;
+  contractorCompletedAt?: string;
+  clientConfirmedAt?: string;
+  autoReleaseAt?: string;
+  completionPhotos: string[];
+  completionNotes?: string;
+  createdAt: string;
+};
+
+// ─── Interest ─────────────────────────────────────────────────────────────────
+
+export type InterestStatus = 'pending' | 'selected' | 'rejected' | 'withdrawn';
+
+export type JobInterest = {
+  id: string;
+  jobId: string;
+  contractorId: string;
+  message?: string;
+  status: InterestStatus;
+  createdAt: string;
+};
+
+// ─── Quotes ───────────────────────────────────────────────────────────────────
+
+export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'rejected' | 'revised' | 'cancelled';
+
+export type Quote = {
+  id: string;
+  jobId: string;
+  contractorId: string;
+  amount: number;
+  scope: string;
+  scheduledDate: string;
+  status: QuoteStatus;
+  clientToken: string;
+  revisionOfId?: string;
+  rejectionNote?: string;
+  platformFeePct: number;
+  commissionPct: number;
+  createdAt: string;
+};
+
+// ─── Escrow ───────────────────────────────────────────────────────────────────
+
+export type EscrowStatus = 'pending' | 'funded' | 'released' | 'refunded' | 'disputed';
+
+export type EscrowPayment = {
+  id: string;
+  jobId: string;
+  quoteId: string;
+  stripePaymentIntentId?: string;
+  stripeCheckoutId?: string;
+  totalAmount: number;
+  platformFeeAmount: number;
+  commissionAmount: number;
+  contractorAmount: number;
+  status: EscrowStatus;
+  paymentLink?: string;
+  paidAt?: string;
+  releasedAt?: string;
+  createdAt: string;
+};
+
+// ─── Disputes ─────────────────────────────────────────────────────────────────
+
+export type DisputeStatus = 'open' | 'under_review' | 'resolved_contractor' | 'resolved_client' | 'closed';
+
+export type Dispute = {
+  id: string;
+  jobId: string;
+  raisedBy: string;
+  reason: string;
+  evidence?: string;
+  status: DisputeStatus;
+  adminNotes?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  createdAt: string;
+};
+
+// ─── Strikes ──────────────────────────────────────────────────────────────────
+
+export type StrikeType = 'ghost' | 'bypass_attempt' | 'client_report';
+
+export type ContractorStrike = {
+  id: string;
+  contractorId: string;
+  type: StrikeType;
+  jobId?: string;
+  reason: string;
+  isWarning: boolean;
   createdAt: string;
 };
 
@@ -137,6 +283,8 @@ export type Subscription = {
 
 // ─── Reviews ──────────────────────────────────────────────────────────────────
 
+export type ReviewDimension = 'job_quality' | 'referral_quality' | 'client_facing' | 'general';
+
 export type Review = {
   id: string;
   jobId: string;
@@ -144,13 +292,34 @@ export type Review = {
   revieweeId: string;
   rating: 1 | 2 | 3 | 4 | 5;
   text: string;
+  dimension: ReviewDimension;
   isFlagged: boolean;
+  createdAt: string;
+};
+
+// ─── Client Lead ──────────────────────────────────────────────────────────────
+
+export type ClientLead = {
+  id: string;
+  jobId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  accessToken: string;
+  tokenExpiry: string;
+  notes?: string;
   createdAt: string;
 };
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export type NotificationType =
+  // Existing types
   | 'job_claimed'
   | 'job_started'
   | 'job_completed'
@@ -161,7 +330,34 @@ export type NotificationType =
   | 'subscription_cancelled'
   | 'review_received'
   | 'message_received'
-  | 'announcement';
+  | 'announcement'
+  // Interest & Assignment
+  | 'interest_received'
+  | 'interest_selected'
+  | 'interest_rejected'
+  | 'job_assigned'
+  // Quote lifecycle
+  | 'quote_sent'
+  | 'quote_approved'
+  | 'quote_rejected'
+  // Payment & Escrow
+  | 'escrow_funded'
+  | 'contractor_completed'
+  | 'client_confirmed'
+  | 'funds_released'
+  // Disputes
+  | 'dispute_raised'
+  | 'dispute_resolved'
+  // Trust & Safety
+  | 'ghost_warning'
+  | 'ghost_strike'
+  | 'penalty_warning'
+  | 'penalty_suspension'
+  | 'penalty_ban'
+  // Ratings
+  | 'review_prompt'
+  // Legacy alias
+  | 'job_expired';
 
 export type Notification = {
   id: string;

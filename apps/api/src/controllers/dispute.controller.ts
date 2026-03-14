@@ -105,16 +105,42 @@ export async function resolveDispute(req: AuthRequest, res: Response, next: Next
     // Handle escrow based on resolution
     if (dispute.job.escrow) {
       if (resolution === 'contractor') {
-        // Release funds to contractor
-        // TODO: call releaseEscrow internally
-        await prisma.escrowPayment.update({
-          where: { id: dispute.job.escrow.id },
-          data: { status: 'released', releasedAt: new Date() },
-        });
-        await prisma.job.update({
-          where: { id: dispute.jobId },
-          data: { status: 'Completed' },
-        });
+        // Release funds to contractor — full distribution
+        await prisma.$transaction([
+          prisma.escrowPayment.update({
+            where: { id: dispute.job.escrow.id },
+            data: { status: 'released', releasedAt: new Date() },
+          }),
+          prisma.job.update({
+            where: { id: dispute.jobId },
+            data: { status: 'Completed' },
+          }),
+          // Create commission record for referee
+          prisma.commission.create({
+            data: {
+              jobId: dispute.jobId,
+              referrerId: dispute.job.postedById,
+              amount: dispute.job.escrow.commissionAmount,
+              status: 'paid',
+              paidAt: new Date(),
+            },
+          }),
+          // Update contractor earnings + job count
+          ...(dispute.job.claimedById ? [
+            prisma.contractorProfile.update({
+              where: { userId: dispute.job.claimedById },
+              data: {
+                totalEarned: { increment: dispute.job.escrow!.contractorAmount },
+                totalJobsCompleted: { increment: 1 },
+              },
+            }),
+          ] : []),
+          // Update referee earnings
+          prisma.contractorProfile.update({
+            where: { userId: dispute.job.postedById },
+            data: { totalEarned: { increment: dispute.job.escrow!.commissionAmount } },
+          }),
+        ]);
       } else {
         // Refund to client
         await prisma.escrowPayment.update({
