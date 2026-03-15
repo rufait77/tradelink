@@ -415,3 +415,26 @@ export async function sendClientRatingPromptEmail(
 
   return sendEmail({ to, subject: `Rate your contractor for "${jobTitle}"`, html: baseTemplate(content, 'Your job is complete — please leave a quick review') });
 }
+
+// ─── Client: Payment Link ───────────────────────────────────────────────────
+
+export async function sendClientPaymentEmail(
+  to: string, clientName: string, jobTitle: string, amount: string, paymentUrl: string,
+) {
+  const content = `
+    ${headingStyle('Your Quote is Ready 💳')}
+    ${paraStyle(`Hi ${clientName}, great news — a contractor has provided a quote for your job <strong style="color:#f1f5f9;">"${jobTitle}"</strong>.`)}
+    ${paraStyle('To proceed, please complete the secure escrow payment below. Your funds will be held safely until the job is completed to your satisfaction.')}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;">Amount</td><td align="right" style="color:#22c55e;font-weight:600;font-size:14px;">$${amount}</td></tr>
+      <tr><td style="color:#64748b;font-size:13px;">Payment Type</td><td align="right" style="color:#f1f5f9;font-size:14px;">Secure Escrow</td></tr>
+    `)}
+    ${btnStyle(paymentUrl, 'Pay Securely →')}
+    ${dividerStyle()}
+    <p style="margin:0;font-size:12px;color:#64748b;line-height:1.6;">
+      🔒 Your payment is held in escrow and only released after you confirm the work is complete.
+    </p>`;
+
+  return sendEmail({ to, subject: `Pay securely for "${jobTitle}" — $${amount}`, html: baseTemplate(content, 'Secure escrow payment for your job') });
+}
+

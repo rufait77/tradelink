@@ -1,9 +1,14 @@
 // @ts-nocheck
 import { Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
+import { stripe } from '../config/stripe';
+import { env } from '../config/env';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { addDays } from 'date-fns';
+import { isDeveloperMode } from '../services/settings.service';
+import { commissionQueue } from './payments.controller';
+import { logger } from '../config/logger';
 
 // ─── POST /escrow/create ────────────────────────────────────────────────────
 // Creates an escrow payment entry after client approves a quote
@@ -27,6 +32,42 @@ export async function createEscrow(req: AuthRequest, res: Response, next: NextFu
     const commissionAmount = (totalAmount * quote.commissionPct) / 100;
     const contractorAmount = totalAmount - platformFeeAmount - commissionAmount;
 
+    const devMode = await isDeveloperMode();
+
+    let checkoutUrl: string | null = null;
+    let stripeCheckoutId: string | null = null;
+
+    if (!devMode) {
+      // ─── Stripe Checkout Session ──────────────────────────────────────
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              unit_amount: Math.round(totalAmount * 100),
+              product_data: {
+                name: `Escrow Payment: ${quote.job.title}`,
+                description: `Contractor quote for "${quote.job.title}" — funds held in escrow until job completion.`,
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          type: 'escrow_payment',
+          jobId: quote.jobId,
+          quoteId: quote.id,
+        },
+        success_url: `${env.WEB_URL}/client/${quote.job.clientLead?.accessToken || 'unknown'}?payment=success`,
+        cancel_url: `${env.WEB_URL}/client/${quote.job.clientLead?.accessToken || 'unknown'}?payment=cancelled`,
+        expires_after: 24 * 60 * 60 , // 24 hours
+      });
+
+      checkoutUrl = session.url;
+      stripeCheckoutId = session.id;
+    }
+
     // Create escrow record
     const escrow = await prisma.escrowPayment.create({
       data: {
@@ -36,23 +77,35 @@ export async function createEscrow(req: AuthRequest, res: Response, next: NextFu
         platformFeeAmount,
         commissionAmount,
         contractorAmount,
-        status: 'pending',
-        // TODO: Create Stripe Checkout Session and store paymentLink + stripeCheckoutId
+        status: devMode ? 'funded' : 'pending',
+        ...(stripeCheckoutId && { stripeCheckoutId }),
+        ...(checkoutUrl && { paymentLink: checkoutUrl }),
       },
     });
 
     // Update job status
     await prisma.job.update({
       where: { id: quote.jobId },
-      data: { status: 'QuoteApproved' }, // stays here until payment completes
+      data: { status: devMode ? 'InProgress' : 'QuoteApproved' },
     });
 
-    // TODO: Phase 2H — sendClientPaymentEmail(clientLead, escrow)
+    // Send client payment email with checkout link
+    if (checkoutUrl && quote.job.clientLead?.email) {
+      const { sendClientPaymentEmail } = await import('../services/email.service');
+      sendClientPaymentEmail(
+        quote.job.clientLead.email,
+        quote.job.clientLead.firstName,
+        quote.job.title,
+        totalAmount.toFixed(2),
+        checkoutUrl,
+      ).catch(() => {});
+    }
 
     res.status(201).json({
       success: true,
       data: {
         escrow,
+        checkoutUrl,
         splitBreakdown: {
           total: totalAmount,
           contractorPayout: contractorAmount,
@@ -90,11 +143,48 @@ export async function releaseEscrow(req: AuthRequest, res: Response, next: NextF
     if (escrow.status !== 'funded') return next(new AppError('Escrow must be funded to release', 400));
 
     const job = escrow.job;
+    const devMode = await isDeveloperMode();
 
-    // TODO: Execute actual Stripe transfers:
-    // 1. Transfer contractorAmount to contractor's Stripe Connect account
-    // 2. Transfer commissionAmount to referee's Stripe Connect account
-    // 3. Platform fee stays in platform Stripe account
+    // ─── Execute Stripe Transfers (only in production) ──────────────────
+    if (!devMode && escrow.stripePaymentIntentId) {
+      try {
+        // 1. Transfer to contractor's Stripe Connect account
+        if (job.claimedBy?.stripeConnectId) {
+          await stripe.transfers.create({
+            amount: Math.round(escrow.contractorAmount * 100),
+            currency: 'usd',
+            destination: job.claimedBy.stripeConnectId,
+            source_transaction: escrow.stripePaymentIntentId,
+            metadata: { jobId: job.id, type: 'contractor_payout' },
+          });
+          logger.info(`[Escrow] Transferred $${escrow.contractorAmount} to contractor ${job.claimedById}`);
+        }
+
+        // 2. Transfer to referee's Stripe Connect account
+        if (job.postedBy?.stripeConnectId) {
+          await stripe.transfers.create({
+            amount: Math.round(escrow.commissionAmount * 100),
+            currency: 'usd',
+            destination: job.postedBy.stripeConnectId,
+            source_transaction: escrow.stripePaymentIntentId,
+            metadata: { jobId: job.id, type: 'referral_commission' },
+          });
+          logger.info(`[Escrow] Transferred $${escrow.commissionAmount} commission to referee ${job.postedById}`);
+        } else {
+          // Queue for later if referee hasn't onboarded Connect yet
+          await commissionQueue.add(
+            { jobId: job.id, referrerId: job.postedById, amount: escrow.commissionAmount },
+            { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+          );
+        }
+
+        // 3. Platform fee stays in platform Stripe account (automatic)
+        logger.info(`[Escrow] Platform fee $${escrow.platformFeeAmount} retained`);
+      } catch (transferErr: any) {
+        logger.error(`[Escrow] Transfer error for job ${job.id}:`, transferErr);
+        // Don't fail the release — transfers can be retried
+      }
+    }
 
     // Mark as released
     await prisma.$transaction([
@@ -193,7 +283,22 @@ export async function refundEscrow(req: AuthRequest, res: Response, next: NextFu
       return next(new AppError('Escrow must be funded or disputed to refund', 400));
     }
 
-    // TODO: Execute Stripe refund
+    const devMode = await isDeveloperMode();
+
+    // ─── Execute Stripe Refund ───────────────────────────────────────────
+    if (!devMode && escrow.stripePaymentIntentId) {
+      try {
+        await stripe.refunds.create({
+          payment_intent: escrow.stripePaymentIntentId,
+          reason: 'requested_by_customer',
+          metadata: { jobId: escrow.jobId, escrowId, type: 'escrow_refund' },
+        });
+        logger.info(`[Escrow] Refunded $${escrow.totalAmount} for job ${escrow.jobId}`);
+      } catch (refundErr: any) {
+        logger.error(`[Escrow] Refund error for job ${escrow.jobId}:`, refundErr);
+        return next(new AppError(`Stripe refund failed: ${refundErr.message}`, 500));
+      }
+    }
 
     await prisma.escrowPayment.update({
       where: { id: escrowId },
@@ -245,7 +350,12 @@ export async function contractorCompleteJob(req: AuthRequest, res: Response, nex
       },
     });
 
-    // TODO: Phase 2H — sendClientCompletionEmail(clientLead, job)
+    // Send client completion confirmation email
+    if (job.clientLead?.email) {
+      const { sendJobCompletedEmail } = await import('../services/email.service');
+      const portalUrl = `${env.WEB_URL}/client/${job.clientLead.accessToken}`;
+      sendJobCompletedEmail(job.clientLead.email, job.clientLead.firstName, job.title, portalUrl).catch(() => {});
+    }
 
     res.json({ success: true, data: { job: updated } });
   } catch (err) {
