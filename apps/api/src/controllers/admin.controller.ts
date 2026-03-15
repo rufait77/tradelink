@@ -115,8 +115,11 @@ export async function adminGetUserDetail(req: Request, res: Response, next: Next
             tradeTypes: true, bio: true, licenseNumber: true, yearsExperience: true,
             streetAddress: true, city: true, state: true, zipCode: true,
             avgRating: true, totalJobsCompleted: true, totalEarned: true,
-            stripeConnectStatus: true,
-            photoUrl: true,
+            stripeConnectStatus: true, photoUrl: true,
+            // Trust & Safety fields
+            licenseFileUrl: true, insuranceUrl: true, certifications: true,
+            isAdminVerified: true, isSuspended: true, suspendedUntil: true,
+            isBanned: true, ghostStrikes: true, bypassWarnings: true,
           },
         },
         subscription: {
@@ -137,8 +140,8 @@ export async function adminGetUserDetail(req: Request, res: Response, next: Next
 
     if (!user) return next(new AppError('User not found', 404));
 
-    // Get recent activity (last 5 jobs, last 5 commissions)
-    const [recentJobs, recentCommissions] = await Promise.all([
+    // Get recent activity, strikes
+    const [recentJobs, recentCommissions, strikes] = await Promise.all([
       prisma.job.findMany({
         where: { OR: [{ postedById: id }, { claimedById: id }] },
         select: { id: true, title: true, status: true, createdAt: true, tradeType: true, budgetMax: true },
@@ -151,9 +154,13 @@ export async function adminGetUserDetail(req: Request, res: Response, next: Next
         orderBy: { createdAt: 'desc' },
         take: 5,
       }),
+      prisma.contractorStrike.findMany({
+        where: { contractorId: id },
+        orderBy: { createdAt: 'desc' },
+      }),
     ]);
 
-    res.json({ success: true, data: { user, recentJobs, recentCommissions } });
+    res.json({ success: true, data: { user, recentJobs, recentCommissions, strikes } });
   } catch (err) {
     next(err);
   }
@@ -874,3 +881,142 @@ export async function adminFlagReview(req: AuthRequest, res: Response, next: Nex
   }
 }
 
+// ─── PUT /admin/users/:id/verify ──────────────────────────────────────────────
+
+export async function adminVerifyUser(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id;
+    const { verified } = req.body; // boolean
+
+    const profile = await prisma.contractorProfile.findUnique({ where: { userId: id } });
+    if (!profile) return next(new AppError('Contractor profile not found', 404));
+
+    await prisma.contractorProfile.update({
+      where: { userId: id },
+      data: { isAdminVerified: verified },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: req.user!.userId,
+        action: verified ? 'VERIFY_USER' : 'UNVERIFY_USER',
+        entityType: 'User',
+        entityId: id,
+      },
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: id,
+        type: 'interest_received' as any,
+        title: verified ? 'Profile Verified ✅' : 'Verification Removed',
+        message: verified
+          ? 'Your profile has been verified by TradeLink. You now have a verified badge.'
+          : 'Your profile verification has been removed. Please contact support.',
+        link: '/dashboard/profile',
+      },
+    });
+
+    res.json({ success: true, data: { message: verified ? 'User verified' : 'Verification removed' } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── POST /admin/users/:id/strike ─────────────────────────────────────────────
+
+export async function adminAddStrike(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const contractorId = req.params.id;
+    const { type, reason, jobId } = req.body;
+
+    const profile = await prisma.contractorProfile.findUnique({ where: { userId: contractorId } });
+    if (!profile) return next(new AppError('Contractor profile not found', 404));
+
+    const { addStrike } = await import('../services/penalty.service');
+    const result = await addStrike(contractorId, type || 'client_report', jobId || null, reason || 'Admin action');
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: req.user!.userId,
+        action: 'ADD_STRIKE',
+        entityType: 'User',
+        entityId: contractorId,
+        newValue: JSON.stringify({ type, reason, strikeCount: result.strikeCount }),
+      },
+    });
+
+    res.json({ success: true, data: { strike: result.strike, strikeCount: result.strikeCount } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── DELETE /admin/users/:id/strike/:strikeId ─────────────────────────────────
+
+export async function adminRemoveStrike(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { id: contractorId, strikeId } = req.params;
+
+    await prisma.contractorStrike.delete({ where: { id: strikeId } });
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: req.user!.userId,
+        action: 'REMOVE_STRIKE',
+        entityType: 'User',
+        entityId: contractorId,
+        newValue: JSON.stringify({ removedStrikeId: strikeId }),
+      },
+    });
+
+    res.json({ success: true, data: { message: 'Strike removed' } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── PUT /admin/users/:id/ban ─────────────────────────────────────────────────
+
+export async function adminBanUser(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id;
+    const { banned } = req.body; // boolean
+
+    const profile = await prisma.contractorProfile.findUnique({ where: { userId: id } });
+    if (!profile) return next(new AppError('Contractor profile not found', 404));
+
+    await prisma.contractorProfile.update({
+      where: { userId: id },
+      data: {
+        isBanned: banned,
+        isSuspended: banned ? true : false,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: req.user!.userId,
+        action: banned ? 'BAN_USER' : 'UNBAN_USER',
+        entityType: 'User',
+        entityId: id,
+      },
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: id,
+        type: banned ? 'penalty_ban' as any : 'interest_received' as any,
+        title: banned ? 'Account Banned' : 'Ban Lifted',
+        message: banned
+          ? 'Your account has been permanently banned. Contact support for details.'
+          : 'Your account ban has been lifted. You may resume activity.',
+        link: '/dashboard/profile',
+      },
+    });
+
+    res.json({ success: true, data: { message: banned ? 'User banned' : 'Ban lifted' } });
+  } catch (err) {
+    next(err);
+  }
+}

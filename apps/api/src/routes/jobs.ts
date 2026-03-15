@@ -10,6 +10,7 @@ import {
 import { createQuote, getJobQuotes } from '../controllers/quote.controller';
 import { contractorCompleteJob } from '../controllers/escrow.controller';
 import { requireAuth, optionalAuth } from '../middleware/auth';
+import { subscriptionGate } from '../middleware/subscriptionGate';
 import { validate } from '../middleware/validate';
 import { createJobSchema } from '@tradelink/validators';
 
@@ -19,14 +20,14 @@ const router = Router();
 router.get('/my-referrals', requireAuth, getMyReferrals);
 router.get('/my-claimed', requireAuth, getMyClaimed);
 
-router.post('/', requireAuth, validate(createJobSchema), createJob);
+router.post('/', requireAuth, subscriptionGate, validate(createJobSchema), createJob);
 router.get('/', optionalAuth, getJobs);
 router.get('/:id', optionalAuth, getJob);
 router.put('/:id', requireAuth, updateJob);
 router.delete('/:id', requireAuth, deleteJob);
 
 // ─── Interest & Assignment (new flow) ────────────────────────────────────────
-router.post('/:id/interest', requireAuth, expressInterest);
+router.post('/:id/interest', requireAuth, subscriptionGate, expressInterest);
 router.delete('/:id/interest', requireAuth, withdrawInterest);
 router.get('/:id/interests', requireAuth, getInterests);
 router.get('/:id/my-interest', requireAuth, getMyInterest);
@@ -34,7 +35,7 @@ router.post('/:id/assign/:contractorId', requireAuth, assignContractor);
 router.post('/:id/reassign', requireAuth, reassignJob);
 
 // ─── Quote & Completion ─────────────────────────────────────────────────────
-router.post('/:id/quote', requireAuth, createQuote);
+router.post('/:id/quote', requireAuth, subscriptionGate, createQuote);
 router.get('/:id/quotes', requireAuth, getJobQuotes);
 router.post('/:id/contractor-complete', requireAuth, contractorCompleteJob);
 

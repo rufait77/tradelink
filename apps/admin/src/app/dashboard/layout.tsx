@@ -15,6 +15,7 @@ const navItems = [
   { href: '/dashboard/users', icon: Users, label: 'Users' },
   { href: '/dashboard/jobs', icon: Briefcase, label: 'Jobs' },
   { href: '/dashboard/commissions', icon: DollarSign, label: 'Commissions' },
+  { href: '/dashboard/disputes', icon: AlertTriangle, label: 'Disputes' },
   { href: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/dashboard/announcements', icon: Bell, label: 'Announcements' },
   { href: '/dashboard/audit-log', icon: FileText, label: 'Audit Log' },

@@ -111,6 +111,14 @@ export default function JobDetailPage() {
   const [newMessage, setNewMessage] = useState('');
   const [sendingMsg, setSendingMsg] = useState(false);
 
+  // Rating Prompt (5F)
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingHover, setRatingHover] = useState(0);
+  const [ratingText, setRatingText] = useState('');
+  const [hasRated, setHasRated] = useState(false);
+  const [submittingRating, setSubmittingRating] = useState(false);
+
   // Active tab for referee view
   const [activeTab, setActiveTab] = useState<'details' | 'interests' | 'quotes'>('details');
 
@@ -162,6 +170,14 @@ export default function JobDetailPage() {
         if (isOwner || isAssigned) {
           const msgRes = await api.get(`/messages/${id}`).catch(() => ({ data: { data: [] } }));
           setMessages(msgRes.data.data || []);
+        }
+
+        // Check if user already rated this job (5F)
+        if (['Completed', 'ClientConfirmed', 'ContractorDone'].includes(jobData.status) && (isOwner || isAssigned)) {
+          try {
+            const revRes = await api.get(`/reviews/my-review/${id}`);
+            if (revRes.data.data?.review) setHasRated(true);
+          } catch { /* no review yet */ }
         }
       } catch {}
 
@@ -800,6 +816,82 @@ export default function JobDetailPage() {
             </Button>
           </div>
         </Card>
+      )}
+      {/* Rating Modal (5F) */}
+      {showRatingModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowRatingModal(false)}>
+          <div className="bg-surface-card border border-surface-border rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-foreground mb-1">
+              {isOwner ? `Rate ${job?.claimedBy?.name}` : 'Rate this referral'}
+            </h3>
+            <p className="text-sm text-surface-muted mb-4">
+              {isOwner ? 'How was the contractor\'s work?' : 'How was the quality of this job referral?'}
+            </p>
+
+            {/* Stars */}
+            <div className="flex gap-1 mb-4 justify-center">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button key={star}
+                  onMouseEnter={() => setRatingHover(star)}
+                  onMouseLeave={() => setRatingHover(0)}
+                  onClick={() => setRatingValue(star)}
+                  className="p-1 transition-transform hover:scale-110">
+                  <Star size={32} className={`${
+                    star <= (ratingHover || ratingValue)
+                      ? 'text-amber-400 fill-amber-400'
+                      : 'text-slate-600'
+                  } transition-colors`} />
+                </button>
+              ))}
+            </div>
+
+            {/* Review text */}
+            <textarea
+              value={ratingText}
+              onChange={e => setRatingText(e.target.value)}
+              rows={3}
+              placeholder="Share your experience (optional)..."
+              className="w-full bg-surface-elevated border border-surface-border rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-surface-muted focus:outline-none focus:border-amber-500 mb-4"
+            />
+
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setShowRatingModal(false)}>Cancel</Button>
+              <Button className="flex-1" loading={submittingRating} disabled={ratingValue === 0}
+                onClick={async () => {
+                  setSubmittingRating(true);
+                  try {
+                    await api.post('/reviews', {
+                      jobId: id,
+                      contractorId: isOwner ? job?.claimedBy?.id : job?.postedBy?.id,
+                      rating: ratingValue,
+                      text: ratingText || undefined,
+                      dimension: isOwner ? 'referral_quality' : 'job_quality',
+                    });
+                    toast.success('Review submitted! Thank you.');
+                    setHasRated(true);
+                    setShowRatingModal(false);
+                  } catch (err: any) {
+                    toast.error(err.response?.data?.error || 'Failed to submit review');
+                  } finally {
+                    setSubmittingRating(false);
+                  }
+                }}>
+                Submit Review
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rating Prompt Banner */}
+      {!hasRated && ['Completed', 'ClientConfirmed', 'ContractorDone'].includes(job?.status ?? '') && (isOwner || isAssigned) && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <button onClick={() => setShowRatingModal(true)}
+            className="bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] px-5 py-3 rounded-2xl shadow-xl shadow-amber-500/25 font-semibold text-sm flex items-center gap-2 hover:scale-105 transition-transform">
+            <Star size={18} className="fill-current" />
+            {isOwner ? `Rate ${job?.claimedBy?.name ?? 'contractor'}` : 'Rate this referral'}
+          </button>
+        </div>
       )}
     </div>
   );
