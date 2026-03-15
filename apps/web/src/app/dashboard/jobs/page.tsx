@@ -11,7 +11,14 @@ import { EmptyState } from '../../../components/ui/empty-state';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
 import { formatCurrency, formatRelativeTime } from '../../../lib/utils';
-import { MapPin, Clock, Search, Briefcase, ChevronLeft, ChevronRight, Users, Timer } from 'lucide-react';
+import { MapPin, Clock, Search, Briefcase, ChevronLeft, ChevronRight, Users, Timer, Navigation } from 'lucide-react';
+
+const RADIUS_OPTIONS = [
+  { label: 'Within 10 mi', value: '10' },
+  { label: 'Within 25 mi', value: '25' },
+  { label: 'Within 50 mi', value: '50' },
+  { label: 'Within 100 mi', value: '100' },
+];
 
 const TRADE_OPTIONS = [
   { label: 'All Trades', value: '' },
@@ -44,6 +51,7 @@ interface Job {
   interestWindowEnd?: string | null;
   _count?: { interests?: number };
   postedBy?: { name: string };
+  _distanceMiles?: number | null;
 }
 
 function getInterestWindowLabel(end: string | null | undefined): { text: string; urgent: boolean } | null {
@@ -65,6 +73,8 @@ function JobBoardContent() {
   const [trade, setTrade] = useState(params.get('trade') || '');
   const [urgency, setUrgency] = useState('');
   const [search, setSearch] = useState('');
+  const [nearZip, setNearZip] = useState('');
+  const [radius, setRadius] = useState('30');
   const pageSize = 12;
 
   useEffect(() => {
@@ -77,6 +87,7 @@ function JobBoardContent() {
         q.set('status', 'Open');
         if (trade) q.set('tradeType', trade);
         if (urgency) q.set('urgency', urgency);
+        if (nearZip.length === 5) { q.set('nearZip', nearZip); q.set('radius', radius); }
         const res = await api.get(`/jobs?${q.toString()}`);
         setJobs(res.data.data?.jobs || res.data.data?.items || []);
         setTotal(res.data.data?.total || 0);
@@ -87,7 +98,7 @@ function JobBoardContent() {
       }
     }
     load();
-  }, [page, trade, urgency]);
+  }, [page, trade, urgency, nearZip, radius]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -121,6 +132,32 @@ function JobBoardContent() {
         <Select options={URGENCY_OPTIONS} value={urgency} onChange={(v) => { setUrgency(v); setPage(1); }} placeholder="Any Urgency" />
       </div>
 
+      {/* Geo radius filter */}
+      <div className="glass-card p-4 flex flex-col sm:flex-row items-end gap-3">
+        <div className="flex-1">
+          <label className="block text-xs text-surface-muted mb-1 flex items-center gap-1">
+            <Navigation className="w-3 h-3 text-amber-400" /> Find jobs near you
+          </label>
+          <Input
+            placeholder="Enter your ZIP code"
+            value={nearZip}
+            onChange={(e) => { setNearZip(e.target.value.replace(/\D/g, '').slice(0, 5)); setPage(1); }}
+            maxLength={5}
+          />
+        </div>
+        <Select
+          options={RADIUS_OPTIONS}
+          value={radius}
+          onChange={(v) => { setRadius(v); setPage(1); }}
+          placeholder="Radius"
+        />
+        {nearZip.length === 5 && (
+          <Button variant="ghost" size="sm" onClick={() => { setNearZip(''); setPage(1); }}>
+            Clear
+          </Button>
+        )}
+      </div>
+
       {/* Job grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -148,10 +185,13 @@ function JobBoardContent() {
                   <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2">{job.title}</h3>
                   <p className="text-xs text-surface-muted line-clamp-2 mb-3 flex-1">{job.description}</p>
 
-                  {/* Location + Value */}
+                  {/* Location + Value + Distance */}
                   <div className="flex items-center justify-between text-xs text-surface-muted pt-3 border-t border-surface-border/50">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {job.city}, {job.state}
+                      {job._distanceMiles != null && (
+                        <span className="text-amber-400 font-medium ml-1">• {job._distanceMiles} mi</span>
+                      )}
                     </span>
                     <span className="font-medium text-emerald-400">
                       ~{formatCurrency(displayValue)}

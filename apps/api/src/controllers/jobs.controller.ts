@@ -92,9 +92,24 @@ export async function getJobs(req: Request, res: Response, next: NextFunction) {
     const {
       tradeType, state, city, zipCode, budgetMin, budgetMax,
       urgency, status = 'Open', page = '1', pageSize = '20',
+      nearZip, radius = '30',
     } = req.query as Record<string, string>;
 
     const skip = (parseInt(page) - 1) * parseInt(pageSize);
+
+    // ─── Geo radius filtering via ZIP code database ─────────────────────
+    let geoZipFilter: string[] | null = null;
+    if (nearZip) {
+      const { getZipsInRadius } = await import('../services/geo.service');
+      geoZipFilter = getZipsInRadius(nearZip, parseFloat(radius));
+      if (geoZipFilter.length === 0) {
+        // No ZIP codes found in radius — return empty
+        return res.json({
+          success: true,
+          data: { jobs: [], total: 0, page: 1, pageSize: parseInt(pageSize), totalPages: 0, nearZip, radiusMiles: parseFloat(radius) },
+        });
+      }
+    }
 
     const where: any = {
       status: status as any,
@@ -102,7 +117,8 @@ export async function getJobs(req: Request, res: Response, next: NextFunction) {
       ...(tradeType && { tradeType: tradeType as any }),
       ...(state && { state }),
       ...(city && { city: { contains: city, mode: 'insensitive' } }),
-      ...(zipCode && { zipCode }),
+      ...(zipCode && !nearZip && { zipCode }), // exact ZIP overridden by nearZip
+      ...(geoZipFilter && { zipCode: { in: geoZipFilter } }),
       ...(budgetMin && { budgetMin: { gte: parseFloat(budgetMin) } }),
       ...(budgetMax && { budgetMax: { lte: parseFloat(budgetMax) } }),
       ...(urgency && { urgency: urgency as any }),
@@ -122,9 +138,30 @@ export async function getJobs(req: Request, res: Response, next: NextFunction) {
       prisma.job.count({ where }),
     ]);
 
+    // Attach distance to each job if geo filtering
+    let enrichedJobs = jobs;
+    if (nearZip) {
+      const { getCoordinates, haversineDistance } = await import('../services/geo.service');
+      const center = getCoordinates(nearZip);
+      if (center) {
+        enrichedJobs = jobs.map((job: any) => {
+          const jobCoords = getCoordinates(job.zipCode);
+          const dist = jobCoords
+            ? haversineDistance(center.latitude, center.longitude, jobCoords.latitude, jobCoords.longitude)
+            : null;
+          return { ...job, _distanceMiles: dist !== null ? Math.round(dist * 10) / 10 : null };
+        }).sort((a: any, b: any) => (a._distanceMiles ?? 999) - (b._distanceMiles ?? 999));
+      }
+    }
+
     res.json({
       success: true,
-      data: { jobs, total, page: parseInt(page), pageSize: parseInt(pageSize), totalPages: Math.ceil(total / parseInt(pageSize)) },
+      data: {
+        jobs: enrichedJobs, total,
+        page: parseInt(page), pageSize: parseInt(pageSize),
+        totalPages: Math.ceil(total / parseInt(pageSize)),
+        ...(nearZip && { nearZip, radiusMiles: parseFloat(radius) }),
+      },
     });
   } catch (err) {
     next(err);
