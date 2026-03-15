@@ -13,11 +13,21 @@ export async function stripeWebhook(req: Request, res: Response, next: NextFunct
   const sig = req.headers['stripe-signature'] as string;
   let event: any;
 
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, env.STRIPE_WEBHOOK_SECRET);
-  } catch (err: any) {
-    logger.warn(`Webhook signature verification failed: ${err.message}`);
-    return res.status(400).json({ error: 'Invalid signature' });
+  // Gracefully handle missing webhook secret
+  if (!env.STRIPE_WEBHOOK_SECRET || env.STRIPE_WEBHOOK_SECRET === 'whsec_placeholder') {
+    logger.warn('⚠️ STRIPE_WEBHOOK_SECRET not configured — skipping webhook signature verification. Set this in production!');
+    try {
+      event = JSON.parse(req.body.toString());
+    } catch (err: any) {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+  } else {
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, env.STRIPE_WEBHOOK_SECRET);
+    } catch (err: any) {
+      logger.warn(`Webhook signature verification failed: ${err.message}`);
+      return res.status(400).json({ error: 'Invalid signature' });
+    }
   }
 
   logger.info(`Stripe webhook received: ${event.type}`);

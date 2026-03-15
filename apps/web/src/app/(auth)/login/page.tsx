@@ -28,6 +28,8 @@ export default function LoginPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: { rememberMe: false },
+    mode: 'onTouched',          // validate only after field is blurred (fixes autofill flicker)
+    reValidateMode: 'onChange',  // clear errors as user types
   });
 
   async function onSubmit(data: LoginInput) {

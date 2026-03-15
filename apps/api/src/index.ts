@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import { rateLimit } from 'express-rate-limit';
 
 import { env } from './config/env';
 import { logger } from './config/logger';
@@ -41,6 +42,16 @@ app.use(
 app.use(compression() as any);
 app.use(cookieParser());
 
+// ─── Global rate limiter (200 req/min per IP) ─────────────────────────────────
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  message: { success: false, error: 'Too many requests, please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === '/health' || req.path.startsWith('/webhooks'),
+}));
+
 // ─── Stripe webhook must receive raw body ─────────────────────────────────────
 app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
 
@@ -74,7 +85,11 @@ app.use('/client', clientRoutes);
 app.use('/escrow', escrowRoutes);
 
 // ─── Static uploads ───────────────────────────────────────────────────────────
-app.use('/uploads', express.static(env.UPLOAD_DIR));
+// ─── Static uploads (no directory listing, dotfiles denied) ──────────────────
+app.use('/uploads', express.static(env.UPLOAD_DIR, {
+  dotfiles: 'deny',
+  index: false,  // disable directory listing
+}));
 
 // ─── Error handling ───────────────────────────────────────────────────────────
 app.use(notFound);
