@@ -862,7 +862,7 @@ export default function JobDetailPage() {
                   try {
                     await api.post('/reviews', {
                       jobId: id,
-                      contractorId: isOwner ? job?.claimedBy?.id : job?.postedBy?.id,
+                      revieweeId: isOwner ? job?.claimedBy?.id : job?.postedBy?.id,
                       rating: ratingValue,
                       text: ratingText || undefined,
                       dimension: isOwner ? 'referral_quality' : 'job_quality',

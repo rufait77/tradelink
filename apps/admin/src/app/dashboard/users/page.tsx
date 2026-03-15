@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '../../../lib/api';
-import { Search, UserCheck, UserX, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, UserCheck, UserX, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 
 interface User {
   id: string; name: string; email: string; role: string;
@@ -10,6 +11,7 @@ interface User {
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -92,7 +94,8 @@ export default function UsersPage() {
               <tr><td colSpan={5} className="text-center py-16 text-slate-500">No users found</td></tr>
             )}
             {users.map((u) => (
-              <tr key={u.id} className="border-b border-slate-800/60 hover:bg-slate-800/20 transition-colors">
+              <tr key={u.id} className="border-b border-slate-800/60 hover:bg-slate-800/20 transition-colors cursor-pointer"
+                onClick={() => router.push(`/dashboard/users/${u.id}`)}>
                 <td className="px-6 py-4">
                   <p className="font-medium text-white">{u.name}</p>
                   <p className="text-slate-500 text-xs">{u.email}</p>

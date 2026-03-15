@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth';
 import { AppError } from './errorHandler';
 import { prisma } from '../config/prisma';
+import { isDeveloperMode } from '../services/settings.service';
 
 // ─── Subscription Gate ────────────────────────────────────────────────────────
 // Blocks actions for users without active subscription, suspended, or banned.
@@ -9,6 +10,8 @@ import { prisma } from '../config/prisma';
 
 export async function subscriptionGate(req: AuthRequest, _res: Response, next: NextFunction) {
   try {
+    // Developer mode bypasses all checks
+    if (await isDeveloperMode()) return next();
     if (!req.user) {
       return next(new AppError('Authentication required', 401, 'UNAUTHORIZED'));
     }

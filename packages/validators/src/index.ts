@@ -141,7 +141,8 @@ export const createReviewSchema = z.object({
   jobId: z.string().uuid(),
   revieweeId: z.string().uuid(),
   rating: z.number().int().min(1).max(5),
-  text: z.string().min(10, 'Review must be at least 10 characters').max(1000),
+  text: z.string().max(1000).optional().default(''),
+  dimension: z.enum(['general', 'job_quality', 'referral_quality', 'client_facing']).optional().default('general'),
 });
 
 // ─── Message Validator ────────────────────────────────────────────────────────

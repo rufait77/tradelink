@@ -8,11 +8,13 @@ import { differenceInDays } from 'date-fns';
 
 export async function createReview(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { jobId, revieweeId, rating, text } = req.body;
+    const { jobId, revieweeId, rating, text, dimension } = req.body;
 
     const job = await prisma.job.findUnique({ where: { id: jobId } });
     if (!job) return next(new AppError('Job not found', 404));
-    if (job.status !== 'Completed') return next(new AppError('Reviews can only be submitted for completed jobs', 400));
+    if (!['Completed', 'ClientConfirmed', 'ContractorDone'].includes(job.status)) {
+      return next(new AppError('Reviews can only be submitted for completed jobs', 400));
+    }
 
     // Only poster or hired contractor can review
     const isInvolved = job.postedById === req.user!.userId || job.claimedById === req.user!.userId;
@@ -36,7 +38,10 @@ export async function createReview(req: AuthRequest, res: Response, next: NextFu
     if (existing) return next(new AppError('You have already submitted a review for this job', 409));
 
     const review = await prisma.review.create({
-      data: { jobId, reviewerId: req.user!.userId, revieweeId, rating, text },
+      data: {
+        jobId, reviewerId: req.user!.userId, revieweeId, rating, text: text || '',
+        dimension: dimension || 'general',
+      },
     });
 
     // Recalculate reviewee's average rating
@@ -61,6 +66,20 @@ export async function createReview(req: AuthRequest, res: Response, next: NextFu
     });
 
     res.status(201).json({ success: true, data: { review } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── GET /reviews/my-review/:jobId ──────────────────────────────────────────
+
+export async function getMyReview(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const jobId = req.params.jobId as string;
+    const review = await prisma.review.findFirst({
+      where: { jobId, reviewerId: req.user!.userId },
+    });
+    res.json({ success: true, data: { review } });
   } catch (err) {
     next(err);
   }
