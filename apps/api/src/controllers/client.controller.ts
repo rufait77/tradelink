@@ -166,6 +166,17 @@ export async function rejectQuote(req: ClientRequest, res: Response, next: NextF
       },
     });
 
+    // 7A: Notify referee that client rejected the quote
+    await prisma.notification.create({
+      data: {
+        userId: job.postedById,
+        type: 'quote_rejected',
+        title: 'Client rejected the quote',
+        message: `The client rejected the $${quote.amount.toFixed(2)} quote for "${job.title}".${reason ? ` Reason: "${reason}"` : ''} The contractor may submit a revision.`,
+        link: `/dashboard/my-referrals`,
+      },
+    });
+
     res.json({ success: true, data: { message: 'Quote rejected. The contractor has been notified and may submit a revision.' } });
   } catch (err) {
     next(err);

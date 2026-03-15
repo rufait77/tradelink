@@ -330,6 +330,35 @@ async function autoReleaseEscrow() {
         });
 
         await prisma.notification.createMany({ data: notifications });
+
+        // 7D: Send rating prompt to client + review prompts to contractor/referee
+        const clientLead = await prisma.clientLead.findFirst({ where: { jobId: job.id } });
+        if (clientLead?.email) {
+          const { sendClientRatingPromptEmail } = await import('../services/email.service');
+          const ratingUrl = `${process.env.WEB_URL || 'https://tradelinkpro.net'}/client/${clientLead.accessToken}/rate`;
+          sendClientRatingPromptEmail(clientLead.email, `${clientLead.firstName}`, job.title, ratingUrl).catch(() => {});
+        }
+
+        // Review prompt notifications
+        const reviewPrompts = [];
+        if (job.claimedById) {
+          reviewPrompts.push({
+            userId: job.claimedById,
+            type: 'review_prompt' as any,
+            title: 'Rate the referral quality',
+            message: `How was the referral for "${job.title}"? Leave a review for ${job.postedBy.name}.`,
+            link: `/dashboard/jobs/${job.id}`,
+          });
+        }
+        reviewPrompts.push({
+          userId: job.postedById,
+          type: 'review_prompt' as any,
+          title: 'Rate the contractor',
+          message: `How did the contractor perform on "${job.title}"? Leave a review.`,
+          link: `/dashboard/my-referrals`,
+        });
+        await prisma.notification.createMany({ data: reviewPrompts });
+
         logger.info(`[AutoRelease] Auto-released escrow for job "${job.title}" ($${job.escrow.totalAmount})`);
       }
     }

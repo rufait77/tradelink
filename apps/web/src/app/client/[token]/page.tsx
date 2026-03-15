@@ -11,8 +11,64 @@ import { toast } from 'sonner';
 import {
   Briefcase, User, Star, MapPin, Shield, Clock,
   CheckCircle2, FileText, CreditCard, AlertTriangle,
-  MessageSquare, ChevronRight,
+  MessageSquare, ChevronRight, PhoneOff,
 } from 'lucide-react';
+
+// ─── 7B: Ghost Report Button ────────────────────────────────────────────────
+function GhostReportButton({ token, jobTitle }: { token: string; jobTitle: string }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleReport = async () => {
+    if (submitted) return;
+    setSubmitting(true);
+    try {
+      await clientApi.post(`/client/${token}/report`, {
+        type: 'not_responding',
+        description: `Client reports contractor is not responding for "${jobTitle}".`,
+      });
+      setSubmitted(true);
+      toast.success('Report submitted. We will follow up within 24 hours.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to submit report');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <Card className="border-amber-500/20 bg-amber-500/5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <CheckCircle2 className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-amber-300">Report Submitted</p>
+            <p className="text-xs text-surface-muted">We'll follow up within 24 hours</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card hover className="cursor-pointer border-amber-500/10" onClick={handleReport}>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+          <PhoneOff className="w-5 h-5 text-amber-400" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-white">
+            {submitting ? 'Submitting...' : 'Contractor Not Responding?'}
+          </p>
+          <p className="text-xs text-surface-muted">Report if no contact after 48 hours</p>
+        </div>
+        <ChevronRight className="w-4 h-4 text-surface-muted ml-auto" />
+      </div>
+    </Card>
+  );
+}
 
 interface DashboardData {
   clientName: string;
@@ -308,6 +364,11 @@ export default function ClientDashboardPage() {
               <ChevronRight className="w-4 h-4 text-surface-muted ml-auto" />
             </div>
           </Card>
+        )}
+
+        {/* 7B: Contractor Not Responding? — visible after 48hrs on InProgress/Assigned */}
+        {(data.job.status === 'InProgress' || data.job.status === 'Assigned') && (
+          <GhostReportButton token={token as string} jobTitle={data.job.title} />
         )}
 
         {/* Rate contractor */}

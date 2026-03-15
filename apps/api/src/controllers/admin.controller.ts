@@ -1021,3 +1021,80 @@ export async function adminBanUser(req: AuthRequest, res: Response, next: NextFu
     next(err);
   }
 }
+
+// ─── POST /admin/jobs/:id/mark-bypass ───────────────────────────────────────
+// 7F: Admin marks a job where contractor attempted to bypass the platform
+
+export async function adminMarkBypass(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const jobId = req.params.id;
+    const { reason } = req.body;
+    const adminId = req.user!.userId;
+
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        postedBy: { select: { id: true, name: true } },
+        claimedBy: { select: { id: true, name: true } },
+        escrow: true,
+      },
+    });
+    if (!job) return next(new AppError('Job not found', 404));
+    if (!job.claimedById) return next(new AppError('No contractor assigned to this job', 400));
+
+    // Add strike via penalty service
+    const { addStrike } = await import('../services/penalty.service');
+    const { strike, strikeCount } = await addStrike(
+      job.claimedById,
+      'platform_bypass',
+      jobId,
+      reason || 'Attempted to bypass platform payment',
+    );
+
+    // Ensure referee still gets commission
+    const existingCommission = await prisma.commission.findFirst({ where: { jobId } });
+    if (!existingCommission && job.escrow) {
+      await prisma.commission.create({
+        data: {
+          jobId,
+          referrerId: job.postedById,
+          amount: job.escrow.commissionAmount,
+          status: 'paid',
+          paidAt: new Date(),
+        },
+      });
+    }
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        adminId,
+        action: 'MARK_BYPASS',
+        entityType: 'Job',
+        entityId: jobId,
+        newValue: JSON.stringify({ reason, contractorId: job.claimedById, strikeCount }),
+      },
+    });
+
+    // Notify referee
+    await prisma.notification.create({
+      data: {
+        userId: job.postedById,
+        type: 'bypass_detected' as any,
+        title: 'Bypass attempt detected on your referral',
+        message: `We detected that the contractor tried to bypass the platform on "${job.title}". Your commission is protected and has been credited.`,
+        link: '/dashboard/earnings',
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        message: `Bypass marked. Strike #${strikeCount} added to contractor.`,
+        strike,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}

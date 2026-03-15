@@ -397,3 +397,21 @@ export async function sendClientDisputeOpenedEmail(
 
   return sendEmail({ to, subject: `Dispute received for "${jobTitle}"`, html: baseTemplate(content) });
 }
+
+// ─── Client: Rating Prompt ───────────────────────────────────────────────────
+
+export async function sendClientRatingPromptEmail(
+  to: string, clientName: string, jobTitle: string, ratingUrl: string,
+) {
+  const content = `
+    ${headingStyle('How did it go? ⭐')}
+    ${paraStyle(`Hi ${clientName}, your job <strong style="color:#f1f5f9;">"${jobTitle}"</strong> is complete and payment has been processed.`)}
+    ${paraStyle('We would really appreciate it if you could take a moment to rate your contractor. Your feedback helps other homeowners make informed decisions and rewards good contractors.')}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;">Status</td><td align="right" style="color:#22c55e;font-weight:600;font-size:14px;">Completed</td></tr>
+    `)}
+    ${btnStyle(ratingUrl, 'Rate Your Contractor →')}
+    ${reportIssueFooter(ratingUrl)}`;
+
+  return sendEmail({ to, subject: `Rate your contractor for "${jobTitle}"`, html: baseTemplate(content, 'Your job is complete — please leave a quick review') });
+}

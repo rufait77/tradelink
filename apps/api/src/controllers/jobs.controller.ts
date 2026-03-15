@@ -186,10 +186,10 @@ export async function getJob(req: Request, res: Response, next: NextFunction) {
     });
     if (!job) return next(new AppError('Job not found', 404));
 
-    // Strip clientLead unless user is poster or assigned contractor
+    // Strip clientLead and clientNote unless user is poster or assigned contractor
     const userId = (req as any).user?.userId;
     const canSeeClient = userId && (userId === job.postedById || userId === job.claimedById);
-    const safeJob = canSeeClient ? job : { ...job, clientLead: null };
+    const safeJob = canSeeClient ? job : { ...job, clientLead: null, clientNote: null };
 
     res.json({ success: true, data: { job: safeJob } });
   } catch (err) {
