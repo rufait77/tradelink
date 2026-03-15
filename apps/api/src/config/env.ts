@@ -29,7 +29,7 @@ const envSchema = z.object({
   MAX_FILE_SIZE_MB: z.coerce.number().default(5),
 
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(5000),
+  PORT: z.coerce.number().default(4000),
 });
 
 function validateEnv() {
