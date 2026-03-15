@@ -63,6 +63,7 @@ function PostJobContent() {
   const [state, setState] = useState('');
   const [serviceRadius, setServiceRadius] = useState('25');
   const [feePcts, setFeePcts] = useState({ platform: 5, commission: 20 });
+  const [usingDefaultFees, setUsingDefaultFees] = useState(false);
 
   // Fetch real fee percentages from API
   useEffect(() => {
@@ -74,7 +75,7 @@ function PostJobContent() {
           commission: parseFloat(s.commission_pct ?? '20'),
         });
       }
-    }).catch(() => {}); // use defaults if fails
+    }).catch(() => { setUsingDefaultFees(true); }); // flag if using defaults
   }, []);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<JobFormData>({

@@ -47,8 +47,8 @@ export async function createQuote(req: AuthRequest, res: Response, next: NextFun
       },
     });
 
-    // 6F: Track response time (hours from assignment to first quote)
-    if (job.assignedAt) {
+    // 6F: Track response time (hours from assignment to first quote only)
+    if (job.assignedAt && job.status === 'Assigned') {
       const responseTimeHrs = (Date.now() - new Date(job.assignedAt).getTime()) / (1000 * 60 * 60);
       const profile = await prisma.contractorProfile.findUnique({ where: { userId: contractorId } });
       if (profile) {

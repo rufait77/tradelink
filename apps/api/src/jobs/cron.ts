@@ -187,7 +187,7 @@ async function checkGhostContractors() {
           logger.info(`[GhostDetection] Warning sent to ${job.claimedBy?.name} for job "${job.title}"`);
         } else if (existingWarning.createdAt < twentyFourHoursAgo) {
           // Warning was sent 24+ hours ago — auto-revoke assignment
-          await prisma.$transaction([
+          const [, updatedProfile] = await prisma.$transaction([
             // Return job to Open
             prisma.job.update({
               where: { id: job.id },
@@ -205,11 +205,8 @@ async function checkGhostContractors() {
             }),
           ]);
 
-          // Check if 3+ ghost strikes → auto-suspend
-          const profile = await prisma.contractorProfile.findUnique({
-            where: { userId: job.claimedById },
-          });
-          if (profile && profile.ghostStrikes >= 3 && !profile.isSuspended) {
+          // Check if 3+ ghost strikes → auto-suspend (reads from transaction result)
+          if (updatedProfile && updatedProfile.ghostStrikes >= 3 && !updatedProfile.isSuspended) {
             await prisma.contractorProfile.update({
               where: { userId: job.claimedById },
               data: { isSuspended: true },

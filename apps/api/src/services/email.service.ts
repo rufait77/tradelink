@@ -392,7 +392,8 @@ export async function sendClientDisputeOpenedEmail(
       <tr><td style="color:#64748b;font-size:13px;">Status</td><td align="right" style="color:#ef4444;font-weight:600;font-size:14px;">Under Review</td></tr>
     `)}
     ${paraStyle('Funds are held securely in escrow while we investigate. You don\'t need to take any further action — we\'ll email you with the outcome.')}
-    ${btnStyle(portalUrl, 'View Dispute Status →')}`;
+    ${btnStyle(portalUrl, 'View Dispute Status →')}
+    ${reportIssueFooter(portalUrl)}`;
 
   return sendEmail({ to, subject: `Dispute received for "${jobTitle}"`, html: baseTemplate(content) });
 }

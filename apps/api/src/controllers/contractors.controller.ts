@@ -176,8 +176,11 @@ export async function uploadCompletionPhotos(req: AuthRequest, res: Response, ne
 
     const photoUrls = files.map(f => `/uploads/jobs/${f.filename}`);
 
-    // Append to existing photos
-    const existing = job.completionPhotos ?? [];
+    // Append to existing photos (cap at 10 total)
+    const existing = (job.completionPhotos as string[]) ?? [];
+    if (existing.length + photoUrls.length > 10) {
+      return next(new AppError(`Maximum 10 completion photos allowed (currently ${existing.length})`, 400));
+    }
     const updated = [...existing, ...photoUrls];
 
     await prisma.job.update({
@@ -253,7 +256,7 @@ export async function uploadCertification(req: AuthRequest, res: Response, next:
     const existing = (profile?.certifications as any[] ?? []);
 
     const newCert = {
-      id: `cert-${Date.now()}`,
+      id: crypto.randomUUID(),
       name: name ?? 'Certification',
       fileUrl,
       issuedBy: issuedBy ?? '',
