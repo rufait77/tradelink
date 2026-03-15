@@ -4,7 +4,11 @@ import { prisma } from '../config/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { getSetting } from '../services/settings.service';
-import { sendJobClaimedEmail, sendJobCompletedEmail } from '../services/email.service';
+import {
+  sendJobClaimedEmail, sendJobCompletedEmail,
+  sendClientJobInProgressEmail, sendClientContractorDoneEmail,
+} from '../services/email.service';
+import { env } from '../config/env';
 
 // ─── POST /jobs ───────────────────────────────────────────────────────────────
 
@@ -294,6 +298,17 @@ export async function startJob(req: AuthRequest, res: Response, next: NextFuncti
       },
     });
 
+    // Email client that work has started
+    const clientLead = await prisma.clientLead.findUnique({ where: { jobId } });
+    if (clientLead?.email) {
+      const contractor = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+      const portalUrl = `${env.WEB_URL}/client/${clientLead.accessToken}`;
+      sendClientJobInProgressEmail(
+        clientLead.email, `${clientLead.firstName} ${clientLead.lastName}`,
+        job.title, contractor?.name ?? 'Your contractor', portalUrl,
+      ).catch(() => {});
+    }
+
     res.json({ success: true, data: { job: updated } });
   } catch (err) {
     next(err);
@@ -341,6 +356,16 @@ export async function completeJob(req: AuthRequest, res: Response, next: NextFun
       }),
       sendJobCompletedEmail(job.postedBy.email, job.postedBy.name, job.title, commissionAmount.toFixed(2)),
     ]);
+
+    // Email client that contractor marked done
+    const clientLead = await prisma.clientLead.findUnique({ where: { jobId } });
+    if (clientLead?.email) {
+      const portalUrl = `${env.WEB_URL}/client/${clientLead.accessToken}`;
+      sendClientContractorDoneEmail(
+        clientLead.email, `${clientLead.firstName} ${clientLead.lastName}`,
+        job.title, portalUrl,
+      ).catch(() => {});
+    }
 
     res.json({ success: true, data: { job: updatedJob, message: 'Job marked as complete. Payment processing initiated via job payment flow.' } });
   } catch (err) {

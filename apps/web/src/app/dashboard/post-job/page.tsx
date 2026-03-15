@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense, useMemo } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -62,6 +62,20 @@ function PostJobContent() {
   const [urgency, setUrgency] = useState('Medium');
   const [state, setState] = useState('');
   const [serviceRadius, setServiceRadius] = useState('25');
+  const [feePcts, setFeePcts] = useState({ platform: 5, commission: 20 });
+
+  // Fetch real fee percentages from API
+  useEffect(() => {
+    api.get('/settings/public').then(res => {
+      const s = res.data?.data;
+      if (s) {
+        setFeePcts({
+          platform: parseFloat(s.platform_fee_pct ?? '5'),
+          commission: parseFloat(s.commission_pct ?? '20'),
+        });
+      }
+    }).catch(() => {}); // use defaults if fails
+  }, []);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<JobFormData>({
     resolver: zodResolver(jobSchema),
@@ -70,15 +84,15 @@ function PostJobContent() {
 
   const estimatedValue = watch('estimatedValue');
 
-  // Live fee preview
+  // Live fee preview (dynamic percentages from API)
   const feePreview = useMemo(() => {
     const val = Number(estimatedValue) || 0;
     if (val <= 0) return null;
-    const platformFee = val * 0.05;
-    const referralFee = val * 0.20;
-    const contractorGets = val * 0.75;
+    const platformFee = val * (feePcts.platform / 100);
+    const referralFee = val * (feePcts.commission / 100);
+    const contractorGets = val - platformFee - referralFee;
     return { total: val, platformFee, referralFee, contractorGets };
-  }, [estimatedValue]);
+  }, [estimatedValue, feePcts]);
 
   async function onSubmit(data: JobFormData) {
     if (!tradeType) { toast.error('Select a trade type'); return; }
@@ -169,15 +183,15 @@ function PostJobContent() {
 
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="text-center p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                <p className="text-[11px] text-surface-muted mb-1">Your Commission (20%)</p>
+                <p className="text-[11px] text-surface-muted mb-1">Your Commission ({feePcts.commission}%)</p>
                 <p className="text-lg font-heading font-bold text-emerald-400">{formatCurrency(feePreview.referralFee)}</p>
               </div>
               <div className="text-center p-3 rounded-xl bg-navy-900 border border-surface-border">
-                <p className="text-[11px] text-surface-muted mb-1">Contractor Gets (75%)</p>
+                <p className="text-[11px] text-surface-muted mb-1">Contractor Gets ({100 - feePcts.commission - feePcts.platform}%)</p>
                 <p className="text-lg font-heading font-bold text-white">{formatCurrency(feePreview.contractorGets)}</p>
               </div>
               <div className="text-center p-3 rounded-xl bg-navy-900 border border-surface-border">
-                <p className="text-[11px] text-surface-muted mb-1">Platform Fee (5%)</p>
+                <p className="text-[11px] text-surface-muted mb-1">Platform Fee ({feePcts.platform}%)</p>
                 <p className="text-lg font-heading font-bold text-surface-muted">{formatCurrency(feePreview.platformFee)}</p>
               </div>
             </div>

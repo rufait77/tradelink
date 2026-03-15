@@ -246,3 +246,153 @@ export async function sendSubscriptionRenewalReminderEmail(to: string, name: str
   return sendEmail({ to, subject: `Your Tradelink subscription expires in ${daysLeft} day${daysLeft === '1' ? '' : 's'}`, html: baseTemplate(content) });
 }
 
+// ─── Client lifecycle email helpers ──────────────────────────────────────────
+
+function reportIssueFooter(portalUrl: string) {
+  return `
+    ${dividerStyle()}
+    <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
+      Something not right? 
+      <a href="${portalUrl}" style="color:#f59e0b;text-decoration:none;font-weight:600;">Report an Issue →</a>
+    </p>`;
+}
+
+function clientJobCard(jobTitle: string, extraRows: string = '') {
+  return `
+    <table width="100%" style="background:#0a1628;border:1px solid #334155;border-radius:12px;padding:20px;margin:16px 0;">
+      <tr><td style="color:#64748b;font-size:13px;padding-bottom:8px;">Job</td><td align="right" style="color:#f1f5f9;font-size:14px;font-weight:600;">${jobTitle}</td></tr>
+      ${extraRows}
+    </table>`;
+}
+
+// ─── Client: Quote Sent ──────────────────────────────────────────────────────
+
+export async function sendClientQuoteSentEmail(
+  to: string, clientName: string, jobTitle: string,
+  amount: number, scope: string, portalUrl: string,
+) {
+  const content = `
+    ${headingStyle('You have a new quote!')}
+    ${paraStyle(`Hi ${clientName}, the contractor has prepared a quote for your job.`)}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;padding-bottom:8px;">Quote Amount</td><td align="right" style="color:#f59e0b;font-weight:700;font-size:18px;">$${amount.toFixed(2)}</td></tr>
+      <tr><td style="color:#64748b;font-size:13px;">Scope</td><td align="right" style="color:#f1f5f9;font-size:13px;">${scope.substring(0, 100)}${scope.length > 100 ? '...' : ''}</td></tr>
+    `)}
+    ${paraStyle('Review the quote and approve it to proceed with the job, or reject it to request changes.')}
+    ${btnStyle(portalUrl, 'Review Quote →')}
+    ${reportIssueFooter(portalUrl)}`;
+
+  return sendEmail({ to, subject: `New quote for "${jobTitle}" — $${amount.toFixed(2)}`, html: baseTemplate(content, `A quote of $${amount.toFixed(2)} is ready for your review`) });
+}
+
+// ─── Client: Quote Approved ──────────────────────────────────────────────────
+
+export async function sendClientQuoteApprovedEmail(
+  to: string, clientName: string, jobTitle: string,
+  amount: number, portalUrl: string,
+) {
+  const content = `
+    ${headingStyle('Quote approved ✓')}
+    ${paraStyle(`Hi ${clientName}, you've approved the quote for your job. The next step is to fund the escrow so work can begin.`)}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;">Approved Amount</td><td align="right" style="color:#f59e0b;font-weight:700;font-size:18px;">$${amount.toFixed(2)}</td></tr>
+    `)}
+    ${paraStyle('Your payment will be held securely in escrow until the job is confirmed complete.')}
+    ${btnStyle(portalUrl, 'Proceed to Payment →')}
+    ${reportIssueFooter(portalUrl)}`;
+
+  return sendEmail({ to, subject: `Quote approved — payment needed for "${jobTitle}"`, html: baseTemplate(content) });
+}
+
+// ─── Client: Payment Received ────────────────────────────────────────────────
+
+export async function sendClientPaymentReceivedEmail(
+  to: string, clientName: string, jobTitle: string,
+  amount: number, portalUrl: string,
+) {
+  const content = `
+    ${headingStyle('Payment received 💳')}
+    ${paraStyle(`Hi ${clientName}, your payment of <strong style="color:#f59e0b;">$${amount.toFixed(2)}</strong> has been received and is held securely in escrow.`)}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;">Amount Held</td><td align="right" style="color:#22c55e;font-weight:700;font-size:18px;">$${amount.toFixed(2)}</td></tr>
+      <tr><td style="color:#64748b;font-size:13px;">Status</td><td align="right" style="color:#f1f5f9;font-size:14px;">Funds in Escrow</td></tr>
+    `)}
+    ${paraStyle('The contractor will now begin work. You can track progress and communicate through your portal.')}
+    ${btnStyle(portalUrl, 'Track Job Progress →')}
+    ${reportIssueFooter(portalUrl)}`;
+
+  return sendEmail({ to, subject: `Payment confirmed — work begins on "${jobTitle}"`, html: baseTemplate(content) });
+}
+
+// ─── Client: Job In Progress ─────────────────────────────────────────────────
+
+export async function sendClientJobInProgressEmail(
+  to: string, clientName: string, jobTitle: string,
+  contractorName: string, portalUrl: string,
+) {
+  const content = `
+    ${headingStyle('Work has started! 🔨')}
+    ${paraStyle(`Hi ${clientName}, <strong style="color:#f1f5f9;">${contractorName}</strong> has started working on your job.`)}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;">Contractor</td><td align="right" style="color:#f1f5f9;font-size:14px;">${contractorName}</td></tr>
+      <tr><td style="color:#64748b;font-size:13px;">Status</td><td align="right" style="color:#3b82f6;font-weight:600;font-size:14px;">In Progress</td></tr>
+    `)}
+    ${paraStyle('You can view progress, photos, and communicate through your client portal.')}
+    ${btnStyle(portalUrl, 'View Job Status →')}
+    ${reportIssueFooter(portalUrl)}`;
+
+  return sendEmail({ to, subject: `Work started on "${jobTitle}"`, html: baseTemplate(content) });
+}
+
+// ─── Client: Contractor Marked Done ──────────────────────────────────────────
+
+export async function sendClientContractorDoneEmail(
+  to: string, clientName: string, jobTitle: string, portalUrl: string,
+) {
+  const content = `
+    ${headingStyle('Job marked as complete! ✅')}
+    ${paraStyle(`Hi ${clientName}, the contractor has marked your job as complete. Please review the work and confirm.`)}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;">Status</td><td align="right" style="color:#f59e0b;font-weight:600;font-size:14px;">Awaiting Your Confirmation</td></tr>
+    `)}
+    ${paraStyle('You have <strong style="color:#f1f5f9;">5 days</strong> to confirm the work or raise a dispute. If you don\'t respond, the job will be automatically confirmed.')}
+    ${btnStyle(portalUrl, 'Confirm or Dispute →')}
+    ${reportIssueFooter(portalUrl)}`;
+
+  return sendEmail({ to, subject: `"${jobTitle}" is done — please confirm`, html: baseTemplate(content, 'The contractor finished your job — please review and confirm') });
+}
+
+// ─── Client: Job Fully Completed ─────────────────────────────────────────────
+
+export async function sendClientJobCompletedEmail(
+  to: string, clientName: string, jobTitle: string, portalUrl: string,
+) {
+  const content = `
+    ${headingStyle('Job completed! 🎉')}
+    ${paraStyle(`Hi ${clientName}, your job has been confirmed as complete. Thank you for using Tradelink!`)}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;">Status</td><td align="right" style="color:#22c55e;font-weight:600;font-size:14px;">Completed</td></tr>
+    `)}
+    ${paraStyle('If you haven\'t already, we\'d love for you to rate the contractor. Your feedback helps other homeowners make informed decisions.')}
+    ${btnStyle(portalUrl, 'Rate the Contractor →')}
+    ${reportIssueFooter(portalUrl)}`;
+
+  return sendEmail({ to, subject: `"${jobTitle}" is complete — thank you!`, html: baseTemplate(content) });
+}
+
+// ─── Client: Dispute Opened ──────────────────────────────────────────────────
+
+export async function sendClientDisputeOpenedEmail(
+  to: string, clientName: string, jobTitle: string, portalUrl: string,
+) {
+  const content = `
+    ${headingStyle('Dispute received')}
+    ${paraStyle(`Hi ${clientName}, your dispute for the following job has been received. Our team will review it within 48 hours.`)}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;">Status</td><td align="right" style="color:#ef4444;font-weight:600;font-size:14px;">Under Review</td></tr>
+    `)}
+    ${paraStyle('Funds are held securely in escrow while we investigate. You don\'t need to take any further action — we\'ll email you with the outcome.')}
+    ${btnStyle(portalUrl, 'View Dispute Status →')}`;
+
+  return sendEmail({ to, subject: `Dispute received for "${jobTitle}"`, html: baseTemplate(content) });
+}

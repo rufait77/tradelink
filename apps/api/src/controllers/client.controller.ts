@@ -3,6 +3,13 @@ import { Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { ClientRequest } from '../middleware/clientAuth';
+import { env } from '../config/env';
+import {
+  sendClientQuoteApprovedEmail,
+  sendClientContractorDoneEmail,
+  sendClientJobCompletedEmail,
+  sendClientDisputeOpenedEmail,
+} from '../services/email.service';
 
 // ─── GET /client/:token ─────────────────────────────────────────────────────
 // Client dashboard — overview of job status, assigned contractor, current quote
@@ -113,6 +120,16 @@ export async function approveQuote(req: ClientRequest, res: Response, next: Next
 
     // TODO: Phase 2D — create escrow payment and send payment link to client
 
+    // Email client confirmation
+    const lead = req.clientLead;
+    if (lead?.email) {
+      const portalUrl = `${env.WEB_URL}/client/${lead.accessToken}`;
+      sendClientQuoteApprovedEmail(
+        lead.email, `${lead.firstName} ${lead.lastName}`,
+        job.title, quote.amount, portalUrl,
+      ).catch(() => {});
+    }
+
     res.json({ success: true, data: { message: 'Quote approved. You will receive a payment link shortly.' } });
   } catch (err) {
     next(err);
@@ -197,6 +214,16 @@ export async function confirmCompletion(req: ClientRequest, res: Response, next:
 
     // TODO: Phase 2D — trigger escrow release
 
+    // Email client completion confirmation
+    const lead = req.clientLead;
+    if (lead?.email) {
+      const portalUrl = `${env.WEB_URL}/client/${lead.accessToken}`;
+      sendClientJobCompletedEmail(
+        lead.email, `${lead.firstName} ${lead.lastName}`,
+        job.title, portalUrl,
+      ).catch(() => {});
+    }
+
     res.json({ success: true, data: { message: 'Thank you for confirming! The contractor will be paid and you can leave a rating.' } });
   } catch (err) {
     next(err);
@@ -262,6 +289,16 @@ export async function raiseDispute(req: ClientRequest, res: Response, next: Next
     }
 
     await prisma.notification.createMany({ data: notifications });
+
+    // Email client dispute confirmation
+    const lead = req.clientLead;
+    if (lead?.email) {
+      const portalUrl = `${env.WEB_URL}/client/${lead.accessToken}`;
+      sendClientDisputeOpenedEmail(
+        lead.email, `${lead.firstName} ${lead.lastName}`,
+        job.title, portalUrl,
+      ).catch(() => {});
+    }
 
     res.status(201).json({ success: true, data: { dispute, message: 'Dispute filed. An admin will review your case within 48 hours.' } });
   } catch (err) {

@@ -9,6 +9,7 @@ import {
 } from '../controllers/interest.controller';
 import { createQuote, getJobQuotes } from '../controllers/quote.controller';
 import { contractorCompleteJob } from '../controllers/escrow.controller';
+import { uploadCompletionPhotos } from '../controllers/contractors.controller';
 import { requireAuth, optionalAuth } from '../middleware/auth';
 import { subscriptionGate } from '../middleware/subscriptionGate';
 import { validate } from '../middleware/validate';
@@ -38,6 +39,7 @@ router.post('/:id/reassign', requireAuth, reassignJob);
 router.post('/:id/quote', requireAuth, subscriptionGate, createQuote);
 router.get('/:id/quotes', requireAuth, getJobQuotes);
 router.post('/:id/contractor-complete', requireAuth, contractorCompleteJob);
+router.post('/:id/completion-photos', requireAuth, uploadCompletionPhotos);
 
 // ─── Legacy flow (kept for backward compat, will be replaced) ───────────────
 router.post('/:id/claim', requireAuth, claimJob);

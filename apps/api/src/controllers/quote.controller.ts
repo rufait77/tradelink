@@ -4,6 +4,8 @@ import { prisma } from '../config/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { getSetting } from '../services/settings.service';
+import { sendClientQuoteSentEmail } from '../services/email.service';
+import { env } from '../config/env';
 
 // ─── POST /jobs/:id/quote ────────────────────────────────────────────────────
 // Assigned contractor creates a quote for the client
@@ -45,6 +47,22 @@ export async function createQuote(req: AuthRequest, res: Response, next: NextFun
       },
     });
 
+    // 6F: Track response time (hours from assignment to first quote)
+    if (job.assignedAt) {
+      const responseTimeHrs = (Date.now() - new Date(job.assignedAt).getTime()) / (1000 * 60 * 60);
+      const profile = await prisma.contractorProfile.findUnique({ where: { userId: contractorId } });
+      if (profile) {
+        const currentAvg = profile.avgResponseTime ?? responseTimeHrs;
+        const completedJobs = profile.totalJobsCompleted || 1;
+        // Rolling average: weighted toward recent
+        const newAvg = (currentAvg * (completedJobs - 1) + responseTimeHrs) / completedJobs;
+        await prisma.contractorProfile.update({
+          where: { userId: contractorId },
+          data: { avgResponseTime: Math.round(newAvg * 10) / 10 }, // 1 decimal
+        });
+      }
+    }
+
     // Update job status
     await prisma.job.update({
       where: { id: jobId },
@@ -68,7 +86,15 @@ export async function createQuote(req: AuthRequest, res: Response, next: NextFun
     const commissionAmount = (totalAmount * commissionPct) / 100;
     const contractorAmount = totalAmount - platformFeeAmount - commissionAmount;
 
-    // TODO: Phase 2H — sendClientQuoteEmail(client, quote, contractorProfile)
+    // Send email to client about the quote
+    if (job.clientLead?.email) {
+      const portalUrl = `${env.WEB_URL}/client/${job.clientLead.accessToken}`;
+      sendClientQuoteSentEmail(
+        job.clientLead.email,
+        `${job.clientLead.firstName} ${job.clientLead.lastName}`,
+        job.title, parseFloat(amount), scope, portalUrl,
+      ).catch(() => {}); // fire-and-forget
+    }
 
     res.status(201).json({
       success: true,

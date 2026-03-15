@@ -147,6 +147,7 @@ async function closeInterestWindows() {
 async function checkGhostContractors() {
   try {
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     // Find jobs assigned 48+ hours ago that are still in "Assigned" status (no quote created)
     const ghostedJobs = await prisma.job.findMany({
@@ -162,27 +163,92 @@ async function checkGhostContractors() {
 
     for (const job of ghostedJobs) {
       if (job.quotes.length === 0 && job.claimedById) {
-        // Check if we already warned in the last 24 hours
-        const recentWarning = await prisma.notification.findFirst({
+        // Check if we already warned
+        const existingWarning = await prisma.notification.findFirst({
           where: {
             userId: job.claimedById,
             type: 'ghost_warning' as any,
             link: `/dashboard/jobs/${job.id}`,
-            createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
           },
+          orderBy: { createdAt: 'desc' },
         });
 
-        if (!recentWarning) {
+        if (!existingWarning) {
+          // First warning — send ghost warning
           await prisma.notification.create({
             data: {
               userId: job.claimedById,
               type: 'ghost_warning' as any,
               title: '⚠️ Action required — send a quote!',
-              message: `You were assigned "${job.title}" over 48 hours ago but haven't sent a quote. Contact the client and send a quote or risk a ghost strike.`,
+              message: `You were assigned "${job.title}" over 48 hours ago but haven't sent a quote. You have 24 hours to respond or the assignment will be revoked.`,
               link: `/dashboard/jobs/${job.id}`,
             },
           });
           logger.info(`[GhostDetection] Warning sent to ${job.claimedBy?.name} for job "${job.title}"`);
+        } else if (existingWarning.createdAt < twentyFourHoursAgo) {
+          // Warning was sent 24+ hours ago — auto-revoke assignment
+          await prisma.$transaction([
+            // Return job to Open
+            prisma.job.update({
+              where: { id: job.id },
+              data: {
+                status: 'Open',
+                claimedById: null,
+                assignedAt: null,
+                interestWindowEnd: new Date(Date.now() + 24 * 60 * 60 * 1000), // new 24hr window
+              },
+            }),
+            // Add ghost strike
+            prisma.contractorProfile.update({
+              where: { userId: job.claimedById },
+              data: { ghostStrikes: { increment: 1 } },
+            }),
+          ]);
+
+          // Check if 3+ ghost strikes → auto-suspend
+          const profile = await prisma.contractorProfile.findUnique({
+            where: { userId: job.claimedById },
+          });
+          if (profile && profile.ghostStrikes >= 3 && !profile.isSuspended) {
+            await prisma.contractorProfile.update({
+              where: { userId: job.claimedById },
+              data: { isSuspended: true },
+            });
+            await prisma.notification.create({
+              data: {
+                userId: job.claimedById,
+                type: 'penalty_suspension' as any,
+                title: '🚫 Job claiming suspended',
+                message: `You've reached 3 ghost strikes. Your ability to claim jobs has been suspended pending admin review.`,
+                link: '/dashboard/settings',
+              },
+            });
+            logger.warn(`[GhostDetection] Suspended ${job.claimedBy?.name} — 3+ ghost strikes`);
+          }
+
+          // Notify contractor of revocation + ghost strike
+          await prisma.notification.create({
+            data: {
+              userId: job.claimedById,
+              type: 'ghost_strike' as any,
+              title: '❌ Assignment revoked — ghost strike added',
+              message: `Your assignment for "${job.title}" was revoked for non-response. A ghost strike has been added to your profile.`,
+              link: '/dashboard/jobs',
+            },
+          });
+
+          // Notify referee that job is back to Open
+          await prisma.notification.create({
+            data: {
+              userId: job.postedById,
+              type: 'job_update' as any,
+              title: 'Contractor removed — job re-opened',
+              message: `The contractor assigned to "${job.title}" was unresponsive. The job is back to Open for new interest.`,
+              link: '/dashboard/my-referrals',
+            },
+          });
+
+          logger.info(`[GhostDetection] Auto-revoked assignment for "${job.title}" from ${job.claimedBy?.name}`);
         }
       }
     }
