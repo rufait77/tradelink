@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
 import { stripe } from '../config/stripe';
+import { logger } from '../config/logger';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { isDeveloperMode, getSetting } from '../services/settings.service';
@@ -243,11 +244,41 @@ export async function getConnectStatus(req: AuthRequest, res: Response, next: Ne
     });
     if (!user) return next(new AppError('User not found', 404));
 
+    let status = user.profile?.stripeConnectStatus ?? 'not_connected';
+
+    // If status is still "pending" and user has a Connect ID, check Stripe directly
+    // This handles the case where the webhook hasn't fired yet after onboarding
+    if (status === 'pending' && user.stripeConnectId) {
+      try {
+        const account = await stripe.accounts.retrieve(user.stripeConnectId);
+        const transfersActive =
+          account.details_submitted &&
+          (account as any).capabilities?.transfers === 'active';
+        const isActive = transfersActive || (
+          account.charges_enabled &&
+          account.payouts_enabled &&
+          account.details_submitted
+        );
+
+        if (isActive) {
+          status = 'active';
+          // Sync DB so future calls don't need to hit Stripe
+          await prisma.contractorProfile.updateMany({
+            where: { userId: user.id },
+            data: { stripeConnectStatus: 'active' },
+          });
+        }
+      } catch (stripeErr) {
+        // If Stripe fails, just return the DB status
+        logger.warn(`Failed to check Connect account ${user.stripeConnectId}:`, stripeErr);
+      }
+    }
+
     res.json({
       success: true,
       data: {
         stripeConnectId: user.stripeConnectId,
-        status: user.profile?.stripeConnectStatus ?? 'not_connected',
+        status,
       },
     });
   } catch (err) {

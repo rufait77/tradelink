@@ -127,15 +127,24 @@ export async function stripeWebhook(req: Request, res: Response, next: NextFunct
         const userId = account.metadata?.userId;
         if (!userId) break;
 
-        const isActive =
+        // Express accounts with only 'transfers' capability won't have charges_enabled
+        // Check details_submitted + transfers capability instead
+        const transfersActive =
+          account.details_submitted &&
+          account.capabilities?.transfers === 'active';
+
+        const isActive = transfersActive || (
           account.charges_enabled &&
           account.payouts_enabled &&
-          account.details_submitted;
+          account.details_submitted
+        );
 
         await prisma.contractorProfile.updateMany({
           where: { userId },
           data: { stripeConnectStatus: isActive ? 'active' : 'pending' },
         });
+
+        logger.info(`Connect account ${account.id} for user ${userId}: ${isActive ? 'active' : 'pending'}`);
         break;
       }
 
