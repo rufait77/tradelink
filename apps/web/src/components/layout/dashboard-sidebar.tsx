@@ -1,8 +1,10 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '../../lib/utils';
 import { useAuthStore } from '../../store/auth.store';
+import api from '../../lib/api';
 import {
   LayoutDashboard, Briefcase, Send, ClipboardList, FolderOpen,
   DollarSign, MessageSquare, Bell, User, Settings, CreditCard,
@@ -29,6 +31,13 @@ const BOTTOM_ITEMS = [
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  const [dmUnread, setDmUnread] = useState(0);
+
+  useEffect(() => {
+    api.get('/dm/unread-count')
+      .then(res => setDmUnread(res.data.data?.count || 0))
+      .catch(() => {});
+  }, [pathname]); // re-fetch on nav
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
@@ -67,6 +76,11 @@ export function DashboardSidebar() {
               {item.label}
               {item.label === 'Post a Referral' && (
                 <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse-amber" />
+              )}
+              {item.label === 'Messages' && dmUnread > 0 && (
+                <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-navy-950 rounded-full min-w-[18px] text-center">
+                  {dmUnread > 99 ? '99+' : dmUnread}
+                </span>
               )}
             </Link>
           );

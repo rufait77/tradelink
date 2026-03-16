@@ -200,7 +200,7 @@ export async function getMyClaimed(req: AuthRequest, res: Response, next: NextFu
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json({ success: true, data: { jobs } });
+    res.json({ success: true, data: { items: jobs } });
   } catch (err) {
     next(err);
   }

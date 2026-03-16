@@ -1,6 +1,8 @@
 // @ts-nocheck
 import { Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
+import { env } from '../config/env';
+import { logger } from '../config/logger';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { addHours } from 'date-fns';
@@ -210,7 +212,26 @@ export async function assignContractor(req: AuthRequest, res: Response, next: Ne
     }
 
     // 6. Send email to client (if client lead exists)
-    // TODO: Phase 2H — sendClientAssignmentEmail
+    if (updatedJob.clientLead) {
+      try {
+        const { sendClientAssignmentEmail } = await import('../services/email.service');
+        const cl = updatedJob.clientLead;
+        const contractor = updatedJob.claimedBy!;
+        const portalUrl = `${env.API_URL.replace('/api', '')}/client/${jobId}`;
+        await sendClientAssignmentEmail(
+          cl.email,
+          cl.firstName,
+          job.title,
+          contractor.name,
+          contractor.profile?.avgRating ?? null,
+          contractor.profile?.tradeTypes?.map(String) ?? [],
+          portalUrl,
+        );
+      } catch (emailErr) {
+        logger.error('Failed to send client assignment email:', emailErr);
+        // Non-fatal — job assignment still succeeds
+      }
+    }
 
     res.json({ success: true, data: { job: updatedJob } });
   } catch (err) {

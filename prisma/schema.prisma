@@ -166,6 +166,9 @@ enum NotificationType {
   penalty_ban             // contractor: permanent ban
   // ─── Ratings ───
   review_prompt           // contractor + referee: please rate
+  // ─── Direct Messaging ───
+  direct_message          // new DM received
+  message_reported        // admin: message reported
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────────
@@ -198,6 +201,8 @@ model User {
   notifications    Notification[]
   sentMessages     Message[]          @relation("SentMessages")
   receivedMessages Message[]          @relation("ReceivedMessages")
+  dmSent           DirectMessage[]    @relation("DmSent")
+  dmReceived       DirectMessage[]    @relation("DmReceived")
   auditLogs        AuditLog[]
   interests        JobInterest[]      @relation("ContractorInterests")
   quotes           Quote[]            @relation("ContractorQuotes")
@@ -572,4 +577,47 @@ model AuditLog {
   @@index([entityType])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ─── Direct Messages — contractor-to-contractor chat ─────────────────────────
+
+model DirectMessage {
+  id           String    @id @default(uuid())
+  senderId     String
+  receiverId   String
+  content      String
+  attachments  Json?     // [{ url, name, type, size }]
+  isRead       Boolean   @default(false)
+  readAt       DateTime?
+  isDeleted    Boolean   @default(false)
+  reactions    Json?     // { "👍": ["userId1"], "❤️": ["userId2"] }
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sender   User @relation("DmSent", fields: [senderId], references: [id])
+  receiver User @relation("DmReceived", fields: [receiverId], references: [id])
+
+  reports  MessageReport[]
+
+  @@index([senderId, receiverId])
+  @@index([receiverId, isRead])
+  @@index([createdAt])
+  @@map("direct_messages")
+}
+
+// ─── Message Reports — flagged messages for admin review ─────────────────────
+
+model MessageReport {
+  id          String   @id @default(uuid())
+  messageId   String
+  reporterId  String
+  reason      String
+  adminNotes  String?
+  status      String   @default("pending") // pending, reviewed, dismissed
+  createdAt   DateTime @default(now())
+
+  message DirectMessage @relation(fields: [messageId], references: [id])
+
+  @@index([status])
+  @@map("message_reports")
 }

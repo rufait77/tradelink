@@ -8,7 +8,7 @@ import { Badge } from '../../../components/ui/badge';
 import { useAuthStore } from '../../../store/auth.store';
 import api from '../../../lib/api';
 import { toast } from 'sonner';
-import { User, Camera, Save, Star, Briefcase, MapPin } from 'lucide-react';
+import { User, Camera, Save, Star, Briefcase, MapPin, ExternalLink } from 'lucide-react';
 
 const TRADE_OPTIONS = [
   'Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Barber','Cosmetologist','Esthetician','Other',
@@ -98,7 +98,19 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-heading font-bold text-white">My Profile</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-heading font-bold text-white">My Profile</h1>
+        {user?.id && (
+          <a
+            href={`/contractors/${user.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-amber-400 border border-amber-500/30 rounded-xl hover:bg-amber-500/10 transition"
+          >
+            <ExternalLink className="w-4 h-4" /> View Public Profile
+          </a>
+        )}
+      </div>
 
       {/* Profile header */}
       <Card className="flex flex-col sm:flex-row items-center gap-6">

@@ -265,6 +265,31 @@ function clientJobCard(jobTitle: string, extraRows: string = '') {
     </table>`;
 }
 
+// ─── Client: Job Assigned to Contractor ──────────────────────────────────────
+
+export async function sendClientAssignmentEmail(
+  to: string, clientName: string, jobTitle: string,
+  contractorName: string, contractorRating: number | null,
+  contractorTrades: string[], portalUrl: string,
+) {
+  const ratingStr = contractorRating ? `${contractorRating.toFixed(1)} ⭐` : 'New Contractor';
+  const tradesStr = contractorTrades.length > 0 ? contractorTrades.join(', ') : 'General';
+  const content = `
+    ${headingStyle('Your job has been assigned! 🎉')}
+    ${paraStyle(`Hi ${clientName}, great news — a verified contractor has been assigned to your job.`)}
+    ${clientJobCard(jobTitle, `
+      <tr><td style="color:#64748b;font-size:13px;padding-bottom:8px;">Contractor</td><td align="right" style="color:#f1f5f9;font-weight:600;font-size:14px;">${contractorName}</td></tr>
+      <tr><td style="color:#64748b;font-size:13px;padding-bottom:8px;">Rating</td><td align="right" style="color:#f59e0b;font-weight:600;font-size:14px;">${ratingStr}</td></tr>
+      <tr><td style="color:#64748b;font-size:13px;">Specialty</td><td align="right" style="color:#f1f5f9;font-size:13px;">${tradesStr}</td></tr>
+    `)}
+    ${paraStyle(`<strong style="color:#f1f5f9;">${contractorName}</strong> will be reaching out to you shortly to discuss your project and schedule a visit.`)}
+    ${paraStyle('Once they prepare a quote, you\'ll receive another email to review and approve it.')}
+    ${btnStyle(portalUrl, 'View Job Status →')}
+    ${reportIssueFooter(portalUrl)}`;
+
+  return sendEmail({ to, subject: `Your job "${jobTitle}" has been assigned to ${contractorName}`, html: baseTemplate(content, `${contractorName} has been assigned to your job`) });
+}
+
 // ─── Client: Quote Sent ──────────────────────────────────────────────────────
 
 export async function sendClientQuoteSentEmail(
