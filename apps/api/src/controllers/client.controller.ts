@@ -81,7 +81,7 @@ export async function getClientDashboard(req: ClientRequest, res: Response, next
 
 export async function approveQuote(req: ClientRequest, res: Response, next: NextFunction) {
   try {
-    const { quoteId } = req.params;
+    const { quoteId } = req.params as { quoteId: string };
     const job = req.clientJob;
     const lead = req.clientLead;
 
@@ -190,7 +190,7 @@ export async function approveQuote(req: ClientRequest, res: Response, next: Next
 
 export async function rejectQuote(req: ClientRequest, res: Response, next: NextFunction) {
   try {
-    const { quoteId } = req.params;
+    const { quoteId } = req.params as { quoteId: string };
     const { reason } = req.body;
     const job = req.clientJob;
 
