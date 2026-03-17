@@ -176,8 +176,9 @@ export default function JobDetailPage() {
 
         // Load messages if involved
         if (isOwner || isAssigned) {
-          const msgRes = await api.get(`/messages/${id}`).catch(() => ({ data: { data: [] } }));
-          setMessages(msgRes.data.data || []);
+          const msgRes = await api.get(`/messages/${id}`).catch(() => ({ data: { data: { messages: [] } } }));
+          const msgData = msgRes.data.data;
+          setMessages(Array.isArray(msgData) ? msgData : Array.isArray(msgData?.messages) ? msgData.messages : []);
         }
 
         // Check if user already rated this job (5F)
@@ -309,7 +310,8 @@ export default function JobDetailPage() {
       await api.post('/messages', { receiverId, jobId: job.id, content: newMessage.trim() });
       setNewMessage('');
       const msgRes = await api.get(`/messages/${id}`);
-      setMessages(msgRes.data.data || []);
+      const msgData = msgRes.data.data;
+      setMessages(Array.isArray(msgData) ? msgData : Array.isArray(msgData?.messages) ? msgData.messages : []);
     } catch {
       toast.error('Failed to send message');
     } finally {
