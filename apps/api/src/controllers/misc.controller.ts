@@ -136,27 +136,47 @@ export async function getEarningsSummary(req: AuthRequest, res: Response, next: 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [profile, paidTotal, pendingTotal, thisMonth] = await Promise.all([
+    const [profile, paidTotal, pendingCommissions, thisMonth, escrowPending, escrowContractorPending] = await Promise.all([
       prisma.contractorProfile.findUnique({ where: { userId } }),
+      // Commission-based earned (referee role)
       prisma.commission.aggregate({
         where: { referrerId: userId, status: 'paid' },
         _sum: { amount: true },
       }),
+      // Commissions still pending
       prisma.commission.aggregate({
         where: { referrerId: userId, status: 'pending' },
         _sum: { amount: true },
       }),
+      // This month's paid commissions
       prisma.commission.aggregate({
         where: { referrerId: userId, status: 'paid', paidAt: { gte: startOfMonth } },
         _sum: { amount: true },
       }),
+      // Escrow funds held for jobs this user referred (pending commission from escrow)
+      prisma.escrowPayment.aggregate({
+        where: { status: 'funded', job: { postedById: userId } },
+        _sum: { commissionAmount: true },
+      }),
+      // Escrow funds held for jobs this user is the contractor on (pending payout)
+      prisma.escrowPayment.aggregate({
+        where: { status: 'funded', job: { claimedById: userId } },
+        _sum: { contractorAmount: true },
+      }),
     ]);
+
+    // Total earned includes actual paid commissions + contractor payouts from profile
+    const totalEarned = (paidTotal._sum.amount ?? 0) + (profile?.totalEarned ?? 0);
+    // Pending includes pending commissions + escrow-held amounts
+    const pending = (pendingCommissions._sum.amount ?? 0) +
+      (escrowPending._sum.commissionAmount ?? 0) +
+      (escrowContractorPending._sum.contractorAmount ?? 0);
 
     res.json({
       success: true,
       data: {
-        totalEarned: paidTotal._sum.amount ?? 0,
-        pending: pendingTotal._sum.amount ?? 0,
+        totalEarned,
+        pending,
         thisMonth: thisMonth._sum.amount ?? 0,
         totalReferrals: profile?.totalReferrals ?? 0,
         totalJobsCompleted: profile?.totalJobsCompleted ?? 0,

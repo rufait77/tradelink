@@ -807,3 +807,30 @@ When building from scratch, the order matters:
 4. `cd apps/api && npm run build` (compiles to `dist/`)
 5. `cd apps/web && npm run build` (builds Next.js to `.next/`)
 6. `cd apps/admin && npm run build` (builds Next.js to `.next/`)
+
+### VPS Deployment Checklist
+
+> **⚠️ IMPORTANT:** The API runs compiled JavaScript from `dist/`, not TypeScript source.
+> Just doing `pm2 restart` alone will **NOT** pick up TypeScript changes — you must compile first.
+
+```bash
+# Full deploy sequence (run on VPS)
+cd /var/www/tradelink
+
+# 1. Pull latest code
+git pull origin main
+
+# 2. Build & restart API (TypeScript → dist/)
+cd apps/api && npx tsc && pm2 restart tradelink-api
+
+# 3. Build & restart Web (Next.js)
+cd ../web && npm run build && pm2 restart tradelink-web
+
+# 4. (Optional) Build & restart Admin
+cd ../admin && npm run build && pm2 restart tradelink-admin
+
+# 5. Save PM2 config
+pm2 save
+
+echo "=== ALL DEPLOYED ==="
+```

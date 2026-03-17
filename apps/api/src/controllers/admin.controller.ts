@@ -578,15 +578,19 @@ export async function adminAnalyticsOverview(_req: Request, res: Response, next:
 
     const [
       totalUsers, activeSubscriptions, openJobs, jobsThisMonth,
-      completedJobsThisMonth, revenueThisMonth, pendingCommissions,
+      completedJobsThisMonth, revenueThisMonth, pendingCommissions, escrowHeld,
     ] = await Promise.all([
       prisma.user.count({ where: { role: 'contractor', isActive: true } }),
       prisma.subscription.count({ where: { status: 'active' } }),
       prisma.job.count({ where: { status: 'Open' } }),
       prisma.job.count({ where: { createdAt: { gte: startOfMonth } } }),
       prisma.job.count({ where: { status: 'Completed', updatedAt: { gte: startOfMonth } } }),
-      prisma.jobPayment.aggregate({ where: { status: 'paid', paidAt: { gte: startOfMonth } }, _sum: { platformFeeAmount: true } }),
-      prisma.commission.aggregate({ where: { status: 'pending' }, _sum: { amount: true } }),
+      // Platform revenue from released escrows this month
+      prisma.escrowPayment.aggregate({ where: { status: 'released', releasedAt: { gte: startOfMonth } }, _sum: { platformFeeAmount: true } }),
+      // Pending commissions from funded (but not yet released) escrows
+      prisma.escrowPayment.aggregate({ where: { status: 'funded' }, _sum: { commissionAmount: true } }),
+      // Total escrow funds currently held
+      prisma.escrowPayment.aggregate({ where: { status: 'funded' }, _sum: { totalAmount: true } }),
     ]);
 
     // MRR estimate = active subscriptions × subscription fee
@@ -599,7 +603,8 @@ export async function adminAnalyticsOverview(_req: Request, res: Response, next:
         totalUsers, activeSubscriptions, openJobs, jobsThisMonth,
         completedJobsThisMonth,
         platformRevenueThisMonth: revenueThisMonth._sum.platformFeeAmount ?? 0,
-        pendingCommissions: pendingCommissions._sum.amount ?? 0,
+        pendingCommissions: pendingCommissions._sum.commissionAmount ?? 0,
+        escrowHeld: escrowHeld._sum.totalAmount ?? 0,
         mrr: mrr.toFixed(2),
       },
     });
@@ -627,7 +632,7 @@ export async function adminAnalyticsDetailed(_req: Request, res: Response, next:
         const [jobs, completed, revenue, newUsers] = await Promise.all([
           prisma.job.count({ where: { createdAt: { gte: m.start, lte: m.end } } }),
           prisma.job.count({ where: { status: 'Completed', updatedAt: { gte: m.start, lte: m.end } } }),
-          prisma.jobPayment.aggregate({ where: { status: 'paid', paidAt: { gte: m.start, lte: m.end } }, _sum: { platformFeeAmount: true } }),
+          prisma.escrowPayment.aggregate({ where: { status: 'released', releasedAt: { gte: m.start, lte: m.end } }, _sum: { platformFeeAmount: true } }),
           prisma.user.count({ where: { createdAt: { gte: m.start, lte: m.end }, role: 'contractor' } }),
         ]);
         return {
@@ -664,11 +669,11 @@ export async function adminAnalyticsDetailed(_req: Request, res: Response, next:
       take: 10,
     });
 
-    // Revenue totals
-    const [totalRevenue, totalCommissionsPaid, totalCommissionsPending] = await Promise.all([
-      prisma.jobPayment.aggregate({ where: { status: 'paid' }, _sum: { platformFeeAmount: true } }),
+    // Revenue totals from escrow
+    const [totalRevenue, totalCommissionsPaid, pendingEscrow] = await Promise.all([
+      prisma.escrowPayment.aggregate({ where: { status: 'released' }, _sum: { platformFeeAmount: true } }),
       prisma.commission.aggregate({ where: { status: 'paid' }, _sum: { amount: true } }),
-      prisma.commission.aggregate({ where: { status: 'pending' }, _sum: { amount: true } }),
+      prisma.escrowPayment.aggregate({ where: { status: 'funded' }, _sum: { totalAmount: true, commissionAmount: true } }),
     ]);
 
     res.json({
@@ -681,7 +686,8 @@ export async function adminAnalyticsDetailed(_req: Request, res: Response, next:
         totals: {
           allTimeRevenue: totalRevenue._sum.platformFeeAmount ?? 0,
           allTimeCommissionsPaid: totalCommissionsPaid._sum.amount ?? 0,
-          pendingCommissions: totalCommissionsPending._sum.amount ?? 0,
+          pendingCommissions: pendingEscrow._sum.commissionAmount ?? 0,
+          escrowHeld: pendingEscrow._sum.totalAmount ?? 0,
         },
       },
     });
