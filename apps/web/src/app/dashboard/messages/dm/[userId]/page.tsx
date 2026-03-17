@@ -80,6 +80,22 @@ export default function DmChatPage() {
     if (partnerId) load();
   }, [partnerId]);
 
+  // ─── Polling fallback for live updates ─────────────────────
+  useEffect(() => {
+    if (!partnerId) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/dm/${partnerId}`);
+        const newMsgs = res.data.data?.messages || [];
+        setMessages(prev => {
+          if (newMsgs.length !== prev.length) return newMsgs;
+          return prev;
+        });
+      } catch { /* silent */ }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [partnerId]);
+
   // ─── Auto-scroll ────────────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

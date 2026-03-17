@@ -5,6 +5,14 @@ import { Bell, Menu, X } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import api from '../../lib/api';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
+const ASSETS_BASE = API_BASE.endsWith('/api') ? API_BASE.slice(0, -4) : API_BASE.replace(/\/+$/, '');
+function resolveUrl(url?: string | null) {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `${ASSETS_BASE}${url}`;
+}
+
 interface DashboardTopbarProps {
   onMenuToggle?: () => void;
   menuOpen?: boolean;
@@ -67,7 +75,7 @@ export function DashboardTopbar({ onMenuToggle, menuOpen }: DashboardTopbarProps
         >
           {user?.profile?.photoUrl ? (
             <img
-              src={user.profile.photoUrl}
+              src={resolveUrl(user?.profile?.photoUrl) || ''}
               alt={user.name}
               className="w-8 h-8 rounded-lg object-cover"
             />

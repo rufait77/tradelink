@@ -14,7 +14,7 @@ import {
   MapPin, Clock, DollarSign, User, ArrowLeft, Send,
   CheckCircle2, MessageSquare, Star, Users, Briefcase,
   FileText, Calendar, Phone, Mail, Lock, Camera,
-  AlertTriangle, Timer, XCircle, RotateCcw, Trash2,
+  AlertTriangle, Timer, XCircle, RotateCcw, Trash2, Play,
 } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
@@ -282,6 +282,19 @@ export default function JobDetailPage() {
       await loadJob();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to create quote');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleStartJob() {
+    setActionLoading(true);
+    try {
+      await api.post(`/jobs/${id}/start`);
+      toast.success('Job started! Status updated to In Progress.');
+      await loadJob();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to start job');
     } finally {
       setActionLoading(false);
     }
@@ -754,8 +767,18 @@ export default function JobDetailPage() {
             )}
           </Card>
 
+          {/* Start Job */}
+          {['Assigned', 'QuoteApproved'].includes(job.status) && (
+            <Card>
+              <Button className="w-full" size="lg" onClick={handleStartJob} loading={actionLoading}>
+                <Play className="w-4 h-4" /> Start Job
+              </Button>
+              <p className="text-xs text-surface-muted text-center mt-2">Click to begin work and notify the referee</p>
+            </Card>
+          )}
+
           {/* Mark Complete */}
-          {['InProgress', 'EscrowFunded', 'QuoteApproved'].includes(job.status) && (
+          {['InProgress', 'EscrowFunded'].includes(job.status) && (
             <Card>
               {!showCompleteModal ? (
                 <Button className="w-full" size="lg" onClick={() => setShowCompleteModal(true)}>

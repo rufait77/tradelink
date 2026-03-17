@@ -35,11 +35,12 @@ interface DmConversation {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
+const ASSETS_BASE = API_BASE.endsWith('/api') ? API_BASE.slice(0, -4) : API_BASE.replace(/\/+$/, '');
 
 function resolvePhoto(url?: string | null) {
   if (!url) return null;
   if (url.startsWith('http')) return url;
-  return `${API_BASE.replace('/api', '')}${url}`;
+  return `${ASSETS_BASE}${url}`;
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -97,7 +98,8 @@ export default function MessagesPage() {
           placeholder="Search conversations..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-surface-card border border-surface-border rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50"
+          className="w-full pl-10 pr-4 py-2.5 bg-[#0a1628] border border-surface-border rounded-xl text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50"
+          style={{ color: '#e2e8f0' }}
         />
       </div>
 
