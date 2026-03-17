@@ -10,6 +10,11 @@ import {
 } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
+// Base URL for static assets (uploads). If API_BASE uses a subdomain (api.xxx), use it directly.
+// If it uses a path suffix like /api, strip that for asset URLs.
+const ASSETS_BASE = API_BASE.endsWith('/api')
+  ? API_BASE.slice(0, -4)
+  : API_BASE.replace(/\/+$/, '');
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -81,7 +86,7 @@ function renderStars(rating: number, size = 'w-4 h-4') {
 function resolveUrl(url: string) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return `${API_BASE.replace('/api', '')}${url}`;
+  return `${ASSETS_BASE}${url}`;
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -268,10 +273,30 @@ export default function PublicProfilePage() {
               {/* Action Buttons */}
               <div className="flex items-center gap-3 mt-5">
                 {isLoggedIn ? (
-                  <Link href={`/dashboard/messages/dm/${profile.userId}`}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] font-bold text-sm rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">
-                    <MessageSquare className="w-4 h-4" /> Message
-                  </Link>
+                  (() => {
+                    // Check if this is the logged-in user's own profile
+                    let loggedInUserId: string | null = null;
+                    try {
+                      const token = localStorage.getItem('tradelink_token');
+                      if (token) {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        loggedInUserId = payload.userId || payload.sub;
+                      }
+                    } catch {}
+                    const isOwnProfile = loggedInUserId === profile.userId;
+
+                    return isOwnProfile ? (
+                      <Link href="/dashboard/profile"
+                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] font-bold text-sm rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">
+                        <User className="w-4 h-4" /> Edit Profile
+                      </Link>
+                    ) : (
+                      <Link href={`/dashboard/messages/dm/${profile.userId}`}
+                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] font-bold text-sm rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">
+                        <MessageSquare className="w-4 h-4" /> Message
+                      </Link>
+                    );
+                  })()
                 ) : (
                   <Link href="/signup"
                     className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] font-bold text-sm rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">

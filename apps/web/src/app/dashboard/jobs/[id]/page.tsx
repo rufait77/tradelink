@@ -10,6 +10,14 @@ import { useAuthStore } from '../../../../store/auth.store';
 import api from '../../../../lib/api';
 import { formatCurrency, formatDate, formatRelativeTime } from '../../../../lib/utils';
 import { toast } from 'sonner';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
+const ASSETS_BASE = API_BASE.endsWith('/api') ? API_BASE.slice(0, -4) : API_BASE.replace(/\/+$/, '');
+function resolveUrl(url?: string | null) {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `${ASSETS_BASE}${url}`;
+}
 import {
   MapPin, Clock, DollarSign, User, ArrowLeft, Send,
   CheckCircle2, MessageSquare, Star, Users, Briefcase,
@@ -448,7 +456,7 @@ export default function JobDetailPage() {
                   <Card key={int.id} className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center shrink-0">
                       {int.contractor.profile?.photoUrl ? (
-                        <img src={int.contractor.profile.photoUrl} alt="" className="w-12 h-12 rounded-xl object-cover" />
+                        <img src={resolveUrl(int.contractor.profile.photoUrl) || ''} alt="" className="w-12 h-12 rounded-xl object-cover" />
                       ) : (
                         <User className="w-6 h-6 text-amber-400" />
                       )}
@@ -478,9 +486,23 @@ export default function JobDetailPage() {
                       <p className="text-xs text-surface-muted">{formatRelativeTime(int.createdAt)}</p>
                     </div>
                     {int.status === 'pending' && ['Open','InterestClosed'].includes(job.status) && (
-                      <Button size="sm" onClick={() => handleAssign(int.contractor.id)} loading={actionLoading}>
-                        Assign
-                      </Button>
+                      <div className="flex flex-col gap-1.5 shrink-0">
+                        <Button size="sm" onClick={() => handleAssign(int.contractor.id)} loading={actionLoading}>
+                          Assign
+                        </Button>
+                        <button
+                          onClick={() => window.open(`/contractors/${int.contractor.id}`, '_blank')}
+                          className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition"
+                        >
+                          View Profile
+                        </button>
+                        <button
+                          onClick={() => router.push(`/dashboard/messages/dm/${int.contractor.id}`)}
+                          className="px-3 py-1.5 text-xs font-medium text-amber-400 hover:text-amber-300 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 rounded-lg transition"
+                        >
+                          Message
+                        </button>
+                      </div>
                     )}
                   </Card>
                 ))
