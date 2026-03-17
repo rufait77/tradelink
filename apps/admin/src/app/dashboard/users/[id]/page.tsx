@@ -67,6 +67,19 @@ export default function UserDetailPage() {
     finally { setActionLoading(''); }
   }
 
+  async function handleDeleteUser() {
+    if (!confirm(`Are you sure you want to permanently delete this user account? This will anonymize all their data and cannot be undone.`)) return;
+    setActionLoading('delete');
+    try {
+      await api.delete(`/admin/users/${id}`);
+      router.push('/dashboard/users');
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Failed to delete user');
+    } finally {
+      setActionLoading('');
+    }
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center py-32">
       <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
@@ -313,6 +326,19 @@ export default function UserDetailPage() {
               >
                 {profile?.isBanned ? 'Lift Ban' : '⚠️ Permanently Ban'}
               </button>
+
+              {/* Delete Account */}
+              <div className="pt-3 mt-3 border-t border-slate-800">
+                <button
+                  onClick={handleDeleteUser}
+                  disabled={!!actionLoading}
+                  className="w-full py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 bg-red-600 text-white hover:bg-red-700 flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={14} />
+                  {actionLoading === 'delete' ? 'Deleting...' : 'Delete Account Permanently'}
+                </button>
+                <p className="text-xs text-slate-500 text-center mt-2">This will anonymize the user and deactivate their account.</p>
+              </div>
             </div>
           </div>
 
