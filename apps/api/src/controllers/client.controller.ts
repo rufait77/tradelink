@@ -261,24 +261,28 @@ export async function confirmCompletion(req: ClientRequest, res: Response, next:
       // Execute Stripe Transfers
       if (escrow.stripePaymentIntentId) {
         try {
+          // Retrieve charge ID from PaymentIntent (source_transaction needs a charge, not PI)
+          const pi = await stripe.paymentIntents.retrieve(escrow.stripePaymentIntentId);
+          const chargeId = pi.latest_charge as string;
+
           // 1. Transfer to contractor
-          if (job.claimedBy && escrow.job.claimedBy?.stripeConnectId) {
+          if (job.claimedBy && escrow.job.claimedBy?.stripeConnectId && chargeId) {
             await stripe.transfers.create({
               amount: Math.round(escrow.contractorAmount * 100),
               currency: 'usd',
               destination: escrow.job.claimedBy.stripeConnectId,
-              source_transaction: escrow.stripePaymentIntentId,
+              source_transaction: chargeId,
               metadata: { jobId: job.id, type: 'contractor_payout' },
             });
           }
 
           // 2. Transfer to referrer
-          if (escrow.job.postedBy?.stripeConnectId) {
+          if (escrow.job.postedBy?.stripeConnectId && chargeId) {
             await stripe.transfers.create({
               amount: Math.round(escrow.commissionAmount * 100),
               currency: 'usd',
               destination: escrow.job.postedBy.stripeConnectId,
-              source_transaction: escrow.stripePaymentIntentId,
+              source_transaction: chargeId,
               metadata: { jobId: job.id, type: 'referral_commission' },
             });
           }
@@ -607,7 +611,7 @@ export async function getPaymentPage(req: ClientRequest, res: Response, next: Ne
   try {
     const job = req.clientJob;
 
-    if (job.status !== 'QuoteApproved' && job.status !== 'EscrowFunded') {
+    if (!['QuoteApproved', 'EscrowFunded', 'InProgress'].includes(job.status)) {
       return next(new AppError('Payment is not available at this stage', 400));
     }
 

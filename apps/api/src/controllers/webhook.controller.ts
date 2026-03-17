@@ -173,7 +173,7 @@ export async function stripeWebhook(req: Request, res: Response, next: NextFunct
               where: { id: escrow.id },
               data: {
                 status: 'funded',
-                fundedAt: new Date(),
+                paidAt: new Date(),
                 stripePaymentIntentId: paymentIntentId,
                 stripeCheckoutId: session.id,
               },
