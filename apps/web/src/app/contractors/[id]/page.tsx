@@ -19,16 +19,13 @@ interface ContractorProfile {
   tradeTypes: string[];
   bio: string;
   licenseNumber?: string;
-  insuranceUrl?: string;
   certifications?: Array<{ name: string; verified: boolean }>;
-  streetAddress: string;
   city: string;
   state: string;
   zipCode: string;
   yearsExperience: number;
   avgRating: number;
   avgResponseTime?: number;
-  totalEarned: number;
   totalReferrals: number;
   totalJobsCompleted: number;
   photoUrl?: string;
@@ -372,10 +369,10 @@ export default function PublicProfilePage() {
                 subtitle={profile.licenseNumber ? `License #${profile.licenseNumber}` : 'Not provided'}
               />
               <CredentialItem
-                icon={<FileCheck className={`w-5 h-5 ${profile.insuranceUrl ? 'text-emerald-400' : 'text-slate-600'}`} />}
-                bgColor={profile.insuranceUrl ? 'bg-emerald-500/10' : 'bg-slate-800'}
+                icon={<FileCheck className="w-5 h-5 text-slate-600" />}
+                bgColor="bg-slate-800"
                 title="Insurance"
-                subtitle={profile.insuranceUrl ? 'Insurance on file' : 'Not uploaded'}
+                subtitle="Contact for details"
               />
               <CredentialItem
                 icon={<Calendar className="w-5 h-5 text-purple-400" />}

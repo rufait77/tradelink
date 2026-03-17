@@ -100,7 +100,26 @@ export async function getPublicProfile(req: AuthRequest, res: Response, next: Ne
     const id = req.params.id as string;
     const profile = await prisma.contractorProfile.findUnique({
       where: { userId: id },
-      include: {
+      select: {
+        id: true,
+        userId: true,
+        tradeTypes: true,
+        bio: true,
+        licenseNumber: true,
+        certifications: true,
+        // streetAddress intentionally excluded — not safe for public
+        city: true,
+        state: true,
+        zipCode: true,
+        yearsExperience: true,
+        avgRating: true,
+        avgResponseTime: true,
+        // totalEarned intentionally excluded — not safe for public
+        totalReferrals: true,
+        totalJobsCompleted: true,
+        photoUrl: true,
+        isAdminVerified: true,
+        createdAt: true,
         user: { select: { id: true, name: true, createdAt: true } },
       },
     });
