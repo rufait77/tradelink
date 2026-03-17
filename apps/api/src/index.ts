@@ -34,7 +34,9 @@ const app = express();
 app.set('trust proxy', 1); // Trust first proxy (Nginx)
 
 // ─── Security & Compression ───────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(
   cors({
     origin: [env.WEB_URL, env.ADMIN_URL],
@@ -89,9 +91,13 @@ app.use('/dm', dmRoutes);
 
 // ─── Static uploads ───────────────────────────────────────────────────────────
 // ─── Static uploads (no directory listing, dotfiles denied) ──────────────────
-app.use('/uploads', express.static(env.UPLOAD_DIR, {
+app.use('/uploads', (_req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(env.UPLOAD_DIR, {
   dotfiles: 'deny',
-  index: false,  // disable directory listing
+  index: false,
 }));
 
 // ─── Error handling ───────────────────────────────────────────────────────────

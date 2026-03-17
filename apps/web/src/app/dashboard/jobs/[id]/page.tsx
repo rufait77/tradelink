@@ -10,6 +10,12 @@ import { useAuthStore } from '../../../../store/auth.store';
 import api from '../../../../lib/api';
 import { formatCurrency, formatDate, formatRelativeTime } from '../../../../lib/utils';
 import { toast } from 'sonner';
+import {
+  MapPin, Clock, DollarSign, User, ArrowLeft, Send,
+  CheckCircle2, MessageSquare, Star, Users, Briefcase,
+  FileText, Calendar, Phone, Mail, Lock, Camera,
+  AlertTriangle, Timer, XCircle, RotateCcw, Trash2,
+} from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
 const ASSETS_BASE = API_BASE.endsWith('/api') ? API_BASE.slice(0, -4) : API_BASE.replace(/\/+$/, '');
@@ -18,12 +24,6 @@ function resolveUrl(url?: string | null) {
   if (url.startsWith('http')) return url;
   return `${ASSETS_BASE}${url}`;
 }
-import {
-  MapPin, Clock, DollarSign, User, ArrowLeft, Send,
-  CheckCircle2, MessageSquare, Star, Users, Briefcase,
-  FileText, Calendar, Phone, Mail, Lock, Camera,
-  AlertTriangle, Timer, XCircle, RotateCcw, Trash2,
-} from 'lucide-react';
 
 // ─── Types ─────────────────────────────────────────────────────────────
 
