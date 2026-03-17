@@ -1,14 +1,16 @@
-// @ts-nocheck
 import { Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
+import { stripe } from '../config/stripe';
 import { AppError } from '../middleware/errorHandler';
 import { ClientRequest } from '../middleware/clientAuth';
 import { env } from '../config/env';
+import { isDeveloperMode } from '../services/settings.service';
 import {
   sendClientQuoteApprovedEmail,
   sendClientContractorDoneEmail,
   sendClientJobCompletedEmail,
   sendClientDisputeOpenedEmail,
+  sendClientPaymentEmail,
 } from '../services/email.service';
 
 // ─── GET /client/:token ─────────────────────────────────────────────────────
@@ -61,6 +63,7 @@ export async function getClientDashboard(req: ClientRequest, res: Response, next
         escrow: escrow ? {
           status: escrow.status,
           totalAmount: escrow.totalAmount,
+          paymentLink: escrow.paymentLink,
           paidAt: escrow.paidAt,
         } : null,
         referee: {
@@ -74,12 +77,13 @@ export async function getClientDashboard(req: ClientRequest, res: Response, next
 }
 
 // ─── POST /client/:token/quote/:quoteId/approve ────────────────────────────
-// Client approves a quote
+// Client approves a quote → auto-creates escrow with Stripe Checkout payment link
 
 export async function approveQuote(req: ClientRequest, res: Response, next: NextFunction) {
   try {
     const { quoteId } = req.params;
     const job = req.clientJob;
+    const lead = req.clientLead;
 
     const quote = await prisma.quote.findUnique({ where: { id: quoteId } });
     if (!quote) return next(new AppError('Quote not found', 404));
@@ -118,19 +122,91 @@ export async function approveQuote(req: ClientRequest, res: Response, next: Next
       ],
     });
 
-    // TODO: Phase 2D — create escrow payment and send payment link to client
+    // ─── Auto-create escrow with Stripe Checkout payment link ─────────────
+    const totalAmount = quote.amount;
+    const platformFeeAmount = (totalAmount * quote.platformFeePct) / 100;
+    const commissionAmount = (totalAmount * quote.commissionPct) / 100;
+    const contractorAmount = totalAmount - platformFeeAmount - commissionAmount;
 
-    // Email client confirmation
-    const lead = req.clientLead;
-    if (lead?.email) {
-      const portalUrl = `${env.WEB_URL}/client/${lead.accessToken}`;
-      sendClientQuoteApprovedEmail(
-        lead.email, `${lead.firstName} ${lead.lastName}`,
-        job.title, quote.amount, portalUrl,
-      ).catch(() => {});
+    const devMode = await isDeveloperMode();
+    let checkoutUrl: string | null = null;
+    let stripeCheckoutId: string | null = null;
+
+    if (!devMode) {
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            unit_amount: Math.round(totalAmount * 100),
+            product_data: {
+              name: `Escrow Payment: ${job.title}`,
+              description: `Contractor quote for "${job.title}" — funds held in escrow until job completion.`,
+            },
+          },
+          quantity: 1,
+        }],
+        metadata: {
+          type: 'escrow_payment',
+          jobId: job.id,
+          quoteId: quote.id,
+        },
+        success_url: `${env.WEB_URL}/client/${lead.accessToken}?payment=success`,
+        cancel_url: `${env.WEB_URL}/client/${lead.accessToken}?payment=cancelled`,
+      });
+
+      checkoutUrl = session.url;
+      stripeCheckoutId = session.id;
     }
 
-    res.json({ success: true, data: { message: 'Quote approved. You will receive a payment link shortly.' } });
+    // Create escrow record
+    await prisma.escrowPayment.create({
+      data: {
+        jobId: job.id,
+        quoteId: quote.id,
+        totalAmount,
+        platformFeeAmount,
+        commissionAmount,
+        contractorAmount,
+        status: devMode ? 'funded' : 'pending',
+        ...(stripeCheckoutId && { stripeCheckoutId }),
+        ...(checkoutUrl && { paymentLink: checkoutUrl }),
+      },
+    });
+
+    // In dev mode, skip to InProgress since no real payment needed
+    if (devMode) {
+      await prisma.job.update({
+        where: { id: job.id },
+        data: { status: 'InProgress' },
+      });
+    }
+
+    // Email client with payment link (or approval confirmation in dev mode)
+    if (lead?.email) {
+      if (checkoutUrl) {
+        sendClientPaymentEmail(
+          lead.email, lead.firstName,
+          job.title, totalAmount.toFixed(2), checkoutUrl,
+        ).catch(() => {});
+      } else {
+        const portalUrl = `${env.WEB_URL}/client/${lead.accessToken}`;
+        sendClientQuoteApprovedEmail(
+          lead.email, `${lead.firstName} ${lead.lastName}`,
+          job.title, quote.amount, portalUrl,
+        ).catch(() => {});
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        message: checkoutUrl
+          ? 'Quote approved! A payment link has been sent to your email.'
+          : 'Quote approved! The job is now in progress.',
+        paymentLink: checkoutUrl,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -184,7 +260,7 @@ export async function rejectQuote(req: ClientRequest, res: Response, next: NextF
 }
 
 // ─── POST /client/:token/confirm ────────────────────────────────────────────
-// Client confirms job completion
+// Client confirms job completion → auto-releases escrow payouts
 
 export async function confirmCompletion(req: ClientRequest, res: Response, next: NextFunction) {
   try {
@@ -195,13 +271,95 @@ export async function confirmCompletion(req: ClientRequest, res: Response, next:
       return next(new AppError('Job must be marked as done by the contractor before you can confirm', 400));
     }
 
-    await prisma.job.update({
-      where: { id: job.id },
-      data: {
-        status: 'ClientConfirmed',
-        clientConfirmedAt: new Date(),
+    // ─── Auto-release escrow → distribute payouts ─────────────────────────
+    const escrow = await prisma.escrowPayment.findUnique({
+      where: { jobId: job.id },
+      include: {
+        job: {
+          include: {
+            postedBy: { select: { id: true, name: true, email: true, stripeConnectId: true } },
+            claimedBy: { select: { id: true, name: true, email: true, stripeConnectId: true } },
+          },
+        },
       },
     });
+
+    const devMode = await isDeveloperMode();
+
+    if (escrow && (escrow.status === 'funded' || (devMode && escrow.status !== 'released'))) {
+      // Execute Stripe Transfers in production
+      if (!devMode && escrow.stripePaymentIntentId) {
+        try {
+          // 1. Transfer to contractor
+          if (job.claimedBy && escrow.job.claimedBy?.stripeConnectId) {
+            await stripe.transfers.create({
+              amount: Math.round(escrow.contractorAmount * 100),
+              currency: 'usd',
+              destination: escrow.job.claimedBy.stripeConnectId,
+              source_transaction: escrow.stripePaymentIntentId,
+              metadata: { jobId: job.id, type: 'contractor_payout' },
+            });
+          }
+
+          // 2. Transfer to referrer
+          if (escrow.job.postedBy?.stripeConnectId) {
+            await stripe.transfers.create({
+              amount: Math.round(escrow.commissionAmount * 100),
+              currency: 'usd',
+              destination: escrow.job.postedBy.stripeConnectId,
+              source_transaction: escrow.stripePaymentIntentId,
+              metadata: { jobId: job.id, type: 'referral_commission' },
+            });
+          }
+          // 3. Platform fee stays in platform account (automatic)
+        } catch (transferErr: any) {
+          // Log but don't fail — transfers can be retried
+          console.error(`[Escrow] Transfer error for job ${job.id}:`, transferErr.message);
+        }
+      }
+
+      // Mark as released and update all records
+      await prisma.$transaction([
+        prisma.escrowPayment.update({
+          where: { id: escrow.id },
+          data: { status: 'released', releasedAt: new Date() },
+        }),
+        prisma.job.update({
+          where: { id: job.id },
+          data: { status: 'Completed', clientConfirmedAt: new Date() },
+        }),
+        prisma.commission.create({
+          data: {
+            jobId: job.id,
+            referrerId: job.postedById,
+            amount: escrow.commissionAmount,
+            status: 'paid',
+            paidAt: new Date(),
+          },
+        }),
+        // Update contractor stats
+        ...(job.claimedById ? [
+          prisma.contractorProfile.update({
+            where: { userId: job.claimedById },
+            data: {
+              totalEarned: { increment: escrow.contractorAmount },
+              totalJobsCompleted: { increment: 1 },
+            },
+          }),
+        ] : []),
+        // Update referee stats
+        prisma.contractorProfile.update({
+          where: { userId: job.postedById },
+          data: { totalEarned: { increment: escrow.commissionAmount } },
+        }),
+      ]);
+    } else {
+      // No escrow — just update job status
+      await prisma.job.update({
+        where: { id: job.id },
+        data: { status: 'Completed', clientConfirmedAt: new Date() },
+      });
+    }
 
     // Notify contractor and referee
     await prisma.notification.createMany({
@@ -210,20 +368,18 @@ export async function confirmCompletion(req: ClientRequest, res: Response, next:
           userId: job.claimedById!,
           type: 'client_confirmed',
           title: 'Client confirmed completion! 🎉',
-          message: `The client confirmed that "${job.title}" is complete. Your payment is being processed.`,
+          message: `The client confirmed that "${job.title}" is complete. ${escrow ? `$${escrow.contractorAmount.toFixed(2)} has been released to your account!` : 'Your payment is being processed.'}`,
           link: `/dashboard/jobs/${job.id}`,
         },
         {
           userId: job.postedById,
           type: 'client_confirmed',
-          title: 'Client confirmed — funds releasing!',
-          message: `The client confirmed "${job.title}" is complete. Commission payout is being processed.`,
+          title: 'Client confirmed — funds released! 💰',
+          message: `The client confirmed "${job.title}" is complete. ${escrow ? `$${escrow.commissionAmount.toFixed(2)} commission has been released!` : 'Commission payout is being processed.'}`,
           link: `/dashboard/earnings`,
         },
       ],
     });
-
-    // TODO: Phase 2D — trigger escrow release
 
     // Email client completion confirmation
     const lead = req.clientLead;
@@ -236,6 +392,63 @@ export async function confirmCompletion(req: ClientRequest, res: Response, next:
     }
 
     res.json({ success: true, data: { message: 'Thank you for confirming! The contractor will be paid and you can leave a rating.' } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── POST /client/:token/quote/:quoteId/counter ─────────────────────────────
+// Client sends a counter-offer with a different amount and message
+
+export async function counterOffer(req: ClientRequest, res: Response, next: NextFunction) {
+  try {
+    const { quoteId } = req.params;
+    const { amount, message } = req.body;
+    const job = req.clientJob;
+    const lead = req.clientLead;
+
+    if (!amount || amount <= 0) return next(new AppError('Counter-offer amount must be positive', 400));
+
+    const quote = await prisma.quote.findUnique({ where: { id: quoteId as string } });
+    if (!quote) return next(new AppError('Quote not found', 404));
+    if (quote.jobId !== job.id) return next(new AppError('Quote does not belong to this job', 400));
+    if (quote.status !== 'sent') return next(new AppError('Quote is not in a state that can be negotiated', 400));
+
+    // Update quote with counter-offer info in the rejection note
+    await prisma.quote.update({
+      where: { id: quoteId as string },
+      data: {
+        status: 'rejected',
+        rejectionNote: `COUNTER_OFFER:${amount}|${message || 'Client proposed a different amount.'}`,
+      },
+    });
+
+    // Notify contractor with counter-offer details
+    await prisma.notification.create({
+      data: {
+        userId: quote.contractorId,
+        type: 'quote_rejected',
+        title: '💰 Client sent a counter-offer!',
+        message: `The client for "${job.title}" proposed $${parseFloat(amount).toFixed(2)} instead of your $${quote.amount.toFixed(2)}.${message ? ` Message: "${message}"` : ''} You can accept or send a new quote.`,
+        link: `/dashboard/jobs/${job.id}`,
+      },
+    });
+
+    // Notify referee
+    await prisma.notification.create({
+      data: {
+        userId: job.postedById,
+        type: 'quote_rejected',
+        title: 'Client negotiating on quote',
+        message: `The client for "${job.title}" counter-offered $${parseFloat(amount).toFixed(2)} (original: $${quote.amount.toFixed(2)}).`,
+        link: `/dashboard/my-referrals`,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: { message: 'Counter-offer sent to the contractor. They will review and respond.' },
+    });
   } catch (err) {
     next(err);
   }
