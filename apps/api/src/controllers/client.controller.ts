@@ -4,7 +4,7 @@ import { stripe } from '../config/stripe';
 import { AppError } from '../middleware/errorHandler';
 import { ClientRequest } from '../middleware/clientAuth';
 import { env } from '../config/env';
-import { isDeveloperMode } from '../services/settings.service';
+// (isDeveloperMode removed — always use real Stripe payments)
 import {
   sendClientQuoteApprovedEmail,
   sendClientContractorDoneEmail,
@@ -122,42 +122,33 @@ export async function approveQuote(req: ClientRequest, res: Response, next: Next
       ],
     });
 
-    // ─── Auto-create escrow with Stripe Checkout payment link ─────────────
+    // ─── Create escrow with Stripe Checkout payment link ───────────────────
     const totalAmount = quote.amount;
     const platformFeeAmount = (totalAmount * quote.platformFeePct) / 100;
     const commissionAmount = (totalAmount * quote.commissionPct) / 100;
     const contractorAmount = totalAmount - platformFeeAmount - commissionAmount;
 
-    const devMode = await isDeveloperMode();
-    let checkoutUrl: string | null = null;
-    let stripeCheckoutId: string | null = null;
-
-    if (!devMode) {
-      const session = await stripe.checkout.sessions.create({
-        mode: 'payment',
-        line_items: [{
-          price_data: {
-            currency: 'usd',
-            unit_amount: Math.round(totalAmount * 100),
-            product_data: {
-              name: `Escrow Payment: ${job.title}`,
-              description: `Contractor quote for "${job.title}" — funds held in escrow until job completion.`,
-            },
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          unit_amount: Math.round(totalAmount * 100),
+          product_data: {
+            name: `Escrow Payment: ${job.title}`,
+            description: `Contractor quote for "${job.title}" — funds held in escrow until job completion.`,
           },
-          quantity: 1,
-        }],
-        metadata: {
-          type: 'escrow_payment',
-          jobId: job.id,
-          quoteId: quote.id,
         },
-        success_url: `${env.WEB_URL}/client/${lead.accessToken}?payment=success`,
-        cancel_url: `${env.WEB_URL}/client/${lead.accessToken}?payment=cancelled`,
-      });
-
-      checkoutUrl = session.url;
-      stripeCheckoutId = session.id;
-    }
+        quantity: 1,
+      }],
+      metadata: {
+        type: 'escrow_payment',
+        jobId: job.id,
+        quoteId: quote.id,
+      },
+      success_url: `${env.WEB_URL}/client/${lead.accessToken}?payment=success`,
+      cancel_url: `${env.WEB_URL}/client/${lead.accessToken}?payment=cancelled`,
+    });
 
     // Create escrow record
     await prisma.escrowPayment.create({
@@ -168,43 +159,25 @@ export async function approveQuote(req: ClientRequest, res: Response, next: Next
         platformFeeAmount,
         commissionAmount,
         contractorAmount,
-        status: devMode ? 'funded' : 'pending',
-        ...(stripeCheckoutId && { stripeCheckoutId }),
-        ...(checkoutUrl && { paymentLink: checkoutUrl }),
+        status: 'pending',
+        stripeCheckoutId: session.id,
+        paymentLink: session.url,
       },
     });
 
-    // In dev mode, skip to InProgress since no real payment needed
-    if (devMode) {
-      await prisma.job.update({
-        where: { id: job.id },
-        data: { status: 'InProgress' },
-      });
-    }
-
-    // Email client with payment link (or approval confirmation in dev mode)
-    if (lead?.email) {
-      if (checkoutUrl) {
-        sendClientPaymentEmail(
-          lead.email, lead.firstName,
-          job.title, totalAmount.toFixed(2), checkoutUrl,
-        ).catch(() => {});
-      } else {
-        const portalUrl = `${env.WEB_URL}/client/${lead.accessToken}`;
-        sendClientQuoteApprovedEmail(
-          lead.email, `${lead.firstName} ${lead.lastName}`,
-          job.title, quote.amount, portalUrl,
-        ).catch(() => {});
-      }
+    // Email client with payment link
+    if (lead?.email && session.url) {
+      sendClientPaymentEmail(
+        lead.email, lead.firstName,
+        job.title, totalAmount.toFixed(2), session.url,
+      ).catch(() => {});
     }
 
     res.json({
       success: true,
       data: {
-        message: checkoutUrl
-          ? 'Quote approved! A payment link has been sent to your email.'
-          : 'Quote approved! The job is now in progress.',
-        paymentLink: checkoutUrl,
+        message: 'Quote approved! A payment link has been sent to your email.',
+        paymentLink: session.url,
       },
     });
   } catch (err) {
@@ -284,11 +257,9 @@ export async function confirmCompletion(req: ClientRequest, res: Response, next:
       },
     });
 
-    const devMode = await isDeveloperMode();
-
-    if (escrow && (escrow.status === 'funded' || (devMode && escrow.status !== 'released'))) {
-      // Execute Stripe Transfers in production
-      if (!devMode && escrow.stripePaymentIntentId) {
+    if (escrow && escrow.status === 'funded') {
+      // Execute Stripe Transfers
+      if (escrow.stripePaymentIntentId) {
         try {
           // 1. Transfer to contractor
           if (job.claimedBy && escrow.job.claimedBy?.stripeConnectId) {

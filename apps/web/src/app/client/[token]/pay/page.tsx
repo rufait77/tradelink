@@ -17,7 +17,7 @@ interface PayData {
   clientName: string;
   job: { title: string; tradeType: string; status: string };
   activeQuote: { id: string; amount: number; status: string } | null;
-  escrow: { status: string; totalAmount: number; paidAt?: string } | null;
+  escrow: { status: string; totalAmount: number; paymentLink?: string; paidAt?: string } | null;
 }
 
 export default function PaymentPage() {
