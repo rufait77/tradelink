@@ -34,6 +34,8 @@ enum TradeType {
   Siding
   Clearing
   GeneralContracting
+  Welding
+  Drywall
   Barber
   Cosmetologist
   Esthetician

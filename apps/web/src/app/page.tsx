@@ -25,6 +25,8 @@ const TRADE_CATEGORIES = [
   { name: 'Siding', icon: '🏗️' },
   { name: 'Masonry', icon: '🧱' },
   { name: 'Clearing', icon: '🌲' },
+  { name: 'Welding', icon: '🔥' },
+  { name: 'Drywall', icon: '🪨' },
   { name: 'Barber', icon: '💈' },
   { name: 'Cosmetologist', icon: '💅' },
   { name: 'Esthetician', icon: '✨' },
@@ -41,7 +43,7 @@ const FAQ = [
   { q: 'How does the referral commission work?', a: 'When you refer a job and another contractor completes it, you earn 20% of the job\'s total value. Payment is processed automatically through Stripe.' },
   { q: 'What does it cost to join?', a: 'There is a one-time signup fee of $29.99 plus a monthly subscription of $9.99 to access the full platform.' },
   { q: 'How do I get paid?', a: 'Commissions are deposited directly into your bank account via Stripe Connect within 2-3 business days of job completion.' },
-  { q: 'What trades are supported?', a: 'We support all major trade categories including Landscaping, Roofing, HVAC, Plumbing, Electrical, Painting, Carpentry, Flooring, Masonry, Cleaning, Pressure Washing, Junk Removal, Window Installation, Siding, Clearing, General Contracting, Barber, Cosmetologist, and Esthetician.' },
+  { q: 'What trades are supported?', a: 'We support all major trade categories including Landscaping, Roofing, HVAC, Plumbing, Electrical, Painting, Carpentry, Flooring, Masonry, Cleaning, Pressure Washing, Junk Removal, Window Installation, Siding, Clearing, General Contracting, Welding, Drywall Installation, Barber, Cosmetologist, and Esthetician.' },
   { q: 'Can I both refer and claim jobs?', a: 'Absolutely! You can post referral jobs for leads you can\'t handle, and claim jobs from other contractors that match your skills.' },
 ];
 
