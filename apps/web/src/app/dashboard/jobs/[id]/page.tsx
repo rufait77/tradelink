@@ -9,6 +9,7 @@ import { PageLoader } from '../../../../components/ui/spinner';
 import { useAuthStore } from '../../../../store/auth.store';
 import api from '../../../../lib/api';
 import { formatCurrency, formatDate, formatRelativeTime } from '../../../../lib/utils';
+import { usePlatformSettings } from '../../../../lib/useSettings';
 import { toast } from 'sonner';
 import {
   MapPin, Clock, DollarSign, User, ArrowLeft, Send,
@@ -94,6 +95,7 @@ export default function JobDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { commissionPct, platformFeePct } = usePlatformSettings();
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -739,16 +741,16 @@ export default function JobDetailPage() {
                 {parseFloat(quoteAmount) > 0 && (
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
-                      <p className="text-[10px] text-surface-muted">You Get (75%)</p>
-                      <p className="text-sm font-bold text-emerald-400">{formatCurrency(parseFloat(quoteAmount) * 0.75)}</p>
+                      <p className="text-[10px] text-surface-muted">You Get ({100 - commissionPct - platformFeePct}%)</p>
+                      <p className="text-sm font-bold text-emerald-400">{formatCurrency(parseFloat(quoteAmount) * (1 - commissionPct / 100 - platformFeePct / 100))}</p>
                     </div>
                     <div className="p-2 rounded-lg bg-navy-900 border border-surface-border">
-                      <p className="text-[10px] text-surface-muted">Referral (20%)</p>
-                      <p className="text-sm font-bold text-white">{formatCurrency(parseFloat(quoteAmount) * 0.20)}</p>
+                      <p className="text-[10px] text-surface-muted">Referral ({commissionPct}%)</p>
+                      <p className="text-sm font-bold text-white">{formatCurrency(parseFloat(quoteAmount) * commissionPct / 100)}</p>
                     </div>
                     <div className="p-2 rounded-lg bg-navy-900 border border-surface-border">
-                      <p className="text-[10px] text-surface-muted">Platform (5%)</p>
-                      <p className="text-sm font-bold text-surface-muted">{formatCurrency(parseFloat(quoteAmount) * 0.05)}</p>
+                      <p className="text-[10px] text-surface-muted">Platform ({platformFeePct}%)</p>
+                      <p className="text-sm font-bold text-surface-muted">{formatCurrency(parseFloat(quoteAmount) * platformFeePct / 100)}</p>
                     </div>
                   </div>
                 )}

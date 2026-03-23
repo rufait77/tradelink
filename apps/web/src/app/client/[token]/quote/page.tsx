@@ -196,11 +196,11 @@ export default function QuoteApprovalPage() {
 
   const q = data.activeQuote;
 
-  // Calculate fee breakdown (20% referral, 5% platform = 25% total)
-  const platformFeePct = 0.05;
-  const commissionPct = 0.20;
-  const platformFee = q.amount * platformFeePct;
-  const commission = q.amount * commissionPct;
+  // Calculate fee breakdown using the quote's snapshotted percentages
+  const quotePlatformPct = q.platformFeePct ?? 5;
+  const quoteCommissionPct = q.commissionPct ?? 20;
+  const platformFee = q.amount * quotePlatformPct / 100;
+  const commission = q.amount * quoteCommissionPct / 100;
   const contractorPayout = q.amount - platformFee - commission;
 
   return (
@@ -264,15 +264,15 @@ export default function QuoteApprovalPage() {
           </h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-surface-muted">Contractor Payout (75%)</span>
+              <span className="text-surface-muted">Contractor Payout ({100 - quoteCommissionPct - quotePlatformPct}%)</span>
               <span className="text-white">{formatCurrency(contractorPayout)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-surface-muted">Referral Commission (20%)</span>
+              <span className="text-surface-muted">Referral Commission ({quoteCommissionPct}%)</span>
               <span className="text-white">{formatCurrency(commission)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-surface-muted">Platform Fee (5%)</span>
+              <span className="text-surface-muted">Platform Fee ({quotePlatformPct}%)</span>
               <span className="text-white">{formatCurrency(platformFee)}</span>
             </div>
             <div className="border-t border-surface-border pt-2 mt-2 flex justify-between font-semibold">

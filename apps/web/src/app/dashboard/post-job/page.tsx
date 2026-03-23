@@ -10,6 +10,7 @@ import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import api from '../../../lib/api';
 import { formatCurrency } from '../../../lib/utils';
+import { usePlatformSettings } from '../../../lib/useSettings';
 import { toast } from 'sonner';
 import {
   Send, ArrowLeft, DollarSign, User, MapPin,
@@ -57,6 +58,7 @@ type JobFormData = z.infer<typeof jobSchema>;
 
 function PostJobContent() {
   const router = useRouter();
+  const { commissionPct } = usePlatformSettings();
   const [loading, setLoading] = useState(false);
   const [tradeType, setTradeType] = useState('');
   const [urgency, setUrgency] = useState('Medium');
@@ -127,7 +129,7 @@ function PostJobContent() {
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
         <h1 className="text-2xl font-heading font-bold text-white mb-1">Post a Referral</h1>
-        <p className="text-sm text-surface-muted">Got a lead you can&apos;t take? Post it and earn a 20% commission when it&apos;s completed.</p>
+        <p className="text-sm text-surface-muted">Got a lead you can&apos;t take? Post it and earn a {commissionPct}% commission when it&apos;s completed.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

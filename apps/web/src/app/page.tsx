@@ -9,6 +9,7 @@ import {
   Shield, Clock, TrendingUp, Wrench, ChevronDown,
 } from 'lucide-react';
 import { useState } from 'react';
+import { usePlatformSettings } from '../lib/useSettings';
 
 const TRADE_CATEGORIES = [
   { name: 'Landscaping', icon: '🌿' },
@@ -32,20 +33,24 @@ const TRADE_CATEGORIES = [
   { name: 'Esthetician', icon: '✨' },
 ];
 
-const FEATURES = [
-  { icon: Shield, title: 'Secure Payments', desc: 'Stripe-powered escrow ensures you always get paid for completed work.' },
-  { icon: Clock, title: 'Quick Payouts', desc: 'Commissions deposited directly to your bank within 2-3 business days.' },
-  { icon: TrendingUp, title: 'Passive Income', desc: 'Earn 20% on jobs you refer — even while you sleep.' },
-  { icon: Wrench, title: 'All Trades Welcome', desc: 'From HVAC to landscaping — every licensed contractor can join.' },
-];
+function getFeatures(commissionPct: number) {
+  return [
+    { icon: Shield, title: 'Secure Payments', desc: 'Stripe-powered escrow ensures you always get paid for completed work.' },
+    { icon: Clock, title: 'Quick Payouts', desc: 'Commissions deposited directly to your bank within 2-3 business days.' },
+    { icon: TrendingUp, title: 'Passive Income', desc: `Earn ${commissionPct}% on jobs you refer — even while you sleep.` },
+    { icon: Wrench, title: 'All Trades Welcome', desc: 'From HVAC to landscaping — every licensed contractor can join.' },
+  ];
+}
 
-const FAQ = [
-  { q: 'How does the referral commission work?', a: 'When you refer a job and another contractor completes it, you earn 20% of the job\'s total value. Payment is processed automatically through Stripe.' },
-  { q: 'What does it cost to join?', a: 'There is a one-time signup fee of $29.99 plus a monthly subscription of $9.99 to access the full platform.' },
-  { q: 'How do I get paid?', a: 'Commissions are deposited directly into your bank account via Stripe Connect within 2-3 business days of job completion.' },
-  { q: 'What trades are supported?', a: 'We support all major trade categories including Landscaping, Roofing, HVAC, Plumbing, Electrical, Painting, Carpentry, Flooring, Masonry, Cleaning, Pressure Washing, Junk Removal, Window Installation, Siding, Clearing, General Contracting, Welding, Drywall Installation, Barber, Cosmetologist, and Esthetician.' },
-  { q: 'Can I both refer and claim jobs?', a: 'Absolutely! You can post referral jobs for leads you can\'t handle, and claim jobs from other contractors that match your skills.' },
-];
+function getFAQ(commissionPct: number) {
+  return [
+    { q: 'How does the referral commission work?', a: `When you refer a job and another contractor completes it, you earn ${commissionPct}% of the job's total value. Payment is processed automatically through Stripe.` },
+    { q: 'What does it cost to join?', a: 'There is a one-time signup fee of $29.99 plus a monthly subscription of $9.99 to access the full platform.' },
+    { q: 'How do I get paid?', a: 'Commissions are deposited directly into your bank account via Stripe Connect within 2-3 business days of job completion.' },
+    { q: 'What trades are supported?', a: 'We support all major trade categories including Landscaping, Roofing, HVAC, Plumbing, Electrical, Painting, Carpentry, Flooring, Masonry, Cleaning, Pressure Washing, Junk Removal, Window Installation, Siding, Clearing, General Contracting, Welding, Drywall Installation, Barber, Cosmetologist, and Esthetician.' },
+    { q: 'Can I both refer and claim jobs?', a: 'Absolutely! You can post referral jobs for leads you can\'t handle, and claim jobs from other contractors that match your skills.' },
+  ];
+}
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -56,15 +61,16 @@ const fadeUp: Variants = {
 };
 
 export default function HomePage() {
+  const { commissionPct } = usePlatformSettings();
   return (
     <>
       <Navbar />
       <main>
-        <HeroSection />
-        <HowItWorksSection />
+        <HeroSection commission={commissionPct} />
+        <HowItWorksSection commission={commissionPct} />
         <TradeShowcase />
-        <FeaturesSection />
-        <FAQSection />
+        <FeaturesSection commission={commissionPct} />
+        <FAQSection commission={commissionPct} />
         <CTASection />
       </main>
       <Footer />
@@ -72,7 +78,7 @@ export default function HomePage() {
   );
 }
 
-function HeroSection() {
+function HeroSection({ commission }: { commission: number }) {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
       {/* Background glow */}
@@ -98,7 +104,7 @@ function HeroSection() {
           transition={{ delay: 0.15, duration: 0.7 }}
         >
           Refer a Job.{' '}
-          <span className="gradient-text">Earn 20%</span>{' '}
+          <span className="gradient-text">Earn {commission}%</span>{' '}
           Commission.
         </motion.h1>
 
@@ -135,7 +141,7 @@ function HeroSection() {
           transition={{ delay: 0.7, duration: 0.8 }}
         >
           {[
-            { value: '20%', label: 'Commission Rate' },
+            { value: `${commission}%`, label: 'Commission Rate' },
             { value: '$29.99', label: 'One-Time Signup' },
             { value: '10+', label: 'Trade Categories' },
           ].map((stat) => (
@@ -150,11 +156,11 @@ function HeroSection() {
   );
 }
 
-function HowItWorksSection() {
+function HowItWorksSection({ commission }: { commission: number }) {
   const steps = [
     { icon: Send, title: 'Post a Referral', desc: 'Got a lead you can\'t take? Post it as a referral with budget, trade type, and location.' },
     { icon: UserCheck, title: 'Another Contractor Claims It', desc: 'A qualified contractor in the right area claims the job and completes the work.' },
-    { icon: DollarSign, title: 'You Get Paid', desc: 'Once the job is marked complete, you earn a 20% commission — deposited directly to your bank.' },
+    { icon: DollarSign, title: 'You Get Paid', desc: `Once the job is marked complete, you earn a ${commission}% commission — deposited directly to your bank.` },
   ];
 
   return (
@@ -233,7 +239,7 @@ function TradeShowcase() {
   );
 }
 
-function FeaturesSection() {
+function FeaturesSection({ commission }: { commission: number }) {
   return (
     <section className="section bg-navy-950">
       <div className="container-wide">
@@ -247,7 +253,7 @@ function FeaturesSection() {
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {FEATURES.map((feat, i) => {
+          {getFeatures(commission).map((feat, i) => {
             const Icon = feat.icon;
             return (
               <motion.div
@@ -275,7 +281,7 @@ function FeaturesSection() {
   );
 }
 
-function FAQSection() {
+function FAQSection({ commission }: { commission: number }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -288,7 +294,7 @@ function FAQSection() {
         </motion.div>
 
         <div className="space-y-3">
-          {FAQ.map((item, i) => (
+          {getFAQ(commission).map((item, i) => (
             <motion.div
               key={i}
               className="glass-card overflow-hidden"

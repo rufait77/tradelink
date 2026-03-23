@@ -1,5 +1,7 @@
+'use client';
 import Link from 'next/link';
 import { Zap } from 'lucide-react';
+import { usePlatformSettings } from '../../lib/useSettings';
 
 const FOOTER_LINKS = {
   Product: [
@@ -26,6 +28,7 @@ const FOOTER_LINKS = {
 };
 
 export function Footer() {
+  const { commissionPct } = usePlatformSettings();
   return (
     <footer className="border-t border-surface-border/30 bg-navy-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -39,7 +42,7 @@ export function Footer() {
               <span className="text-lg font-heading font-bold text-white">Tradelink</span>
             </Link>
             <p className="text-sm text-surface-muted leading-relaxed">
-              The contractor referral platform that pays. Earn 20% commission on every completed job you refer.
+              The contractor referral platform that pays. Earn {commissionPct}% commission on every completed job you refer.
             </p>
           </div>
 

@@ -1,8 +1,10 @@
 'use client';
 import { Zap } from 'lucide-react';
 import Link from 'next/link';
+import { usePlatformSettings } from '../../lib/useSettings';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const { commissionPct, signupFee } = usePlatformSettings();
   return (
     <div className="min-h-screen bg-navy-950 flex">
       {/* Left panel — branding */}
@@ -23,14 +25,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <span className="gradient-text">Passive Income</span>
           </h2>
           <p className="text-surface-muted text-lg leading-relaxed">
-            The contractor referral platform that pays you 20% commission on every completed job.
+            The contractor referral platform that pays you {commissionPct}% commission on every completed job.
           </p>
         </div>
 
         <div className="relative z-10 grid grid-cols-3 gap-6">
           {[
-            { value: '20%', label: 'Commission' },
-            { value: '$29.99', label: 'Signup Fee' },
+            { value: `${commissionPct}%`, label: 'Commission' },
+            { value: `$${signupFee}`, label: 'Signup Fee' },
             { value: '10+', label: 'Trade Types' },
           ].map((stat) => (
             <div key={stat.label}>

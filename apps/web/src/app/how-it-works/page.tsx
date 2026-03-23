@@ -5,6 +5,7 @@ import { motion, type Variants } from 'framer-motion';
 import { Send, UserCheck, DollarSign, FileText, CreditCard, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '../../components/ui/button';
+import { usePlatformSettings } from '../../lib/useSettings';
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -14,35 +15,40 @@ const fadeUp: Variants = {
   }),
 };
 
-const STEPS = [
-  {
-    icon: FileText, step: '01', title: 'Create Your Account',
-    desc: 'Sign up with your email, pay the one-time $29.99 signup fee, and verify your email address.',
-    details: ['Complete contractor profile', 'Select your trade specialties', 'Set your service area'],
-  },
-  {
-    icon: CreditCard, step: '02', title: 'Activate Subscription',
-    desc: 'Subscribe for $9.99/month to unlock full access to the job board and referral platform.',
-    details: ['Access entire job board', 'Post unlimited referrals', 'Connect your bank via Stripe'],
-  },
-  {
-    icon: Send, step: '03', title: 'Post a Referral',
-    desc: 'Got a lead you can\'t take? Post it with budget, trade type, location, and any client notes.',
-    details: ['Set budget range', 'Choose trade category', 'Add client details'],
-  },
-  {
-    icon: UserCheck, step: '04', title: 'Contractor Claims the Job',
-    desc: 'A qualified contractor in the area sees your referral, claims it, and starts the work.',
-    details: ['Verified contractors only', 'Real-time notifications', 'In-app messaging'],
-  },
-  {
-    icon: DollarSign, step: '05', title: 'Get Paid Automatically',
-    desc: 'When the job is marked complete, you receive a 20% commission deposited straight to your bank.',
-    details: ['2-3 day bank deposit', 'Track all earnings', 'Commission history dashboard'],
-  },
-];
+function getSteps(commissionPct: number, signupFee: string, subscriptionFee: string) {
+  return [
+    {
+      icon: FileText, step: '01', title: 'Create Your Account',
+      desc: `Sign up with your email, pay the one-time $${signupFee} signup fee, and verify your email address.`,
+      details: ['Complete contractor profile', 'Select your trade specialties', 'Set your service area'],
+    },
+    {
+      icon: CreditCard, step: '02', title: 'Activate Subscription',
+      desc: `Subscribe for $${subscriptionFee}/month to unlock full access to the job board and referral platform.`,
+      details: ['Access entire job board', 'Post unlimited referrals', 'Connect your bank via Stripe'],
+    },
+    {
+      icon: Send, step: '03', title: 'Post a Referral',
+      desc: 'Got a lead you can\'t take? Post it with budget, trade type, location, and any client notes.',
+      details: ['Set budget range', 'Choose trade category', 'Add client details'],
+    },
+    {
+      icon: UserCheck, step: '04', title: 'Contractor Claims the Job',
+      desc: 'A qualified contractor in the area sees your referral, claims it, and starts the work.',
+      details: ['Verified contractors only', 'Real-time notifications', 'In-app messaging'],
+    },
+    {
+      icon: DollarSign, step: '05', title: 'Get Paid Automatically',
+      desc: `When the job is marked complete, you receive a ${commissionPct}% commission deposited straight to your bank.`,
+      details: ['2-3 day bank deposit', 'Track all earnings', 'Commission history dashboard'],
+    },
+  ];
+}
 
 export default function HowItWorksPage() {
+  const { commissionPct, signupFee, subscriptionFee } = usePlatformSettings();
+  const STEPS = getSteps(commissionPct, signupFee, subscriptionFee);
+
   return (
     <>
       <Navbar />
