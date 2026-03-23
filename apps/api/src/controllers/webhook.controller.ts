@@ -5,7 +5,6 @@ import { stripe } from '../config/stripe';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
 import { sendCommissionPaidEmail, sendJobClaimedEmail, sendJobCompletedEmail } from '../services/email.service';
-import { commissionQueue } from './payments.controller';
 
 // ─── POST /webhooks/stripe ────────────────────────────────────────────────────
 
@@ -227,64 +226,3 @@ export async function stripeWebhook(req: Request, res: Response, next: NextFunct
   }
 }
 
-// ─── Commission payout queue processor ───────────────────────────────────────
-
-async function sendSubscriptionConfirmEmail(email: string, name: string, amount: string, nextDate: string) {
-  const { sendSubscriptionConfirmEmail: send } = await import('../services/email.service');
-  return send(email, name, amount, nextDate);
-}
-
-commissionQueue.process(async (job) => {
-  const { jobId, referrerId, amount } = job.data as { jobId: string; referrerId: string; amount: number };
-
-  const referrer = await prisma.user.findUnique({ where: { id: referrerId } });
-  if (!referrer?.stripeConnectId) {
-    throw new Error(`Referrer ${referrerId} has no Stripe Connect account`);
-  }
-
-  // Transfer commission to referrer's Connect account
-  const transfer = await stripe.transfers.create({
-    amount: Math.round(amount * 100),
-    currency: 'usd',
-    destination: referrer.stripeConnectId,
-    metadata: { jobId, referrerId },
-  });
-
-  // Update commission record
-  const commission = await prisma.commission.findUnique({ where: { jobId } });
-  if (commission) {
-    await prisma.commission.update({
-      where: { id: commission.id },
-      data: { status: 'paid', stripeTransferId: transfer.id, paidAt: new Date() },
-    });
-
-    // Update referrer total earned
-    await prisma.contractorProfile.updateMany({
-      where: { userId: referrerId },
-      data: { totalEarned: { increment: amount } },
-    });
-  }
-
-  // Get the job title for email
-  const jobRecord = await prisma.job.findUnique({ where: { id: jobId } });
-
-  // Send commission paid email
-  await sendCommissionPaidEmail(referrer.email, referrer.name, amount.toFixed(2), jobRecord?.title ?? 'Job');
-
-  // Send in-app notification
-  await prisma.notification.create({
-    data: {
-      userId: referrerId,
-      type: 'commission_paid',
-      title: 'Commission Paid! 💸',
-      message: `Your $${amount.toFixed(2)} commission for "${jobRecord?.title}" has been paid out.`,
-      link: '/dashboard/earnings',
-    },
-  });
-
-  logger.info(`Commission payout successful: $${amount} to ${referrerId} for job ${jobId}`);
-});
-
-commissionQueue.on('failed', (job, err) => {
-  logger.error(`Commission queue job failed for jobId ${job.data.jobId}:`, err);
-});

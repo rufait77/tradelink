@@ -294,6 +294,7 @@ export async function confirmCompletion(req: ClientRequest, res: Response, next:
       }
 
       // Mark as released and update all records
+      const refereeHasConnect = !!escrow.job.postedBy?.stripeConnectId;
       await prisma.$transaction([
         prisma.escrowPayment.update({
           where: { id: escrow.id },
@@ -308,8 +309,8 @@ export async function confirmCompletion(req: ClientRequest, res: Response, next:
             jobId: job.id,
             referrerId: job.postedById,
             amount: escrow.commissionAmount,
-            status: 'paid',
-            paidAt: new Date(),
+            status: refereeHasConnect ? 'paid' : 'pending',
+            paidAt: refereeHasConnect ? new Date() : undefined,
           },
         }),
         // Update contractor stats
@@ -322,11 +323,13 @@ export async function confirmCompletion(req: ClientRequest, res: Response, next:
             },
           }),
         ] : []),
-        // Update referee stats
-        prisma.contractorProfile.update({
-          where: { userId: job.postedById },
-          data: { totalEarned: { increment: escrow.commissionAmount } },
-        }),
+        // Update referee stats — only increment if commission was paid directly
+        ...(refereeHasConnect ? [
+          prisma.contractorProfile.update({
+            where: { userId: job.postedById },
+            data: { totalEarned: { increment: escrow.commissionAmount } },
+          }),
+        ] : []),
       ]);
     } else {
       // No escrow — just update job status

@@ -9,6 +9,7 @@ import { EmptyState } from '../../../components/ui/empty-state';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
 import { formatCurrency, formatRelativeTime } from '../../../lib/utils';
+import { usePlatformSettings } from '../../../lib/useSettings';
 import {
   Send, MapPin, Clock, ChevronLeft, ChevronRight, Plus,
   Users, DollarSign, User, CheckCircle2, AlertTriangle,
@@ -52,6 +53,7 @@ interface Job {
 
 export default function MyReferralsPage() {
   const router = useRouter();
+  const { commissionPct } = usePlatformSettings();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -85,7 +87,7 @@ export default function MyReferralsPage() {
   const completedCount = jobs.filter((j) => ['Completed', 'ClientConfirmed'].includes(j.status)).length;
   const totalEarnings = jobs
     .filter((j) => ['Completed', 'ClientConfirmed'].includes(j.status))
-    .reduce((sum, j) => sum + ((j.estimatedValue || ((j.budgetMin + j.budgetMax) / 2)) * 0.20), 0);
+    .reduce((sum, j) => sum + ((j.estimatedValue || ((j.budgetMin + j.budgetMax) / 2)) * (commissionPct / 100)), 0);
 
   return (
     <div className="space-y-6">
@@ -147,7 +149,7 @@ export default function MyReferralsPage() {
           {filteredJobs.map((job) => {
             const interestCount = job._count?.interests ?? 0;
             const displayValue = job.estimatedValue || ((job.budgetMin + job.budgetMax) / 2);
-            const commission = displayValue * 0.20;
+            const commission = displayValue * (commissionPct / 100);
 
             return (
               <Link key={job.id} href={`/dashboard/jobs/${job.id}`}>

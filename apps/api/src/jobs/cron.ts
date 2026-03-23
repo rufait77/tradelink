@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma';
 import { logger } from '../config/logger';
+import { commissionQueue } from '../controllers/payments.controller';
 
 // ─── Intervals ────────────────────────────────────────────────────────────────
 const ONE_HOUR = 60 * 60 * 1000;
@@ -269,7 +270,7 @@ async function autoReleaseEscrow() {
       },
       include: {
         escrow: true,
-        postedBy: { select: { id: true, name: true } },
+        postedBy: { select: { id: true, name: true, stripeConnectId: true } },
         claimedBy: { select: { id: true, name: true } },
       },
     });
@@ -277,6 +278,7 @@ async function autoReleaseEscrow() {
     for (const job of autoReleaseJobs) {
       if (job.escrow && job.escrow.status === 'funded') {
         // Auto-confirm and release
+        const refereeHasConnect = !!job.postedBy?.stripeConnectId;
         await prisma.$transaction([
           prisma.job.update({
             where: { id: job.id },
@@ -295,20 +297,32 @@ async function autoReleaseEscrow() {
               },
             }),
           ] : []),
-          prisma.contractorProfile.update({
-            where: { userId: job.postedById },
-            data: { totalEarned: { increment: job.escrow.commissionAmount } },
-          }),
+          // Commission — mark paid only if referee has Connect
           prisma.commission.create({
             data: {
               jobId: job.id,
               referrerId: job.postedById,
               amount: job.escrow.commissionAmount,
-              status: 'paid',
-              paidAt: now,
+              status: refereeHasConnect ? 'paid' : 'pending',
+              paidAt: refereeHasConnect ? now : undefined,
             },
           }),
+          // Referee totalEarned — only increment if paid directly
+          ...(refereeHasConnect ? [
+            prisma.contractorProfile.update({
+              where: { userId: job.postedById },
+              data: { totalEarned: { increment: job.escrow.commissionAmount } },
+            }),
+          ] : []),
         ]);
+
+        // Queue commission payout for referees without Connect
+        if (!refereeHasConnect) {
+          await commissionQueue.add(
+            { jobId: job.id, referrerId: job.postedById, amount: job.escrow.commissionAmount },
+            { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+          );
+        }
 
         // Notify both parties
         const notifications = [];

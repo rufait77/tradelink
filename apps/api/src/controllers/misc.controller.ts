@@ -136,48 +136,62 @@ export async function getEarningsSummary(req: AuthRequest, res: Response, next: 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [profile, paidTotal, pendingCommissions, thisMonth, escrowPending, escrowContractorPending] = await Promise.all([
+    const [
+      profile,
+      paidCommissions,
+      releasedPayouts,
+      thisMonthCommissions,
+      thisMonthPayouts,
+      escrowPendingCommission,
+      escrowPendingPayout,
+    ] = await Promise.all([
       prisma.contractorProfile.findUnique({ where: { userId } }),
-      // Commission-based earned (referee role)
+      // Paid referral commissions (as referee)
       prisma.commission.aggregate({
         where: { referrerId: userId, status: 'paid' },
         _sum: { amount: true },
       }),
-      // Commissions still pending
-      prisma.commission.aggregate({
-        where: { referrerId: userId, status: 'pending' },
-        _sum: { amount: true },
+      // Released contractor payouts (as hired contractor)
+      prisma.escrowPayment.aggregate({
+        where: { status: 'released', job: { claimedById: userId } },
+        _sum: { contractorAmount: true },
       }),
-      // This month's paid commissions
+      // This month's paid commissions (as referee)
       prisma.commission.aggregate({
         where: { referrerId: userId, status: 'paid', paidAt: { gte: startOfMonth } },
         _sum: { amount: true },
       }),
-      // Escrow funds held for jobs this user referred (pending commission from escrow)
+      // This month's released payouts (as contractor)
+      prisma.escrowPayment.aggregate({
+        where: { status: 'released', releasedAt: { gte: startOfMonth }, job: { claimedById: userId } },
+        _sum: { contractorAmount: true },
+      }),
+      // Pending: escrow held for jobs this user referred (commission portion)
       prisma.escrowPayment.aggregate({
         where: { status: 'funded', job: { postedById: userId } },
         _sum: { commissionAmount: true },
       }),
-      // Escrow funds held for jobs this user is the contractor on (pending payout)
+      // Pending: escrow held for jobs this user is working on (contractor portion)
       prisma.escrowPayment.aggregate({
         where: { status: 'funded', job: { claimedById: userId } },
         _sum: { contractorAmount: true },
       }),
     ]);
 
-    // Total earned includes actual paid commissions + contractor payouts from profile
-    const totalEarned = (paidTotal._sum.amount ?? 0) + (profile?.totalEarned ?? 0);
-    // Pending includes pending commissions + escrow-held amounts
-    const pending = (pendingCommissions._sum.amount ?? 0) +
-      (escrowPending._sum.commissionAmount ?? 0) +
-      (escrowContractorPending._sum.contractorAmount ?? 0);
+    // Total earned: paid commissions (referee) + released contractor payouts — no double-counting
+    const totalEarned = (paidCommissions._sum.amount ?? 0) + (releasedPayouts._sum.contractorAmount ?? 0);
+    // Pending: only escrow-held amounts (no Commission table to avoid overlap)
+    const pending = (escrowPendingCommission._sum.commissionAmount ?? 0) +
+      (escrowPendingPayout._sum.contractorAmount ?? 0);
+    // This month: commissions + payouts released this month
+    const thisMonth = (thisMonthCommissions._sum.amount ?? 0) + (thisMonthPayouts._sum.contractorAmount ?? 0);
 
     res.json({
       success: true,
       data: {
         totalEarned,
         pending,
-        thisMonth: thisMonth._sum.amount ?? 0,
+        thisMonth,
         totalReferrals: profile?.totalReferrals ?? 0,
         totalJobsCompleted: profile?.totalJobsCompleted ?? 0,
         avgRating: profile?.avgRating ?? 0,

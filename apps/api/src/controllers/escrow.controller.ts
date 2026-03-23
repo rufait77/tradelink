@@ -187,6 +187,7 @@ export async function releaseEscrow(req: AuthRequest, res: Response, next: NextF
     }
 
     // Mark as released
+    const refereeHasConnect = !!job.postedBy?.stripeConnectId;
     await prisma.$transaction([
       prisma.escrowPayment.update({
         where: { id: escrowId },
@@ -196,14 +197,14 @@ export async function releaseEscrow(req: AuthRequest, res: Response, next: NextF
         where: { id: job.id },
         data: { status: 'Completed' },
       }),
-      // Create commission record
+      // Create commission record — only mark 'paid' if referee has Connect (transfer already sent)
       prisma.commission.create({
         data: {
           jobId: job.id,
           referrerId: job.postedById,
           amount: escrow.commissionAmount,
-          status: 'paid',
-          paidAt: new Date(),
+          status: refereeHasConnect ? 'paid' : 'pending',
+          paidAt: refereeHasConnect ? new Date() : undefined,
         },
       }),
       // Update contractor stats
@@ -214,11 +215,13 @@ export async function releaseEscrow(req: AuthRequest, res: Response, next: NextF
           totalJobsCompleted: { increment: 1 },
         },
       }),
-      // Update referee stats
-      prisma.contractorProfile.update({
-        where: { userId: job.postedById },
-        data: { totalEarned: { increment: escrow.commissionAmount } },
-      }),
+      // Update referee stats — only increment if commission was paid directly
+      ...(refereeHasConnect ? [
+        prisma.contractorProfile.update({
+          where: { userId: job.postedById },
+          data: { totalEarned: { increment: escrow.commissionAmount } },
+        }),
+      ] : []),
     ]);
 
     // Notify contractor and referee
