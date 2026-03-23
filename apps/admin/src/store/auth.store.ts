@@ -26,13 +26,10 @@ export const useAuthStore = create<AuthStore>()(
       login: async (email, password) => {
         const res = await api.post('/admin/auth/login', { email, password });
         const { accessToken, admin } = res.data.data;
-        localStorage.setItem('admin_token', accessToken);
         set({ admin, token: accessToken });
       },
 
       logout: () => {
-        localStorage.removeItem('admin_token');
-        localStorage.removeItem('admin_user');
         set({ admin: null, token: null });
       },
 
