@@ -79,7 +79,7 @@ npm run type-check
 **Platform**: Notification (30+ types), PlatformSetting, AuditLog, Review
 
 ### Key Enums
-- **TradeType**: 22 values (Landscaping, Roofing, HVAC, Plumbing, Electrical, Painting, Carpentry, Flooring, Masonry, Cleaning, PressureWashing, JunkRemoval, WindowInstallation, Siding, Clearing, GeneralContracting, Welding, Drywall, Barber, Cosmetologist, Esthetician, Other)
+- **TradeType**: 22 values (Landscaping, Roofing, HVAC, Plumbing, Electrical, Painting, Carpentry, Flooring, Masonry, Cleaning, PressureWashing, JunkRemoval, WindowInstallation, Siding, Clearing, GeneralContracting, Welding, Drywall, Barber, Cosmetology, Esthetician, Other)
 - **JobStatus**: Open → InterestClosed → Assigned → QuoteSent → QuoteApproved → EscrowFunded → InProgress → ContractorDone → ClientConfirmed → Completed (+ Disputed, Cancelled, Expired)
 - **EscrowStatus**: pending, funded, released, refunded, disputed
 

@@ -34,7 +34,7 @@ export const TRADE_TYPES = [
   'Clearing',
   'GeneralContracting',
   'Barber',
-  'Cosmetologist',
+  'Cosmetology',
   'Esthetician',
   'Other',
 ] as const;
@@ -60,7 +60,7 @@ export const TRADE_TYPE_LABELS: Record<TradeType, string> = {
   Clearing: 'Clearing',
   GeneralContracting: 'General Contracting',
   Barber: 'Barber',
-  Cosmetologist: 'Cosmetologist',
+  Cosmetology: 'Cosmetology',
   Esthetician: 'Esthetician',
   Other: 'Other',
 };

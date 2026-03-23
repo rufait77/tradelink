@@ -169,7 +169,7 @@ async function main() {
     update: {},
     create: {
       userId: contractor3.id,
-      tradeTypes: ['Barber', 'Cosmetologist'],
+      tradeTypes: ['Barber', 'Cosmetology'],
       bio: 'Professional barber and cosmetologist serving the Miami area for 8 years.',
       licenseNumber: 'FL-COS-67890',
       streetAddress: '456 Palm Ave',
@@ -181,7 +181,7 @@ async function main() {
     },
   });
 
-  console.log('  ✓ Contractor: Mike Williams (mike@test.com) — fully onboarded, Barber + Cosmetologist');
+  console.log('  ✓ Contractor: Mike Williams (mike@test.com) — fully onboarded, Barber + Cosmetology');
   console.log('\n  📋 All test passwords: Test@1234');
 
   console.log('\n✅ Seed complete!');

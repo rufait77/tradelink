@@ -37,7 +37,7 @@ enum TradeType {
   Welding
   Drywall
   Barber
-  Cosmetologist
+  Cosmetology
   Esthetician
   Other
 }
