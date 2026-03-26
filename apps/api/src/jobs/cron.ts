@@ -374,6 +374,16 @@ async function autoReleaseEscrow() {
         await prisma.notification.createMany({ data: reviewPrompts });
 
         logger.info(`[AutoRelease] Auto-released escrow for job "${job.title}" ($${job.escrow.totalAmount})`);
+        // Admin notification
+        import('../services/email.service').then(({ sendAdminNotificationEmail }) =>
+          sendAdminNotificationEmail('Escrow Auto-Released', {
+            Job: job.title,
+            'Total Amount': `$${job.escrow!.totalAmount.toFixed(2)}`,
+            Contractor: job.claimedBy?.name ?? 'N/A',
+            Referee: job.postedBy?.name ?? 'N/A',
+            Reason: 'Client did not respond within 5 days',
+          }).catch(() => {})
+        );
       }
     }
   } catch (err) {

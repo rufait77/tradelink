@@ -42,8 +42,8 @@ export async function subscriptionGate(req: AuthRequest, _res: Response, next: N
       return next(new AppError(msg, 403, 'ACCOUNT_SUSPENDED'));
     }
 
-    // 3. Check active subscription
-    if (!user.subscription || user.subscription.status !== 'active') {
+    // 3. Check active subscription (active or trialing both allowed)
+    if (!user.subscription || !['active', 'trialing'].includes(user.subscription.status)) {
       return next(new AppError(
         'An active subscription is required to perform this action. Please subscribe first.',
         403, 'SUBSCRIPTION_REQUIRED',

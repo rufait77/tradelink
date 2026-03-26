@@ -463,3 +463,37 @@ export async function sendClientPaymentEmail(
   return sendEmail({ to, subject: `Pay securely for "${jobTitle}" — $${amount}`, html: baseTemplate(content, 'Secure escrow payment for your job') });
 }
 
+// ─── Admin Notification Email ────────────────────────────────────────────────
+// Fire-and-forget admin alerts for key platform events.
+// Does nothing if admin_notification_email is not set.
+
+export async function sendAdminNotificationEmail(
+  event: string,
+  details: Record<string, string>,
+) {
+  try {
+    const { getSetting } = await import('./settings.service');
+    const adminEmail = await getSetting('admin_notification_email');
+    if (!adminEmail) return; // no-op if not configured
+
+    const rows = Object.entries(details)
+      .map(([k, v]) => `<tr><td style="color:#64748b;font-size:13px;padding:6px 12px;border-bottom:1px solid #1e293b;">${k}</td><td style="color:#f1f5f9;font-size:13px;padding:6px 12px;border-bottom:1px solid #1e293b;">${v}</td></tr>`)
+      .join('');
+
+    const content = `
+      ${headingStyle(`Admin Alert: ${event}`)}
+      ${paraStyle(`A platform event has occurred that requires your attention.`)}
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;background:#0f172a;border-radius:12px;border:1px solid #1e293b;">
+        ${rows}
+      </table>
+      ${btnStyle(`${env.ADMIN_URL}/dashboard`, 'Open Admin Panel →')}
+      ${dividerStyle()}
+      <p style="margin:0;font-size:12px;color:#64748b;">This is an automated notification from Tradelink.</p>`;
+
+    await sendEmail({ to: adminEmail, subject: `[Tradelink Admin] ${event}`, html: baseTemplate(content, `Admin alert: ${event}`) });
+  } catch (err) {
+    logger.error(`Failed to send admin notification (${event}):`, err);
+    // Silently fail — admin notifications should never block operations
+  }
+}
+

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import api from '../../../lib/api';
 import { Save, Loader2 } from 'lucide-react';
 
-interface SettingDef { key: string; label: string; description: string; type: 'number' | 'boolean' }
+interface SettingDef { key: string; label: string; description: string; type: 'number' | 'boolean' | 'text' }
 
 const SETTING_DEFS: SettingDef[] = [
   { key: 'signup_fee', label: 'Signup Fee ($)', description: 'One-time fee for contractors to register', type: 'number' },
@@ -13,6 +13,7 @@ const SETTING_DEFS: SettingDef[] = [
   { key: 'min_job_budget', label: 'Min Job Budget ($)', description: 'Minimum budget a job can be posted with', type: 'number' },
   { key: 'max_job_budget', label: 'Max Job Budget ($)', description: 'Maximum budget a job can be posted with', type: 'number' },
   { key: 'job_expiry_days', label: 'Job Expiry (days)', description: 'Days before an open job automatically expires', type: 'number' },
+  { key: 'admin_notification_email', label: 'Admin Notification Email', description: 'Receives alerts for signups, payments, jobs, disputes', type: 'text' },
   { key: 'developer_mode', label: 'Developer Mode', description: 'When ON — all payments bypassed for testing', type: 'boolean' },
 ];
 
@@ -79,16 +80,27 @@ export default function SettingsPage() {
               {type === 'boolean' ? (
                 /* Toggle switch */
                 <button
+                  type="button"
+                  aria-label={`Toggle ${label}`}
                   onClick={() => setSettings(s => ({ ...s, [key]: s[key] === 'true' ? 'false' : 'true' }))}
                   className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${settings[key] === 'true' ? 'bg-amber-500' : 'bg-slate-700'}`}
                 >
                   <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${settings[key] === 'true' ? 'left-7' : 'left-1'}`} />
                 </button>
+              ) : type === 'text' ? (
+                <input
+                  type="text"
+                  placeholder={description}
+                  value={settings[key] ?? ''}
+                  onChange={(e) => setSettings(s => ({ ...s, [key]: e.target.value }))}
+                  className="w-72 bg-[#0a1628] border border-slate-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-amber-500 text-sm"
+                />
               ) : (
                 <input
                   type="number"
                   min={0}
-                  step={type === 'number' ? 0.01 : 1}
+                  step={0.01}
+                  placeholder={label}
                   value={settings[key] ?? ''}
                   onChange={(e) => setSettings(s => ({ ...s, [key]: e.target.value }))}
                   className="w-32 text-right bg-[#0a1628] border border-slate-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-amber-500"

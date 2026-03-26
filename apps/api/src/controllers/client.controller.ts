@@ -502,6 +502,15 @@ export async function raiseDispute(req: ClientRequest, res: Response, next: Next
       ).catch(() => {});
     }
 
+    // Admin notification
+    import('../services/email.service').then(({ sendAdminNotificationEmail }) =>
+      sendAdminNotificationEmail('Dispute Raised', {
+        Job: job.title,
+        'Raised By': 'Client',
+        Reason: reason,
+      }).catch(() => {})
+    );
+
     res.status(201).json({ success: true, data: { dispute, message: 'Dispute filed. An admin will review your case within 48 hours.' } });
   } catch (err) {
     next(err);

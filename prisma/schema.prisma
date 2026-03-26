@@ -39,6 +39,7 @@ enum TradeType {
   Barber
   Cosmetology
   Esthetician
+  AutoMechanics
   Other
 }
 

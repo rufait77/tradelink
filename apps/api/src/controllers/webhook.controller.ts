@@ -4,7 +4,7 @@ import { prisma } from '../config/prisma';
 import { stripe } from '../config/stripe';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
-import { sendCommissionPaidEmail, sendJobClaimedEmail, sendJobCompletedEmail } from '../services/email.service';
+import { sendCommissionPaidEmail, sendJobClaimedEmail, sendJobCompletedEmail, sendAdminNotificationEmail } from '../services/email.service';
 
 // ─── POST /webhooks/stripe ────────────────────────────────────────────────────
 
@@ -42,6 +42,12 @@ export async function stripeWebhook(req: Request, res: Response, next: NextFunct
             data: { isActive: true },
           });
           logger.info(`Account activated for user ${pi.metadata.userId}`);
+          const signupUser = await prisma.user.findUnique({ where: { id: pi.metadata.userId } });
+          sendAdminNotificationEmail('Signup Fee Paid', {
+            User: signupUser?.name ?? 'Unknown',
+            Email: signupUser?.email ?? '',
+            Amount: `$${(pi.amount / 100).toFixed(2)}`,
+          }).catch(() => {});
         }
         break;
       }
@@ -78,6 +84,12 @@ export async function stripeWebhook(req: Request, res: Response, next: NextFunct
           const amount = (invoice.amount_paid / 100).toFixed(2);
           const nextDate = new Date(stripeSub.current_period_end * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
           await sendSubscriptionConfirmEmail(user.email, user.name, amount, nextDate);
+          sendAdminNotificationEmail('Subscription Payment', {
+            User: user.name,
+            Email: user.email,
+            Amount: `$${amount}`,
+            'Next Billing': nextDate,
+          }).catch(() => {});
         }
         break;
       }
@@ -210,6 +222,12 @@ export async function stripeWebhook(req: Request, res: Response, next: NextFunct
             });
 
             logger.info(`[Webhook] Escrow funded for job ${jobId}: $${escrow.totalAmount}`);
+            sendAdminNotificationEmail('Escrow Funded (Client Paid)', {
+              Job: job.title,
+              Amount: `$${escrow.totalAmount.toFixed(2)}`,
+              Contractor: job.claimedBy?.name ?? 'N/A',
+              Referee: job.postedBy?.name ?? 'N/A',
+            }).catch(() => {});
           }
         }
         break;

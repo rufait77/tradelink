@@ -31,6 +31,7 @@ const TRADE_CATEGORIES = [
   { name: 'Barber', icon: '💈' },
   { name: 'Cosmetology', icon: '💅' },
   { name: 'Esthetician', icon: '✨' },
+  { name: 'Auto Mechanics', icon: '🔧' },
 ];
 
 function getFeatures(commissionPct: number) {
@@ -42,10 +43,10 @@ function getFeatures(commissionPct: number) {
   ];
 }
 
-function getFAQ(commissionPct: number) {
+function getFAQ(commissionPct: number, signupFee: string, subscriptionFee: string) {
   return [
     { q: 'How does the referral commission work?', a: `When you refer a job and another contractor completes it, you earn ${commissionPct}% of the job's total value. Payment is processed automatically through Stripe.` },
-    { q: 'What does it cost to join?', a: 'There is a one-time signup fee of $29.99 plus a monthly subscription of $9.99 to access the full platform.' },
+    { q: 'What does it cost to join?', a: `There is a one-time signup fee of $${signupFee} plus a monthly subscription of $${subscriptionFee}/mo to access the full platform. First month is free!` },
     { q: 'How do I get paid?', a: 'Commissions are deposited directly into your bank account via Stripe Connect within 2-3 business days of job completion.' },
     { q: 'What trades are supported?', a: 'We support all major trade categories including Landscaping, Roofing, HVAC, Plumbing, Electrical, Painting, Carpentry, Flooring, Masonry, Cleaning, Pressure Washing, Junk Removal, Window Installation, Siding, Clearing, General Contracting, Welding, Drywall Installation, Barber, Cosmetology, and Esthetician.' },
     { q: 'Can I both refer and claim jobs?', a: 'Absolutely! You can post referral jobs for leads you can\'t handle, and claim jobs from other contractors that match your skills.' },
@@ -61,16 +62,16 @@ const fadeUp: Variants = {
 };
 
 export default function HomePage() {
-  const { commissionPct } = usePlatformSettings();
+  const { commissionPct, signupFee, subscriptionFee } = usePlatformSettings();
   return (
     <>
       <Navbar />
       <main>
-        <HeroSection commission={commissionPct} />
+        <HeroSection commission={commissionPct} signupFee={signupFee} />
         <HowItWorksSection commission={commissionPct} />
         <TradeShowcase />
         <FeaturesSection commission={commissionPct} />
-        <FAQSection commission={commissionPct} />
+        <FAQSection commission={commissionPct} signupFee={signupFee} subscriptionFee={subscriptionFee} />
         <CTASection />
       </main>
       <Footer />
@@ -78,7 +79,7 @@ export default function HomePage() {
   );
 }
 
-function HeroSection({ commission }: { commission: number }) {
+function HeroSection({ commission, signupFee }: { commission: number; signupFee: string }) {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
       {/* Background glow */}
@@ -142,7 +143,7 @@ function HeroSection({ commission }: { commission: number }) {
         >
           {[
             { value: `${commission}%`, label: 'Commission Rate' },
-            { value: '$29.99', label: 'One-Time Signup' },
+            { value: `$${signupFee}`, label: 'One-Time Signup' },
             { value: '10+', label: 'Trade Categories' },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
@@ -281,7 +282,7 @@ function FeaturesSection({ commission }: { commission: number }) {
   );
 }
 
-function FAQSection({ commission }: { commission: number }) {
+function FAQSection({ commission, signupFee, subscriptionFee }: { commission: number; signupFee: string; subscriptionFee: string }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -294,7 +295,7 @@ function FAQSection({ commission }: { commission: number }) {
         </motion.div>
 
         <div className="space-y-3">
-          {getFAQ(commission).map((item, i) => (
+          {getFAQ(commission, signupFee, subscriptionFee).map((item, i) => (
             <motion.div
               key={i}
               className="glass-card overflow-hidden"

@@ -264,6 +264,19 @@ export async function releaseEscrow(req: AuthRequest, res: Response, next: NextF
       ],
     });
 
+    // Admin notification
+    import('../services/email.service').then(({ sendAdminNotificationEmail }) =>
+      sendAdminNotificationEmail('Escrow Released', {
+        Job: job.title,
+        'Total Amount': `$${escrow.totalAmount.toFixed(2)}`,
+        'Contractor Payout': `$${escrow.contractorAmount.toFixed(2)}`,
+        'Referee Commission': `$${escrow.commissionAmount.toFixed(2)}`,
+        'Platform Fee': `$${escrow.platformFeeAmount.toFixed(2)}`,
+        Contractor: job.claimedBy?.name ?? 'N/A',
+        Referee: job.postedBy?.name ?? 'N/A',
+      }).catch(() => {})
+    );
+
     res.json({ success: true, data: { escrow: { ...escrow, status: 'released', releasedAt: new Date() } } });
   } catch (err) {
     next(err);

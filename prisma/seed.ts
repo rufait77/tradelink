@@ -55,6 +55,11 @@ async function main() {
         'When true, skips ALL payment requirements for contractors and customers — for testing only',
     },
     {
+      key: 'admin_notification_email',
+      value: '',
+      description: 'Email address that receives admin event notifications (signups, payments, disputes)',
+    },
+    {
       key: 'featured_trade_categories',
       value: JSON.stringify(['Landscaping', 'Roofing', 'HVAC', 'Plumbing', 'Electrical']),
       description: 'Ordered list of featured trade categories shown on landing page',

@@ -79,6 +79,16 @@ export async function createJob(req: AuthRequest, res: Response, next: NextFunct
       data: { totalReferrals: { increment: 1 } },
     });
 
+    // Admin notification
+    import('../services/email.service').then(({ sendAdminNotificationEmail }) =>
+      sendAdminNotificationEmail('New Job Posted', {
+        Title: job.title,
+        Trade: job.tradeType,
+        Budget: `$${job.budgetMin} – $${job.budgetMax}`,
+        'Posted By': req.user!.userId,
+      }).catch(() => {})
+    );
+
     res.status(201).json({ success: true, data: { job } });
   } catch (err) {
     next(err);

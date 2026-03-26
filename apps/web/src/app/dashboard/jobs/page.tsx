@@ -22,7 +22,7 @@ const RADIUS_OPTIONS = [
 
 const TRADE_OPTIONS = [
   { label: 'All Trades', value: '' },
-  ...['Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Welding','Drywall','Barber','Cosmetology','Esthetician','Other']
+  ...['Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Welding','Drywall','Barber','Cosmetology','Esthetician','AutoMechanics','Other']
     .map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t })),
 ];
 

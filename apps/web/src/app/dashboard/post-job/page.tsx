@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 const TRADE_OPTIONS = [
-  'Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Welding','Drywall','Barber','Cosmetology','Esthetician','Other',
+  'Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Welding','Drywall','Barber','Cosmetology','Esthetician','AutoMechanics','Other',
 ].map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t }));
 
 const URGENCY_OPTIONS = [

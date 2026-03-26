@@ -75,6 +75,13 @@ commissionQueue.process(async (job) => {
       });
 
       await sendCommissionPaidEmail(referrerUser.email, referrerUser.name, amount.toFixed(2), jobRecord?.title ?? 'Job');
+      // Admin notification
+      const { sendAdminNotificationEmail } = await import('../services/email.service');
+      sendAdminNotificationEmail('Commission Paid', {
+        Referee: referrerUser.name,
+        Amount: `$${amount.toFixed(2)}`,
+        Job: jobRecord?.title ?? 'Unknown',
+      }).catch(() => {});
     }
 
     logger.info(`[CommissionQueue] ✅ Payout completed: transfer=${transfer.id}, amount=$${amount}`);

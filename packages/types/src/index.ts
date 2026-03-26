@@ -36,6 +36,7 @@ export const TRADE_TYPES = [
   'Barber',
   'Cosmetology',
   'Esthetician',
+  'AutoMechanics',
   'Other',
 ] as const;
 
@@ -62,6 +63,7 @@ export const TRADE_TYPE_LABELS: Record<TradeType, string> = {
   Barber: 'Barber',
   Cosmetology: 'Cosmetology',
   Esthetician: 'Esthetician',
+  AutoMechanics: 'Auto Mechanics',
   Other: 'Other',
 };
 

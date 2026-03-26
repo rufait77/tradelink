@@ -10,6 +10,7 @@ import api from '../../../lib/api';
 import { formatDate } from '../../../lib/utils';
 import { CreditCard, Calendar, AlertTriangle, ExternalLink, CheckCircle2, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePlatformSettings } from '../../../lib/useSettings';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK || '');
 
@@ -33,6 +34,7 @@ interface SubData {
 function SubscribeForm({ onSuccess }: { onSuccess: () => void }) {
   const stripe = useStripe();
   const elements = useElements();
+  const { subscriptionFee } = usePlatformSettings();
   const [loading, setLoading] = useState(false);
 
   async function handleSubscribe(e: React.FormEvent) {
@@ -104,11 +106,8 @@ function SubscribeForm({ onSuccess }: { onSuccess: () => void }) {
           }}
         />
       </div>
-      <p className="text-xs text-surface-muted flex items-center gap-1">
-        <CreditCard className="w-3 h-3" /> Test card: 4242 4242 4242 4242 — any future date, any CVC
-      </p>
       <Button type="submit" loading={loading} disabled={!stripe} className="w-full">
-        Subscribe — $9.99/mo
+        Subscribe — First Month Free, then ${subscriptionFee}/mo
       </Button>
     </form>
   );

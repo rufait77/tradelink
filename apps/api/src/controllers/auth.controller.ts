@@ -121,6 +121,11 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       }
     }
 
+    // Notify admin
+    import('../services/email.service').then(({ sendAdminNotificationEmail }) =>
+      sendAdminNotificationEmail('New User Signup', { Name: name, Email: email }).catch(() => {})
+    );
+
     res.status(201).json({
       success: true,
       data: {
