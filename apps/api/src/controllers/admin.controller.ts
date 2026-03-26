@@ -69,6 +69,8 @@ export async function adminGetUsers(req: Request, res: Response, next: NextFunct
     const skip = (parseInt(page) - 1) * parseInt(pageSize);
 
     const where: any = {
+      // Exclude soft-deleted users (anonymized emails ending with @removed.tradelink)
+      NOT: { email: { endsWith: '@removed.tradelink' } },
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
