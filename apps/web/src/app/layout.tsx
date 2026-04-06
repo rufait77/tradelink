@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   description:
     'Tradelink is the contractor referral platform that pays you. Refer a job, earn 20% commission when it\'s completed. Built for US contractors.',
   keywords: ['contractor', 'referral', 'commission', 'landscaping', 'roofing', 'HVAC', 'plumbing'],
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
   openGraph: {
     title: 'Tradelink — Earn Commissions on Every Referral',
     description: 'The contractor referral platform that pays you 20% commission on every completed job.',
