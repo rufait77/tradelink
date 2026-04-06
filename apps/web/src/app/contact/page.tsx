@@ -6,6 +6,7 @@ import { Input } from '../../components/ui/input';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Mail, MapPin, Phone } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function ContactPage() {
   const [loading, setLoading] = useState(false);
@@ -13,11 +14,21 @@ export default function ContactPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    // Simulated contact form
-    await new Promise((r) => setTimeout(r, 1500));
-    toast.success('Message sent! We\'ll get back to you within 24 hours.');
-    setLoading(false);
-    (e.target as HTMLFormElement).reset();
+    try {
+      const form = e.target as HTMLFormElement;
+      const data = {
+        name: (form.elements.namedItem('name') as HTMLInputElement).value,
+        email: (form.elements.namedItem('email') as HTMLInputElement).value,
+        message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
+      };
+      await api.post('/settings/contact', data);
+      toast.success('Message sent! We\'ll get back to you within 24 hours.');
+      form.reset();
+    } catch {
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -41,7 +52,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-slate-200">Email</p>
-                  <p className="text-xs text-surface-muted">support@tradelink.com</p>
+                  <p className="text-xs text-surface-muted">Tradelinkpro.net@gmail.com</p>
                 </div>
               </div>
               <div className="glass-card p-5 flex gap-4">
@@ -50,7 +61,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-slate-200">Phone</p>
-                  <p className="text-xs text-surface-muted">(555) 123-4567</p>
+                  <p className="text-xs text-surface-muted">(803) 394-6335</p>
                 </div>
               </div>
               <div className="glass-card p-5 flex gap-4">
@@ -67,7 +78,7 @@ export default function ContactPage() {
             {/* Contact form */}
             <form onSubmit={handleSubmit} className="md:col-span-3 glass-card p-6 space-y-4">
               <Input label="Full Name" name="name" placeholder="John Smith" required />
-              <Input label="Email" name="email" type="email" placeholder="john@example.com" required />
+              <Input label="Email" name="email" type="email" placeholder="Tradelinkpro.net@gmail.com" required />
               <div className="space-y-1.5">
                 <label className="label">Message</label>
                 <textarea
