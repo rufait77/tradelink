@@ -3,7 +3,7 @@ import { Response, NextFunction } from 'express';
 import { prisma } from '../config/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
-import { getSetting } from '../services/settings.service';
+import { getSetting, getCommissionPctForPoster } from '../services/settings.service';
 import { sendClientQuoteSentEmail } from '../services/email.service';
 import { env } from '../config/env';
 
@@ -26,13 +26,13 @@ export async function createQuote(req: AuthRequest, res: Response, next: NextFun
       return next(new AppError('Job must be in Assigned or QuoteSent status to create a quote', 400));
     }
 
-    // Snapshot fee percentages from platform settings
-    const [platformFeePctStr, commissionPctStr] = await Promise.all([
+    // Snapshot fee percentages from platform settings.
+    // Commission depends on the poster's role: referrer → referrer_commission_pct (5%), contractor → commission_pct (20%).
+    const [platformFeePctStr, commissionPct] = await Promise.all([
       getSetting('platform_fee_pct'),
-      getSetting('commission_pct'),
+      getCommissionPctForPoster(job.postedById),
     ]);
     const platformFeePct = parseFloat(platformFeePctStr ?? '5');
-    const commissionPct = parseFloat(commissionPctStr ?? '20');
 
     const quote = await prisma.quote.create({
       data: {

@@ -2,11 +2,12 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth';
 import { AppError } from './errorHandler';
 import { prisma } from '../config/prisma';
-import { isDeveloperMode } from '../services/settings.service';
+import { isDeveloperMode, referrerRequiresSubscription } from '../services/settings.service';
 
 // ─── Subscription Gate ────────────────────────────────────────────────────────
 // Blocks actions for users without active subscription, suspended, or banned.
 // Must be placed AFTER requireAuth middleware.
+// Referrers skip the subscription checks unless `referrer_requires_subscription` is true.
 
 export async function subscriptionGate(req: AuthRequest, _res: Response, next: NextFunction) {
   try {
@@ -42,7 +43,12 @@ export async function subscriptionGate(req: AuthRequest, _res: Response, next: N
       return next(new AppError(msg, 403, 'ACCOUNT_SUSPENDED'));
     }
 
-    // 3. Check active subscription (active or trialing both allowed)
+    // 3. Referrers: subscription is optional unless the admin flips the switch
+    if (user.role === 'referrer' && !(await referrerRequiresSubscription())) {
+      return next();
+    }
+
+    // 4. Check active subscription (active or trialing both allowed)
     if (!user.subscription || !['active', 'trialing'].includes(user.subscription.status)) {
       return next(new AppError(
         'An active subscription is required to perform this action. Please subscribe first.',
@@ -50,7 +56,7 @@ export async function subscriptionGate(req: AuthRequest, _res: Response, next: N
       ));
     }
 
-    // 4. Check subscription not expired
+    // 5. Check subscription not expired
     if (user.subscription.currentPeriodEnd && new Date(user.subscription.currentPeriodEnd) < new Date()) {
       return next(new AppError(
         'Your subscription has expired. Please renew to continue.',

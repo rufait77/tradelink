@@ -29,6 +29,21 @@ async function main() {
       description: 'Referral commission percentage paid to the referring contractor',
     },
     {
+      key: 'referrer_signup_fee',
+      value: '10.00',
+      description: 'One-time signup fee charged to new referrers (USD)',
+    },
+    {
+      key: 'referrer_commission_pct',
+      value: '5',
+      description: 'Referral commission percentage paid when the job poster is a referrer (non-contractor)',
+    },
+    {
+      key: 'referrer_requires_subscription',
+      value: 'false',
+      description: 'When true, referrers must hold an active monthly subscription to post referrals',
+    },
+    {
       key: 'min_job_budget',
       value: '100',
       description: 'Minimum allowed job budget (USD)',

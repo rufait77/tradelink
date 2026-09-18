@@ -1,6 +1,13 @@
 // ─── User & Auth ─────────────────────────────────────────────────────────────
 
-export type UserRole = 'contractor' | 'admin';
+export type UserRole = 'contractor' | 'referrer' | 'admin';
+
+/** Roles a visitor may choose at signup (admin is never self-assigned). */
+export const REGISTRABLE_ROLES = ['contractor', 'referrer'] as const;
+export type RegistrableRole = (typeof REGISTRABLE_ROLES)[number];
+
+/** Error code returned (HTTP 403) when a referrer hits a contractor-only action. */
+export const REFERRER_FORBIDDEN_CODE = 'REFERRER_NOT_ALLOWED';
 
 export type User = {
   id: string;
@@ -395,13 +402,19 @@ export type PlatformSettingKey =
   | 'max_job_budget'
   | 'job_expiry_days'
   | 'maintenance_mode'
-  | 'featured_trade_categories';
+  | 'featured_trade_categories'
+  | 'referrer_signup_fee'
+  | 'referrer_commission_pct'
+  | 'referrer_requires_subscription';
 
 export type PlatformSettings = {
   signupFee: number;
   subscriptionFee: number;
   platformFeePct: number;
   commissionPct: number;
+  referrerSignupFee: number;
+  referrerCommissionPct: number;
+  referrerRequiresSubscription: boolean;
   minJobBudget: number;
   maxJobBudget: number;
   jobExpiryDays: number;

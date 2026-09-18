@@ -4,7 +4,10 @@ import { stripe } from '../config/stripe';
 import { logger } from '../config/logger';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
-import { isDeveloperMode, getSetting } from '../services/settings.service';
+import {
+  isDeveloperMode, getSetting, getSignupFeeForRole, getCommissionPctForRole,
+} from '../services/settings.service';
+import { UserRole } from '@tradelink/types';
 import {
   sendSubscriptionConfirmEmail,
 } from '../services/email.service';
@@ -26,8 +29,9 @@ export async function createSignupIntent(req: AuthRequest, res: Response, next: 
     const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
     if (!user) return next(new AppError('User not found', 404));
 
-    const signupFee = await getSetting('signup_fee');
-    const amountCents = Math.round(parseFloat(signupFee ?? '29.99') * 100);
+    // Role-aware: referrers pay referrer_signup_fee, contractors pay signup_fee
+    const signupFee = await getSignupFeeForRole(user.role as UserRole);
+    const amountCents = Math.round(signupFee * 100);
 
     let customerId = user.stripeCustomerId;
     if (!customerId) {
@@ -40,11 +44,11 @@ export async function createSignupIntent(req: AuthRequest, res: Response, next: 
       amount: amountCents,
       currency: 'usd',
       customer: customerId,
-      metadata: { userId: user.id, type: 'signup_fee' },
+      metadata: { userId: user.id, type: 'signup_fee', role: user.role },
       description: 'Tradelink one-time platform signup fee',
     });
 
-    res.json({ success: true, data: { clientSecret: pi.client_secret, amount: signupFee } });
+    res.json({ success: true, data: { clientSecret: pi.client_secret, amount: signupFee.toFixed(2) } });
   } catch (err) {
     next(err);
   }
@@ -303,13 +307,15 @@ export async function processJobPayment(req: AuthRequest, res: Response, next: N
     if (job.claimedById !== req.user!.userId) return next(new AppError('Only the hired contractor can initiate payment', 403));
 
     const devMode = await isDeveloperMode();
-    const [platformFeePct, commissionPct] = await Promise.all([
+    // Commission rate depends on the poster's role (referrer → referrer_commission_pct)
+    const [platformFeePct, commissionPctNum] = await Promise.all([
       getSetting('platform_fee_pct'),
-      getSetting('commission_pct'),
+      getCommissionPctForRole(job.postedBy.role as UserRole),
     ]);
+    const commissionPct = String(commissionPctNum);
 
     const platformFeeRate = parseFloat(platformFeePct ?? '5') / 100;
-    const commissionRate = parseFloat(commissionPct ?? '20') / 100;
+    const commissionRate = commissionPctNum / 100;
     const jobAmount = job.budgetMax; // Use max budget as agreed amount
     const platformFee = jobAmount * platformFeeRate;
     const commissionAmount = jobAmount * commissionRate;

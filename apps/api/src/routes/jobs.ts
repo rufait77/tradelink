@@ -12,6 +12,7 @@ import { contractorCompleteJob } from '../controllers/escrow.controller';
 import { uploadCompletionPhotos } from '../controllers/contractors.controller';
 import { requireAuth, optionalAuth } from '../middleware/auth';
 import { subscriptionGate } from '../middleware/subscriptionGate';
+import { forbidReferrer } from '../middleware/roleGuard';
 import { validate } from '../middleware/validate';
 import { createJobSchema } from '@tradelink/validators';
 
@@ -28,7 +29,8 @@ router.put('/:id', requireAuth, updateJob);
 router.delete('/:id', requireAuth, deleteJob);
 
 // ─── Interest & Assignment (new flow) ────────────────────────────────────────
-router.post('/:id/interest', requireAuth, subscriptionGate, expressInterest);
+// Contractor-only: referrers get 403 REFERRER_NOT_ALLOWED
+router.post('/:id/interest', requireAuth, forbidReferrer, subscriptionGate, expressInterest);
 router.delete('/:id/interest', requireAuth, withdrawInterest);
 router.get('/:id/interests', requireAuth, getInterests);
 router.get('/:id/my-interest', requireAuth, getMyInterest);
@@ -36,13 +38,13 @@ router.post('/:id/assign/:contractorId', requireAuth, assignContractor);
 router.post('/:id/reassign', requireAuth, reassignJob);
 
 // ─── Quote & Completion ─────────────────────────────────────────────────────
-router.post('/:id/quote', requireAuth, subscriptionGate, createQuote);
+router.post('/:id/quote', requireAuth, forbidReferrer, subscriptionGate, createQuote);
 router.get('/:id/quotes', requireAuth, getJobQuotes);
 router.post('/:id/contractor-complete', requireAuth, contractorCompleteJob);
 router.post('/:id/completion-photos', requireAuth, uploadCompletionPhotos);
 
 // ─── Legacy flow (kept for backward compat, will be replaced) ───────────────
-router.post('/:id/claim', requireAuth, claimJob);
+router.post('/:id/claim', requireAuth, forbidReferrer, claimJob);
 router.post('/:id/start', requireAuth, startJob);
 router.post('/:id/complete', requireAuth, completeJob);
 

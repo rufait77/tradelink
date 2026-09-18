@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TRADE_TYPES, US_STATES } from '@tradelink/types';
+import { TRADE_TYPES, US_STATES, REGISTRABLE_ROLES } from '@tradelink/types';
 
 // ─── Auth Validators ──────────────────────────────────────────────────────────
 
@@ -13,6 +13,8 @@ export const registerSchema = z
       .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
       .regex(/[0-9]/, 'Must contain at least one number'),
     confirmPassword: z.string(),
+    // Optional — defaults to 'contractor' server-side when omitted
+    role: z.enum(REGISTRABLE_ROLES).optional(),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords don't match",
@@ -165,6 +167,9 @@ export const platformSettingsSchema = z.object({
   job_expiry_days: z.number().int().min(1).max(365).optional(),
   maintenance_mode: z.boolean().optional(),
   featured_trade_categories: z.array(z.enum(TRADE_TYPES)).optional(),
+  referrer_signup_fee: z.number().min(0).optional(),
+  referrer_commission_pct: z.number().min(0).max(50).optional(),
+  referrer_requires_subscription: z.boolean().optional(),
 });
 
 // ─── Change Password Validator ────────────────────────────────────────────────
