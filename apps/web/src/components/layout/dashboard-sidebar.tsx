@@ -22,6 +22,9 @@ const NAV_ITEMS = [
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
 ];
 
+// Referrers cannot claim jobs or send quotes — hide contractor-only entry points.
+const REFERRER_HIDDEN_HREFS = ['/dashboard/jobs', '/dashboard/my-jobs'];
+
 const BOTTOM_ITEMS = [
   { href: '/dashboard/profile', label: 'Profile', icon: User },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
@@ -32,6 +35,9 @@ export function DashboardSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const [dmUnread, setDmUnread] = useState(0);
+  const visibleNavItems = user?.role === 'referrer'
+    ? NAV_ITEMS.filter((item) => !REFERRER_HIDDEN_HREFS.includes(item.href))
+    : NAV_ITEMS;
 
   useEffect(() => {
     api.get('/dm/unread-count')
@@ -58,7 +64,7 @@ export function DashboardSidebar() {
 
       {/* Nav items */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (

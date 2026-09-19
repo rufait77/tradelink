@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { usePlatformSettings } from '../lib/useSettings';
+import { MockDashboardSection } from '../components/landing/mock-dashboard-section';
 
 const TRADE_CATEGORIES = [
   { name: 'Landscaping', icon: '🌿' },
@@ -69,6 +70,7 @@ export default function HomePage() {
       <main>
         <HeroSection commission={commissionPct} signupFee={signupFee} />
         <HowItWorksSection commission={commissionPct} />
+        <MockDashboardSection />
         <TradeShowcase />
         <FeaturesSection commission={commissionPct} />
         <FAQSection commission={commissionPct} signupFee={signupFee} subscriptionFee={subscriptionFee} />

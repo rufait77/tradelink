@@ -4,7 +4,8 @@ import { addDays, addHours } from 'date-fns';
 import { prisma } from '../config/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
-import { getSetting } from '../services/settings.service';
+import { getSetting, getCommissionPctForRole } from '../services/settings.service';
+import { UserRole } from '@tradelink/types';
 import {
   sendJobClaimedEmail, sendJobCompletedEmail,
   sendClientJobInProgressEmail, sendClientContractorDoneEmail,
@@ -391,9 +392,9 @@ export async function completeJob(req: AuthRequest, res: Response, next: NextFun
       }),
     ]);
 
-    // Get commission pct for email
-    const commissionPct = await getSetting('commission_pct');
-    const commissionAmount = (job.budgetMax * parseFloat(commissionPct ?? '20')) / 100;
+    // Get commission pct for email (role-aware: referrer posters earn referrer_commission_pct)
+    const commissionPct = await getCommissionPctForRole(job.postedBy.role as UserRole);
+    const commissionAmount = (job.budgetMax * commissionPct) / 100;
 
     await Promise.all([
       prisma.notification.create({

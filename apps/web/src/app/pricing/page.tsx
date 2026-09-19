@@ -17,6 +17,10 @@ export default function PricingPage() {
   const [signup, setSignup] = useState('29.99');
   const [monthly, setMonthly] = useState('9.99');
   const [commission, setCommission] = useState('20');
+  // Referrer tier (regular people who refer jobs)
+  const [referrerSignup, setReferrerSignup] = useState('10.00');
+  const [referrerCommission, setReferrerCommission] = useState('5');
+  const [referrerNeedsSub, setReferrerNeedsSub] = useState(false);
 
   useEffect(() => {
     api.get('/settings/public').then((res) => {
@@ -24,6 +28,9 @@ export default function PricingPage() {
       if (d.signupFee) setSignup(String(d.signupFee));
       if (d.subscriptionFee) setMonthly(String(d.subscriptionFee));
       if (d.commissionPct) setCommission(String(d.commissionPct));
+      if (d.referrerSignupFee != null) setReferrerSignup(Number(d.referrerSignupFee).toFixed(2));
+      if (d.referrerCommissionPct) setReferrerCommission(String(d.referrerCommissionPct));
+      setReferrerNeedsSub(d.referrerRequiresSubscription === true);
     }).catch(() => {});
   }, []);
 
@@ -85,6 +92,47 @@ export default function PricingPage() {
               </ul>
             </motion.div>
           </div>
+
+          {/* Referrer tier — regular people who refer jobs (no trade license needed) */}
+          <motion.div
+            className="glass-card p-8 mt-6 max-w-3xl mx-auto hover-lift relative overflow-hidden border border-emerald-500/20"
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2}
+          >
+            <div className="absolute top-0 right-0 px-3 py-1 bg-emerald-500 text-navy-950 text-xs font-bold rounded-bl-xl">
+              NEW
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              <div>
+                <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Referrer</p>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-4xl font-heading font-bold text-white">${referrerSignup}</span>
+                  <span className="text-sm text-surface-muted">one-time</span>
+                </div>
+                <p className="text-sm text-surface-muted">
+                  Not a contractor? Know people who need work done? Refer the job, pick the pro, and earn {referrerCommission}% when it&apos;s completed.
+                  {referrerNeedsSub ? ' Requires a monthly subscription.' : ' No monthly subscription.'}
+                </p>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  `Earn ${referrerCommission}% commission on every referral`,
+                  'No trade license or insurance required',
+                  referrerNeedsSub ? 'Monthly subscription required' : 'No monthly subscription',
+                  'Post referrals and choose the contractor',
+                  'Paid out via Stripe Connect',
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-slate-300">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" /> {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="mt-6">
+              <Link href="/signup?role=referrer">
+                <Button variant="outline" size="sm">Join as a referrer <ArrowRight className="w-4 h-4" /></Button>
+              </Link>
+            </div>
+          </motion.div>
 
           {/* Commission breakdown */}
           <motion.div

@@ -67,6 +67,7 @@ export default function UsersPage() {
         >
           <option value="">All Roles</option>
           <option value="contractor">Contractor</option>
+          <option value="referrer">Referrer</option>
           <option value="customer">Customer</option>
           <option value="admin">Admin</option>
         </select>
@@ -103,7 +104,8 @@ export default function UsersPage() {
                 <td className="px-6 py-4">
                   <span className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${
                     u.role === 'admin' ? 'bg-amber-500/15 text-amber-400' :
-                    u.role === 'contractor' ? 'bg-blue-500/15 text-blue-400' : 'bg-slate-700 text-slate-300'
+                    u.role === 'contractor' ? 'bg-blue-500/15 text-blue-400' :
+                    u.role === 'referrer' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-slate-700 text-slate-300'
                   }`}>{u.role}</span>
                 </td>
                 <td className="px-6 py-4">

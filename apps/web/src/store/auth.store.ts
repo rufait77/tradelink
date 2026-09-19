@@ -42,6 +42,8 @@ interface AuthStore {
   fetchMe: () => Promise<void>;
   isAuthenticated: () => boolean;
   needsOnboarding: () => boolean;
+  /** True when the logged-in user is a referrer (cannot claim jobs or send quotes). */
+  isReferrer: () => boolean;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -94,6 +96,8 @@ export const useAuthStore = create<AuthStore>()(
         const { user, onboardingComplete } = get();
         return !!user && !onboardingComplete;
       },
+
+      isReferrer: () => get().user?.role === 'referrer',
     }),
     {
       name: 'tradelink_auth',

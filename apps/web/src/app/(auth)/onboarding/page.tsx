@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,8 +45,15 @@ const STEPS = [
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { fetchMe } = useAuthStore();
+  const { fetchMe, user } = useAuthStore();
+  // Referrers skip the Trade Types step (and the license field) — they start at Location.
+  const isReferrer = user?.role === 'referrer';
+  const firstStep = isReferrer ? 1 : 0;
   const [step, setStep] = useState(0);
+  // Reactive floor: user may hydrate after first render (hard refresh), so never show step 0 to a referrer.
+  useEffect(() => {
+    if (isReferrer && step < 1) setStep(1);
+  }, [isReferrer, step]);
   const [loading, setLoading] = useState(false);
   const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState('');
@@ -63,7 +70,7 @@ export default function OnboardingPage() {
   }
 
   async function handleFinish() {
-    if (step === 0 && selectedTrades.length === 0) {
+    if (step === 0 && !isReferrer && selectedTrades.length === 0) {
       toast.error('Select at least one trade type');
       return;
     }
@@ -82,7 +89,8 @@ export default function OnboardingPage() {
     try {
       const vals = getValues();
       await api.put('/contractors/profile', {
-        tradeTypes: selectedTrades,
+        // Referrers omit tradeTypes entirely — the validator's min(1) still runs on an empty array
+        ...(isReferrer ? {} : { tradeTypes: selectedTrades }),
         state: selectedState,
         bio: vals.bio,
         licenseNumber: vals.licenseNumber || undefined,
@@ -108,6 +116,7 @@ export default function OnboardingPage() {
         <div className="flex items-center justify-center gap-2 mb-8">
           {STEPS.map((s, i) => {
             const Icon = s.icon;
+            if (i < firstStep) return null; // referrers: hide the Trade Types indicator
             return (
               <div key={i} className="flex items-center gap-2">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${
@@ -177,7 +186,9 @@ export default function OnboardingPage() {
                 />
                 {errors.bio && <p className="text-xs text-red-400">{errors.bio.message as string}</p>}
               </div>
-              <Input label="License Number (optional)" {...register('licenseNumber')} placeholder="e.g. LIC-12345" />
+              {!isReferrer && (
+                <Input label="License Number (optional)" {...register('licenseNumber')} placeholder="e.g. LIC-12345" />
+              )}
               <Input
                 label="Years of Experience"
                 type="number"
@@ -202,7 +213,7 @@ export default function OnboardingPage() {
 
           {/* Navigation */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-surface-border">
-            {step > 0 ? (
+            {step > firstStep ? (
               <Button variant="ghost" onClick={() => setStep(step - 1)}>
                 <ArrowLeft className="w-4 h-4" /> Back
               </Button>

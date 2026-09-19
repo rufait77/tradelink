@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -10,6 +10,7 @@ import { Input } from '../../../components/ui/input';
 import { toast } from 'sonner';
 import api from '../../../lib/api';
 import { Eye, EyeOff } from 'lucide-react';
+import { RoleSelector, type SelectableRole } from '../../../components/auth/role-selector';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -30,6 +31,13 @@ export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [role, setRole] = useState<SelectableRole>('contractor');
+
+  // Preselect role from ?role=referrer (landing-page CTAs). window read avoids a Suspense boundary.
+  useEffect(() => {
+    const preset = new URLSearchParams(window.location.search).get('role');
+    if (preset === 'referrer' || preset === 'contractor') setRole(preset);
+  }, []);
 
   const { register, handleSubmit, formState: { errors } } = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
@@ -43,6 +51,7 @@ export default function SignupPage() {
         email: data.email,
         password: data.password,
         confirmPassword: data.confirmPassword,
+        role,
       });
       const { devMode, clientSecret, userId } = res.data.data;
 
@@ -72,6 +81,7 @@ export default function SignupPage() {
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <RoleSelector value={role} onChange={setRole} />
         <Input
           label="Full Name"
           placeholder="John Smith"

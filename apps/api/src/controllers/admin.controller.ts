@@ -247,8 +247,8 @@ export async function adminChangeUserRole(req: AuthRequest, res: Response, next:
     const id = req.params.id as string;
     const { role } = req.body as { role: string };
 
-    if (!['contractor', 'admin'].includes(role)) {
-      return next(new AppError('Invalid role. Must be "contractor" or "admin"', 400));
+    if (!['contractor', 'referrer', 'admin'].includes(role)) {
+      return next(new AppError('Invalid role. Must be "contractor", "referrer" or "admin"', 400));
     }
 
     const user = await prisma.user.findUnique({ where: { id } });

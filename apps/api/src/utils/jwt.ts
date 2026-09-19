@@ -1,9 +1,10 @@
 import jwt from 'jsonwebtoken';
+import { UserRole } from '@tradelink/types';
 import { env } from '../config/env';
 
 export type JwtPayload = {
   userId: string;
-  role: 'contractor' | 'admin';
+  role: UserRole;
 };
 
 // ─── Contractor Tokens ────────────────────────────────────────────────────────

@@ -17,8 +17,9 @@ import {
   sendWelcomeEmail,
   sendPasswordResetEmail,
 } from '../services/email.service';
-import { isDeveloperMode, getSetting } from '../services/settings.service';
+import { isDeveloperMode, getSignupFeeForRole } from '../services/settings.service';
 import { stripe } from '../config/stripe';
+import { RegistrableRole, UserRole } from '@tradelink/types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,8 @@ function safeUser(user: any) {
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
     const { name, email, password } = req.body;
+    // Role is validated by registerSchema; defaults to contractor. Admin is never self-assigned.
+    const role: RegistrableRole = req.body.role === 'referrer' ? 'referrer' : 'contractor';
 
     // Check if email already exists
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -60,12 +63,13 @@ export async function register(req: Request, res: Response, next: NextFunction) 
         name,
         email,
         passwordHash,
+        role,
         emailVerifyToken: verifyToken,
         emailVerifyExpiry: verifyExpiry,
         isVerified: false,
         isActive: false,
         profile: {
-          create: {}, // Empty contractor profile created immediately
+          create: {}, // Empty profile created immediately (referrers use it for address/photo/Connect)
         },
       },
     });
@@ -75,19 +79,20 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 
     if (!devMode) {
       // Create Stripe customer
-      const signupFeeValue = await getSetting('signup_fee');
-      const signupFeeCents = Math.round(parseFloat(signupFeeValue ?? '29.99') * 100);
+      const signupFeeCents = Math.round((await getSignupFeeForRole(role)) * 100);
 
       const customer = await stripe.customers.create({ email, name });
       stripeCustomerId = customer.id;
 
-      // Create PaymentIntent for signup fee
+      // Create PaymentIntent for signup fee (role-aware: referrers pay referrer_signup_fee)
       const paymentIntent = await stripe.paymentIntents.create({
         amount: signupFeeCents,
         currency: 'usd',
         customer: customer.id,
-        metadata: { userId: user.id, type: 'signup_fee' },
-        description: 'Tradelink one-time signup fee',
+        metadata: { userId: user.id, type: 'signup_fee', role },
+        description: role === 'referrer'
+          ? 'Tradelink one-time referrer signup fee'
+          : 'Tradelink one-time signup fee',
       });
 
       // Update user with Stripe customer id
@@ -123,7 +128,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 
     // Notify admin
     import('../services/email.service').then(({ sendAdminNotificationEmail }) =>
-      sendAdminNotificationEmail('New User Signup', { Name: name, Email: email }).catch(() => {})
+      sendAdminNotificationEmail('New User Signup', { Name: name, Email: email, Role: role }).catch(() => {})
     );
 
     res.status(201).json({
@@ -131,6 +136,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       data: {
         userId: user.id,
         email: user.email,
+        role,
         devMode,
         // clientSecret only present when devMode is false
         ...(clientSecret ? { clientSecret } : {}),
@@ -234,7 +240,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       return next(new AppError('Admin users must use the admin login portal', 403, 'USE_ADMIN_LOGIN'));
     }
 
-    const payload = { userId: user.id, role: user.role as 'contractor' };
+    const payload = { userId: user.id, role: user.role as UserRole };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
 
@@ -274,7 +280,7 @@ export async function refreshToken(req: Request, res: Response, next: NextFuncti
       return next(new AppError('Account not found or inactive', 401, 'UNAUTHORIZED'));
     }
 
-    const newAccessToken = signAccessToken({ userId: user.id, role: user.role as 'contractor' });
+    const newAccessToken = signAccessToken({ userId: user.id, role: user.role as UserRole });
 
     res.json({ success: true, data: { accessToken: newAccessToken } });
   } catch {

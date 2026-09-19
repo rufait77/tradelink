@@ -12,6 +12,15 @@ import { SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
 import { formatCurrency, formatRelativeTime } from '../../../lib/utils';
 import { MapPin, Clock, Search, Briefcase, ChevronLeft, ChevronRight, Users, Timer, Navigation } from 'lucide-react';
+import { useAuthStore } from '../../../store/auth.store';
+import { useRouter } from 'next/navigation';
+
+// Referrer accounts cannot claim jobs — the board is contractor-only (API also returns 403).
+const REFERRER_BOARD_STRINGS = {
+  title: 'The job board is for contractors',
+  description: 'Referrer accounts post referrals and earn commission, but cannot claim jobs. Post a referral instead.',
+  action: 'Post a Referral',
+} as const;
 
 const RADIUS_OPTIONS = [
   { label: 'Within 10 mi', value: '10' },
@@ -76,9 +85,12 @@ function JobBoardContent() {
   const [nearZip, setNearZip] = useState('');
   const [radius, setRadius] = useState('30');
   const pageSize = 12;
+  const isReferrer = useAuthStore((s) => s.user?.role === 'referrer');
+  const router = useRouter();
 
   useEffect(() => {
     async function load() {
+      if (isReferrer) { setLoading(false); return; } // board is contractor-only; skip the fetch
       setLoading(true);
       try {
         const q = new URLSearchParams();
@@ -98,13 +110,25 @@ function JobBoardContent() {
       }
     }
     load();
-  }, [page, trade, urgency, nearZip, radius]);
+  }, [page, trade, urgency, nearZip, radius, isReferrer]);
 
   const totalPages = Math.ceil(total / pageSize);
 
   const filteredJobs = search
     ? jobs.filter((j) => j.title.toLowerCase().includes(search.toLowerCase()) || j.city.toLowerCase().includes(search.toLowerCase()))
     : jobs;
+
+  if (isReferrer) {
+    return (
+      <EmptyState
+        icon={Briefcase}
+        title={REFERRER_BOARD_STRINGS.title}
+        description={REFERRER_BOARD_STRINGS.description}
+        actionLabel={REFERRER_BOARD_STRINGS.action}
+        onAction={() => router.push('/dashboard/post-job')}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
