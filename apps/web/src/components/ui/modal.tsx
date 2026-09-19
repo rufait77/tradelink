@@ -2,6 +2,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useT } from '../../i18n';
 
 interface ModalProps {
   open: boolean;
@@ -14,6 +15,7 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, title, description, children, className, size = 'md' }: ModalProps) {
+  const t = useT();
   const sizes: Record<string, string> = {
     sm: 'max-w-sm',
     md: 'max-w-lg',
@@ -46,7 +48,7 @@ export function Modal({ open, onClose, title, description, children, className, 
           <Dialog.Close asChild>
             <button
               className="absolute top-4 right-4 p-1.5 rounded-lg text-surface-muted hover:text-white hover:bg-surface-elevated transition"
-              aria-label="Close"
+              aria-label={t('common.close')}
             >
               <X className="w-4 h-4" />
             </button>
