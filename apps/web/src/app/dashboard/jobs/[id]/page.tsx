@@ -201,7 +201,9 @@ export default function JobDetailPage() {
 
   const isOwner = user?.id === job?.postedBy?.id;
   const isAssigned = user?.id === job?.claimedBy?.id;
-  const isBrowser = !isOwner && !isAssigned;
+  // Referrers cannot express interest in or claim jobs — enforced server-side too.
+  const isReferrer = user?.role === 'referrer';
+  const isBrowser = !isOwner && !isAssigned && !isReferrer;
   const displayValue = job?.estimatedValue || ((job?.budgetMin ?? 0) + (job?.budgetMax ?? 0)) / 2;
 
   // ─── Actions ──────────────────────────────────────────────────────────

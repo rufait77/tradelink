@@ -22,6 +22,8 @@ export default function DashboardHomePage() {
   const { user } = useAuthStore();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  // Referrers cannot claim jobs — hide the contractor-only job board entry point.
+  const isReferrer = user?.role === 'referrer';
 
   useEffect(() => {
     async function load() {
@@ -111,7 +113,7 @@ export default function DashboardHomePage() {
           { href: '/dashboard/post-job', icon: Send, label: 'Post a Referral', desc: 'Got a lead you can\'t take?' },
           { href: '/dashboard/jobs', icon: Briefcase, label: 'Browse Job Board', desc: 'Find jobs to claim' },
           { href: '/dashboard/earnings', icon: DollarSign, label: 'View Earnings', desc: 'Track your commissions' },
-        ].map((action) => {
+        ].filter((action) => !(isReferrer && action.href === '/dashboard/jobs')).map((action) => {
           const Icon = action.icon;
           return (
             <Link key={action.href} href={action.href}>

@@ -21,6 +21,7 @@ interface QuoteData {
   activeQuote: {
     id: string; amount: number; scope: string;
     scheduledDate: string; status: string;
+    platformFeePct?: number; commissionPct?: number;
   } | null;
   escrow: {
     status: string; totalAmount: number; paymentLink?: string; paidAt?: string;
