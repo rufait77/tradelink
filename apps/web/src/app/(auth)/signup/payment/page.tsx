@@ -7,6 +7,7 @@ import { Button } from '../../../../components/ui/button';
 import { toast } from 'sonner';
 import api from '../../../../lib/api';
 import { Shield, Lock } from 'lucide-react';
+import { useT } from '../../../../i18n';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK || '');
 
@@ -15,6 +16,7 @@ function PaymentForm() {
   const elements = useElements();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const t = useT();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,19 +30,19 @@ function PaymentForm() {
       });
 
       if (error) {
-        toast.error(error.message || 'Payment failed');
+        toast.error(error.message || t('payment.toast.failed'));
       } else if (paymentIntent?.status === 'succeeded') {
         const userId = sessionStorage.getItem('signup_userId');
         await api.post('/auth/confirm-signup-payment', {
           userId,
           paymentIntentId: paymentIntent.id,
         });
-        toast.success('Payment successful! Now verify your email.');
+        toast.success(t('payment.toast.success'));
         const email = sessionStorage.getItem('signup_email') || '';
         router.push(`/verify-email?email=${encodeURIComponent(email)}`);
       }
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('payment.toast.error'));
     } finally {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ function PaymentForm() {
         }}
       />
       <Button type="submit" loading={loading} disabled={!stripe} className="w-full" size="lg">
-        <Lock className="w-4 h-4" /> Pay Signup Fee
+        <Lock className="w-4 h-4" /> {t('payment.submit')}
       </Button>
     </form>
   );
@@ -62,6 +64,7 @@ function PaymentForm() {
 
 export default function PaymentPage() {
   const router = useRouter();
+  const t = useT();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,15 +80,15 @@ export default function PaymentPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-heading font-bold text-white mb-1">Complete Payment</h1>
+      <h1 className="text-2xl font-heading font-bold text-white mb-1">{t('payment.title')}</h1>
       <p className="text-sm text-surface-muted mb-6">
-        One-time signup fee to activate your account.
+        {t('payment.subtitle')}
       </p>
 
       <div className="glass-card p-5 mb-6 flex items-center gap-3">
         <Shield className="w-5 h-5 text-emerald-400 shrink-0" />
         <p className="text-xs text-slate-300">
-          Secured by Stripe. Your card details are never stored on our servers.
+          {t('payment.secureNote')}
         </p>
       </div>
 

@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui/button';
 import { toast } from 'sonner';
 import api from '../../../lib/api';
 import { Mail, CheckCircle2, RefreshCcw } from 'lucide-react';
+import { useT } from '../../../i18n';
 
 function VerifyEmailContent() {
   const router = useRouter();
@@ -13,6 +14,7 @@ function VerifyEmailContent() {
   const email = params.get('email');
   const [status, setStatus] = useState<'pending' | 'verifying' | 'success' | 'error'>('pending');
   const [resending, setResending] = useState(false);
+  const t = useT();
 
   // Auto-verify if token present in URL
   useEffect(() => {
@@ -21,11 +23,11 @@ function VerifyEmailContent() {
     api.post('/auth/verify-email', { token })
       .then(() => {
         setStatus('success');
-        toast.success('Email verified successfully!');
+        toast.success(t('verify.toast.verified'));
       })
       .catch(() => {
         setStatus('error');
-        toast.error('Verification link is invalid or expired.');
+        toast.error(t('verify.toast.invalid'));
       });
   }, [token]);
 
@@ -34,9 +36,9 @@ function VerifyEmailContent() {
     setResending(true);
     try {
       await api.post('/auth/resend-verification', { email });
-      toast.success('Verification email resent!');
+      toast.success(t('verify.toast.resent'));
     } catch {
-      toast.error('Failed to resend. Please try again.');
+      toast.error(t('verify.toast.resendFailed'));
     } finally {
       setResending(false);
     }
@@ -48,7 +50,7 @@ function VerifyEmailContent() {
       return (
         <div className="text-center py-8">
           <RefreshCcw className="w-12 h-12 text-amber-500 animate-spin mx-auto mb-4" />
-          <h1 className="text-2xl font-heading font-bold text-white">Verifying your email...</h1>
+          <h1 className="text-2xl font-heading font-bold text-white">{t('verify.verifying')}</h1>
         </div>
       );
     }
@@ -57,9 +59,9 @@ function VerifyEmailContent() {
       return (
         <div className="text-center py-8">
           <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-heading font-bold text-white mb-2">Email Verified!</h1>
-          <p className="text-surface-muted mb-6">Your account is now active. You can log in.</p>
-          <Button onClick={() => router.push('/login')} size="lg">Go to Login</Button>
+          <h1 className="text-2xl font-heading font-bold text-white mb-2">{t('verify.successTitle')}</h1>
+          <p className="text-surface-muted mb-6">{t('verify.successBody')}</p>
+          <Button onClick={() => router.push('/login')} size="lg">{t('verify.goToLogin')}</Button>
         </div>
       );
     }
@@ -69,9 +71,9 @@ function VerifyEmailContent() {
         <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
           <Mail className="w-8 h-8 text-red-400" />
         </div>
-        <h1 className="text-2xl font-heading font-bold text-white mb-2">Verification Failed</h1>
-        <p className="text-surface-muted mb-6">This link may be invalid or expired.</p>
-        <Button variant="outline" onClick={() => router.push('/signup')}>Sign Up Again</Button>
+        <h1 className="text-2xl font-heading font-bold text-white mb-2">{t('verify.failedTitle')}</h1>
+        <p className="text-surface-muted mb-6">{t('verify.failedBody')}</p>
+        <Button variant="outline" onClick={() => router.push('/signup')}>{t('verify.signUpAgain')}</Button>
       </div>
     );
   }
@@ -82,21 +84,21 @@ function VerifyEmailContent() {
       <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
         <Mail className="w-8 h-8 text-amber-500" />
       </div>
-      <h1 className="text-2xl font-heading font-bold text-white mb-2">Check Your Email</h1>
+      <h1 className="text-2xl font-heading font-bold text-white mb-2">{t('verify.checkTitle')}</h1>
       <p className="text-surface-muted mb-1">
-        We&apos;ve sent a verification link to:
+        {t('verify.checkBody')}
       </p>
       {email && <p className="text-amber-400 font-medium mb-6">{email}</p>}
       <p className="text-xs text-surface-muted mb-8">
-        Click the link in your email to verify your account. The link expires in 24 hours.
+        {t('verify.checkNote')}
       </p>
 
       <div className="space-y-3">
         <Button variant="outline" onClick={resend} loading={resending} className="w-full">
-          <RefreshCcw className="w-4 h-4" /> Resend Verification Email
+          <RefreshCcw className="w-4 h-4" /> {t('verify.resend')}
         </Button>
         <Button variant="ghost" onClick={() => router.push('/login')} className="w-full">
-          Already verified? Log in
+          {t('verify.alreadyVerified')}
         </Button>
       </div>
     </div>
@@ -104,8 +106,9 @@ function VerifyEmailContent() {
 }
 
 export default function VerifyEmailPage() {
+  const t = useT();
   return (
-    <Suspense fallback={<div className="text-center py-8"><p className="text-surface-muted">Loading...</p></div>}>
+    <Suspense fallback={<div className="text-center py-8"><p className="text-surface-muted">{t('auth.loading')}</p></div>}>
       <VerifyEmailContent />
     </Suspense>
   );

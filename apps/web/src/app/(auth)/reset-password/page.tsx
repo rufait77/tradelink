@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,19 +9,22 @@ import { Input } from '../../../components/ui/input';
 import { toast } from 'sonner';
 import api from '../../../lib/api';
 import { Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { apiErrorMessage, useT, type TranslateFn } from '../../../i18n';
 
-const schema = z.object({
-  password: z.string()
-    .min(8, 'At least 8 characters')
-    .regex(/[A-Z]/, 'One uppercase letter')
-    .regex(/[0-9]/, 'One number'),
-  confirmPassword: z.string(),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
+function buildSchema(t: TranslateFn) {
+  return z.object({
+    password: z.string()
+      .min(8, t('auth.validation.min8'))
+      .regex(/[A-Z]/, t('auth.validation.oneUpper'))
+      .regex(/[0-9]/, t('auth.validation.oneNumber')),
+    confirmPassword: z.string(),
+  }).refine((d) => d.password === d.confirmPassword, {
+    message: t('auth.validation.passwordMismatch'),
+    path: ['confirmPassword'],
+  });
+}
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<ReturnType<typeof buildSchema>>;
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -30,6 +33,8 @@ function ResetPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const t = useT();
+  const schema = useMemo(() => buildSchema(t), [t]);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -40,9 +45,9 @@ function ResetPasswordContent() {
     try {
       await api.post('/auth/reset-password', { token, password: data.password });
       setSuccess(true);
-      toast.success('Password reset! You can now log in.');
+      toast.success(t('reset.toast.success'));
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Reset link is invalid or expired.');
+      toast.error(apiErrorMessage(err, t, t('reset.toast.failed')));
     } finally {
       setLoading(false);
     }
@@ -51,9 +56,9 @@ function ResetPasswordContent() {
   if (!token) {
     return (
       <div className="text-center">
-        <h1 className="text-2xl font-heading font-bold text-white mb-2">Invalid Link</h1>
-        <p className="text-sm text-surface-muted mb-6">This password reset link is invalid.</p>
-        <Button variant="outline" onClick={() => router.push('/forgot-password')}>Request New Link</Button>
+        <h1 className="text-2xl font-heading font-bold text-white mb-2">{t('reset.invalidTitle')}</h1>
+        <p className="text-sm text-surface-muted mb-6">{t('reset.invalidBody')}</p>
+        <Button variant="outline" onClick={() => router.push('/forgot-password')}>{t('reset.requestNew')}</Button>
       </div>
     );
   }
@@ -62,24 +67,24 @@ function ResetPasswordContent() {
     return (
       <div className="text-center">
         <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto mb-4" />
-        <h1 className="text-2xl font-heading font-bold text-white mb-2">Password Reset!</h1>
-        <p className="text-sm text-surface-muted mb-6">Your password has been changed. You can now log in.</p>
-        <Button onClick={() => router.push('/login')} size="lg">Go to Login</Button>
+        <h1 className="text-2xl font-heading font-bold text-white mb-2">{t('reset.successTitle')}</h1>
+        <p className="text-sm text-surface-muted mb-6">{t('reset.successBody')}</p>
+        <Button onClick={() => router.push('/login')} size="lg">{t('reset.goToLogin')}</Button>
       </div>
     );
   }
 
   return (
     <div>
-      <h1 className="text-2xl font-heading font-bold text-white mb-1">Reset your password</h1>
-      <p className="text-sm text-surface-muted mb-8">Choose a new password for your account.</p>
+      <h1 className="text-2xl font-heading font-bold text-white mb-1">{t('reset.title')}</h1>
+      <p className="text-sm text-surface-muted mb-8">{t('reset.subtitle')}</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="relative">
           <Input
-            label="New Password"
+            label={t('reset.newPassword')}
             type={showPw ? 'text' : 'password'}
-            placeholder="Min 8 chars, 1 uppercase, 1 number"
+            placeholder={t('auth.field.passwordRule')}
             error={errors.password?.message as string}
             {...register('password')}
           />
@@ -92,13 +97,13 @@ function ResetPasswordContent() {
           </button>
         </div>
         <Input
-          label="Confirm New Password"
+          label={t('reset.confirmNewPassword')}
           type="password"
           error={errors.confirmPassword?.message as string}
           {...register('confirmPassword')}
         />
         <Button type="submit" loading={loading} className="w-full" size="lg">
-          Reset Password
+          {t('reset.submit')}
         </Button>
       </form>
     </div>
@@ -106,8 +111,9 @@ function ResetPasswordContent() {
 }
 
 export default function ResetPasswordPage() {
+  const t = useT();
   return (
-    <Suspense fallback={<div className="text-center py-8"><p className="text-surface-muted">Loading...</p></div>}>
+    <Suspense fallback={<div className="text-center py-8"><p className="text-surface-muted">{t('auth.loading')}</p></div>}>
       <ResetPasswordContent />
     </Suspense>
   );
