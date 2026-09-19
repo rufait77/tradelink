@@ -90,6 +90,7 @@ function JobBoardContent() {
 
   useEffect(() => {
     async function load() {
+      if (isReferrer) { setLoading(false); return; } // board is contractor-only; skip the fetch
       setLoading(true);
       try {
         const q = new URLSearchParams();
@@ -109,7 +110,7 @@ function JobBoardContent() {
       }
     }
     load();
-  }, [page, trade, urgency, nearZip, radius]);
+  }, [page, trade, urgency, nearZip, radius, isReferrer]);
 
   const totalPages = Math.ceil(total / pageSize);
 

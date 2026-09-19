@@ -85,7 +85,8 @@ export default function OnboardingPage() {
     try {
       const vals = getValues();
       await api.put('/contractors/profile', {
-        tradeTypes: isReferrer ? [] : selectedTrades,
+        // Referrers omit tradeTypes entirely — the validator's min(1) still runs on an empty array
+        ...(isReferrer ? {} : { tradeTypes: selectedTrades }),
         state: selectedState,
         bio: vals.bio,
         licenseNumber: vals.licenseNumber || undefined,
