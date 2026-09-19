@@ -7,6 +7,7 @@ import { PageLoader } from '../../../../components/ui/spinner';
 import clientApi from '../../../../lib/clientApi';
 import { toast } from 'sonner';
 import { ArrowLeft, Star, Send, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { useT, useLabels } from '../../../../i18n';
 
 export default function RatePage() {
   const { token } = useParams();
@@ -20,17 +21,19 @@ export default function RatePage() {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const t = useT();
+  const { apiErrorMessage } = useLabels();
 
   useEffect(() => {
     async function load() {
       try {
         const res = await clientApi.get(`/client/${token}`);
         const d = res.data.data;
-        setContractorName(d.contractor?.name || 'Contractor');
+        setContractorName(d.contractor?.name || t('clientQuote.fallbackContractor'));
         setJobTitle(d.job.title);
         setJobStatus(d.job.status);
       } catch {
-        toast.error('Invalid or expired link');
+        toast.error(t('client.invalidLink'));
       } finally {
         setLoading(false);
       }
@@ -39,7 +42,7 @@ export default function RatePage() {
   }, [token]);
 
   async function handleSubmit() {
-    if (rating === 0) { toast.error('Please select a rating'); return; }
+    if (rating === 0) { toast.error(t('clientRate.toast.pickRating')); return; }
 
     setSubmitLoading(true);
     try {
@@ -47,10 +50,10 @@ export default function RatePage() {
         rating,
         text: reviewText || undefined,
       });
-      toast.success('Thank you for your review!');
+      toast.success(t('clientRate.toast.success'));
       setSubmitted(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to submit rating');
+      toast.error(apiErrorMessage(err, t('clientRate.toast.failed')));
     } finally {
       setSubmitLoading(false);
     }
@@ -65,13 +68,13 @@ export default function RatePage() {
       <div className="max-w-lg mx-auto space-y-6">
         <button onClick={() => router.push(`/client/${token}`)}
           className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="w-4 h-4" /> {t('client.back')}
         </button>
         <Card className="text-center py-8">
           <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-          <h1 className="text-xl font-heading font-bold text-white mb-2">Rating Not Available</h1>
+          <h1 className="text-xl font-heading font-bold text-white mb-2">{t('clientRate.notAvailableTitle')}</h1>
           <p className="text-surface-muted">
-            You can rate the contractor after the job has been confirmed as complete.
+            {t('clientRate.notAvailableBody')}
           </p>
         </Card>
       </div>
@@ -83,14 +86,13 @@ export default function RatePage() {
       <div className="max-w-lg mx-auto space-y-6">
         <button onClick={() => router.push(`/client/${token}`)}
           className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="w-4 h-4" /> {t('client.back')}
         </button>
         <Card className="text-center py-8">
           <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto mb-4" />
-          <h1 className="text-xl font-heading font-bold text-white mb-2">Thank You!</h1>
+          <h1 className="text-xl font-heading font-bold text-white mb-2">{t('clientRate.thanksTitle')}</h1>
           <p className="text-surface-muted">
-            Your {rating}-star review for {contractorName} has been submitted.
-            This helps other clients make informed decisions.
+            {t('clientRate.thanksBody', { rating, name: contractorName })}
           </p>
           <div className="flex items-center justify-center gap-1 mt-4">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -102,23 +104,23 @@ export default function RatePage() {
     );
   }
 
-  const starLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+  const starLabels = ['', t('clientRate.star1'), t('clientRate.star2'), t('clientRate.star3'), t('clientRate.star4'), t('clientRate.star5')];
   const displayRating = hoveredRating || rating;
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <button onClick={() => router.push(`/client/${token}`)}
         className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        <ArrowLeft className="w-4 h-4" /> {t('client.back')}
       </button>
 
       <Card>
         <div className="text-center mb-6">
           <h1 className="text-xl font-heading font-bold text-white mb-1">
-            Rate {contractorName}
+            {t('clientRate.title', { name: contractorName })}
           </h1>
           <p className="text-sm text-surface-muted">
-            for &quot;{jobTitle}&quot;
+            {t('clientRate.forJob', { title: jobTitle })}
           </p>
         </div>
 
@@ -149,19 +151,19 @@ export default function RatePage() {
           <p className={`text-sm font-medium transition-colors ${
             displayRating > 0 ? 'text-amber-400' : 'text-surface-muted'
           }`}>
-            {displayRating > 0 ? starLabels[displayRating] : 'Tap a star to rate'}
+            {displayRating > 0 ? starLabels[displayRating] : t('clientRate.prompt')}
           </p>
         </div>
 
         {/* Review text */}
         <div className="mb-6">
           <label className="label mb-2 block">
-            Write a review <span className="text-surface-muted">(optional)</span>
+            {t('clientRate.writeLead')} <span className="text-surface-muted">{t('clientRate.writeOptional')}</span>
           </label>
           <textarea
             className="input-field resize-none w-full"
             rows={4}
-            placeholder="Tell others about your experience working with this contractor..."
+            placeholder={t('clientRate.placeholder')}
             value={reviewText}
             onChange={(e) => setReviewText(e.target.value)}
           />
@@ -169,7 +171,7 @@ export default function RatePage() {
 
         <Button className="w-full" size="lg" onClick={handleSubmit} loading={submitLoading}
           disabled={rating === 0}>
-          <Send className="w-4 h-4" /> Submit Review
+          <Send className="w-4 h-4" /> {t('clientRate.submit')}
         </Button>
       </Card>
     </div>

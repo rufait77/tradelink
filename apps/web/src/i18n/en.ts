@@ -4,6 +4,8 @@ import { enLegal } from './dictionaries/en/legal';
 import { enAuth } from './dictionaries/en/auth';
 import { enDashboard } from './dictionaries/en/dashboard';
 import { enJobs } from './dictionaries/en/jobs';
+import { enMessages } from './dictionaries/en/messages';
+import { enClient } from './dictionaries/en/client';
 
 /**
  * The English dictionary is the source of truth for the key set.
@@ -17,6 +19,8 @@ export const en = {
   ...enAuth,
   ...enDashboard,
   ...enJobs,
+  ...enMessages,
+  ...enClient,
 } as const;
 
 export type TranslationKey = keyof typeof en;

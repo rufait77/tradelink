@@ -13,11 +13,15 @@ import {
   CheckCircle2, FileText, CreditCard, AlertTriangle,
   MessageSquare, ChevronRight, PhoneOff,
 } from 'lucide-react';
+import { useT, useLabels, useFormat, type TranslationKey } from '../../../i18n';
+import { en } from '../../../i18n/en';
 
 // ─── 7B: Ghost Report Button ────────────────────────────────────────────────
 function GhostReportButton({ token, jobTitle }: { token: string; jobTitle: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const t = useT();
+  const { apiErrorMessage } = useLabels();
 
   const handleReport = async () => {
     if (submitted) return;
@@ -25,12 +29,12 @@ function GhostReportButton({ token, jobTitle }: { token: string; jobTitle: strin
     try {
       await clientApi.post(`/client/${token}/report`, {
         type: 'not_responding',
-        description: `Client reports contractor is not responding for "${jobTitle}".`,
+        description: t('client.ghost.description', { title: jobTitle }),
       });
       setSubmitted(true);
-      toast.success('Report submitted. We will follow up within 24 hours.');
+      toast.success(t('client.ghost.toastSuccess'));
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to submit report');
+      toast.error(apiErrorMessage(err, t('client.ghost.toastFailed')));
     } finally {
       setSubmitting(false);
     }
@@ -44,8 +48,8 @@ function GhostReportButton({ token, jobTitle }: { token: string; jobTitle: strin
             <CheckCircle2 className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-amber-300">Report Submitted</p>
-            <p className="text-xs text-surface-muted">We'll follow up within 24 hours</p>
+            <p className="text-sm font-semibold text-amber-300">{t('client.ghost.submitted')}</p>
+            <p className="text-xs text-surface-muted">{t('client.ghost.submittedDesc')}</p>
           </div>
         </div>
       </Card>
@@ -60,9 +64,9 @@ function GhostReportButton({ token, jobTitle }: { token: string; jobTitle: strin
         </div>
         <div>
           <p className="text-sm font-semibold text-white">
-            {submitting ? 'Submitting...' : 'Contractor Not Responding?'}
+            {submitting ? t('client.ghost.submitting') : t('client.ghost.prompt')}
           </p>
-          <p className="text-xs text-surface-muted">Report if no contact after 48 hours</p>
+          <p className="text-xs text-surface-muted">{t('client.ghost.promptDesc')}</p>
         </div>
         <ChevronRight className="w-4 h-4 text-surface-muted ml-auto" />
       </div>
@@ -110,15 +114,15 @@ interface DashboardData {
 }
 
 // Timeline steps mapped to job statuses
-const TIMELINE_STEPS = [
-  { status: 'Open', label: 'Referral Posted', icon: Briefcase },
-  { status: 'Assigned', label: 'Contractor Assigned', icon: User },
-  { status: 'QuoteSent', label: 'Quote Sent', icon: FileText },
-  { status: 'QuoteApproved', label: 'Quote Approved', icon: CheckCircle2 },
-  { status: 'EscrowFunded', label: 'Payment Received', icon: CreditCard },
-  { status: 'InProgress', label: 'Work In Progress', icon: Clock },
-  { status: 'ContractorDone', label: 'Work Complete', icon: CheckCircle2 },
-  { status: 'Completed', label: 'Job Completed', icon: Star },
+const TIMELINE_STEPS: { status: string; labelKey: TranslationKey; icon: typeof Briefcase }[] = [
+  { status: 'Open', labelKey: 'client.step.posted', icon: Briefcase },
+  { status: 'Assigned', labelKey: 'client.step.assigned', icon: User },
+  { status: 'QuoteSent', labelKey: 'client.step.quoteSent', icon: FileText },
+  { status: 'QuoteApproved', labelKey: 'client.step.quoteApproved', icon: CheckCircle2 },
+  { status: 'EscrowFunded', labelKey: 'client.step.paid', icon: CreditCard },
+  { status: 'InProgress', labelKey: 'client.step.inProgress', icon: Clock },
+  { status: 'ContractorDone', labelKey: 'client.step.workDone', icon: CheckCircle2 },
+  { status: 'Completed', labelKey: 'client.step.completed', icon: Star },
 ];
 
 function getStepIndex(status: string): number {
@@ -136,6 +140,15 @@ export default function ClientDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const t = useT();
+  const { tradeLabel, statusLabel, escrowStatusLabel, apiErrorMessage } = useLabels();
+  const { formatDate } = useFormat();
+
+  // Quote review states come from the API; fall back to the raw value.
+  function quoteStatusLabel(status: string) {
+    const key = `quoteStatus.${status}`;
+    return key in en ? t(key as TranslationKey) : status;
+  }
 
   useEffect(() => {
     async function load() {
@@ -143,7 +156,7 @@ export default function ClientDashboardPage() {
         const res = await clientApi.get(`/client/${token}`);
         setData(res.data.data);
       } catch (err: any) {
-        const msg = err.response?.data?.error || 'Invalid or expired access link';
+        const msg = apiErrorMessage(err, t('client.loadFailed'));
         setError(msg);
         toast.error(msg);
       } finally {
@@ -161,8 +174,8 @@ export default function ClientDashboardPage() {
         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/10 flex items-center justify-center">
           <AlertTriangle className="w-8 h-8 text-red-400" />
         </div>
-        <h1 className="text-2xl font-heading font-bold text-white mb-2">Access Denied</h1>
-        <p className="text-surface-muted">{error || 'This link is invalid or has expired.'}</p>
+        <h1 className="text-2xl font-heading font-bold text-white mb-2">{t('client.accessDenied')}</h1>
+        <p className="text-surface-muted">{error || t('client.accessExpired')}</p>
       </div>
     );
   }
@@ -175,11 +188,10 @@ export default function ClientDashboardPage() {
       {/* Welcome banner */}
       <Card className="bg-gradient-to-br from-amber-500/5 to-emerald-500/5 border-amber-500/10">
         <h1 className="text-xl font-heading font-bold text-white mb-1">
-          Welcome, {data.clientName}
+          {t('client.welcome', { name: data.clientName })}
         </h1>
         <p className="text-sm text-surface-muted">
-          {data.referee.name} referred your job to our platform.
-          Track everything about your project here.
+          {t('client.welcomeBody', { name: data.referee.name })}
         </p>
       </Card>
 
@@ -188,9 +200,9 @@ export default function ClientDashboardPage() {
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="amber">{data.job.tradeType.replace(/([A-Z])/g, ' $1').trim()}</Badge>
+              <Badge variant="amber">{tradeLabel(data.job.tradeType)}</Badge>
               <Badge variant="status" statusClass={getStatusClass(data.job.status)}>
-                {isDisputeActive ? '⚠️ Disputed' : data.job.status.replace(/([A-Z])/g, ' $1').trim()}
+                {isDisputeActive ? t('client.disputedBadge') : statusLabel(data.job.status)}
               </Badge>
             </div>
             <h2 className="text-lg font-heading font-semibold text-white">{data.job.title}</h2>
@@ -199,7 +211,7 @@ export default function ClientDashboardPage() {
             <p className="text-lg font-heading font-bold text-emerald-400">
               {formatCurrency(data.job.budgetMin)} – {formatCurrency(data.job.budgetMax)}
             </p>
-            <p className="text-xs text-surface-muted">Estimated Budget</p>
+            <p className="text-xs text-surface-muted">{t('client.estimatedBudget')}</p>
           </div>
         </div>
         <p className="text-sm text-slate-300 leading-relaxed">{data.job.description}</p>
@@ -208,7 +220,7 @@ export default function ClientDashboardPage() {
       {/* Timeline */}
       <Card>
         <h3 className="text-sm font-semibold text-white mb-5 flex items-center gap-2">
-          <Clock className="w-4 h-4 text-amber-500" /> Job Progress
+          <Clock className="w-4 h-4 text-amber-500" /> {t('client.progress')}
         </h3>
         <div className="relative">
           {TIMELINE_STEPS.map((step, i) => {
@@ -232,10 +244,10 @@ export default function ClientDashboardPage() {
                 </div>
                 <div className="pb-8">
                   <p className={`text-sm font-medium ${isCompleted ? 'text-white' : 'text-surface-muted'}`}>
-                    {step.label}
+                    {t(step.labelKey)}
                   </p>
                   {isCurrent && (
-                    <p className="text-xs text-emerald-400 mt-0.5">Current stage</p>
+                    <p className="text-xs text-emerald-400 mt-0.5">{t('client.currentStage')}</p>
                   )}
                 </div>
               </div>
@@ -248,7 +260,7 @@ export default function ClientDashboardPage() {
       {data.contractor && (
         <Card>
           <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <User className="w-4 h-4 text-amber-500" /> Your Contractor
+            <User className="w-4 h-4 text-amber-500" /> {t('client.contractor.title')}
           </h3>
           <div className="flex items-start gap-4">
             {data.contractor.photoUrl ? (
@@ -271,19 +283,19 @@ export default function ClientDashboardPage() {
                   <Star className="w-3.5 h-3.5 text-amber-500" /> {data.contractor.avgRating.toFixed(1)}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Briefcase className="w-3.5 h-3.5" /> {data.contractor.totalJobsCompleted} jobs
+                  <Briefcase className="w-3.5 h-3.5" /> {t('client.contractor.jobs', { count: data.contractor.totalJobsCompleted })}
                 </span>
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5" /> {data.contractor.city}, {data.contractor.state}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {data.contractor.tradeTypes.map(t => (
-                  <Badge key={t} variant="amber">{t.replace(/([A-Z])/g, ' $1').trim()}</Badge>
+                {data.contractor.tradeTypes.map(trade => (
+                  <Badge key={trade} variant="amber">{tradeLabel(trade)}</Badge>
                 ))}
               </div>
               {data.contractor.licenseNumber && (
-                <p className="text-xs text-surface-muted mt-2">License: {data.contractor.licenseNumber}</p>
+                <p className="text-xs text-surface-muted mt-2">{t('client.contractor.license', { number: data.contractor.licenseNumber })}</p>
               )}
             </div>
           </div>
@@ -294,27 +306,25 @@ export default function ClientDashboardPage() {
       {data.activeQuote && (
         <Card glow={data.activeQuote.status === 'sent'}>
           <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-amber-500" /> Quote Details
+            <FileText className="w-4 h-4 text-amber-500" /> {t('client.quote.title')}
           </h3>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
-              <p className="text-xs text-surface-muted">Total</p>
+              <p className="text-xs text-surface-muted">{t('client.quote.total')}</p>
               <p className="text-lg font-heading font-bold text-emerald-400">
                 {formatCurrency(data.activeQuote.amount)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-surface-muted">Scheduled</p>
+              <p className="text-xs text-surface-muted">{t('client.quote.scheduled')}</p>
               <p className="text-sm font-medium text-white">
-                {new Date(data.activeQuote.scheduledDate).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric',
-                })}
+                {formatDate(data.activeQuote.scheduledDate)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-surface-muted">Status</p>
+              <p className="text-xs text-surface-muted">{t('client.quote.status')}</p>
               <Badge variant={data.activeQuote.status === 'approved' ? 'green' : 'amber'}>
-                {data.activeQuote.status}
+                {quoteStatusLabel(data.activeQuote.status)}
               </Badge>
             </div>
           </div>
@@ -325,7 +335,7 @@ export default function ClientDashboardPage() {
               className="w-full"
               onClick={() => router.push(`/client/${token}/quote`)}
             >
-              <FileText className="w-4 h-4" /> Review & Approve Quote
+              <FileText className="w-4 h-4" /> {t('client.quote.review')}
               <ChevronRight className="w-4 h-4 ml-auto" />
             </Button>
           )}
@@ -342,8 +352,8 @@ export default function ClientDashboardPage() {
                 <CreditCard className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Make Payment</p>
-                <p className="text-xs text-surface-muted">Pay securely via Stripe</p>
+                <p className="text-sm font-semibold text-white">{t('client.action.pay')}</p>
+                <p className="text-xs text-surface-muted">{t('client.action.payDesc')}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-surface-muted ml-auto" />
             </div>
@@ -358,8 +368,8 @@ export default function ClientDashboardPage() {
                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Confirm Completion</p>
-                <p className="text-xs text-surface-muted">Review work & release payment</p>
+                <p className="text-sm font-semibold text-white">{t('client.action.confirm')}</p>
+                <p className="text-xs text-surface-muted">{t('client.action.confirmDesc')}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-surface-muted ml-auto" />
             </div>
@@ -379,8 +389,8 @@ export default function ClientDashboardPage() {
                 <Star className="w-5 h-5 text-amber-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Rate Contractor</p>
-                <p className="text-xs text-surface-muted">Leave a review</p>
+                <p className="text-sm font-semibold text-white">{t('client.action.rate')}</p>
+                <p className="text-xs text-surface-muted">{t('client.action.rateDesc')}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-surface-muted ml-auto" />
             </div>
@@ -394,8 +404,8 @@ export default function ClientDashboardPage() {
               <AlertTriangle className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Report an Issue</p>
-              <p className="text-xs text-surface-muted">Something not right?</p>
+              <p className="text-sm font-semibold text-white">{t('client.action.report')}</p>
+              <p className="text-xs text-surface-muted">{t('client.action.reportDesc')}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-surface-muted ml-auto" />
           </div>
@@ -406,18 +416,18 @@ export default function ClientDashboardPage() {
       {data.escrow && (
         <Card>
           <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-amber-500" /> Payment Status
+            <CreditCard className="w-4 h-4 text-amber-500" /> {t('client.payment.title')}
           </h3>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-surface-muted">Amount</p>
+              <p className="text-sm text-surface-muted">{t('client.payment.amount')}</p>
               <p className="text-lg font-heading font-bold text-white">{formatCurrency(data.escrow.totalAmount)}</p>
             </div>
             <Badge variant={data.escrow.status === 'funded' ? 'green' : data.escrow.status === 'released' ? 'blue' : 'amber'}>
-              {data.escrow.status === 'funded' ? 'Funds Held Securely' :
-               data.escrow.status === 'released' ? 'Funds Released' :
-               data.escrow.status === 'disputed' ? '⚠️ Frozen — Under Review' :
-               data.escrow.status}
+              {data.escrow.status === 'funded' ? t('client.payment.held') :
+               data.escrow.status === 'released' ? t('client.payment.released') :
+               data.escrow.status === 'disputed' ? t('client.payment.frozen') :
+               escrowStatusLabel(data.escrow.status)}
             </Badge>
           </div>
         </Card>
@@ -425,8 +435,8 @@ export default function ClientDashboardPage() {
 
       {/* Footer note */}
       <p className="text-center text-xs text-surface-muted py-4">
-        This portal is provided by <span className="text-amber-400 font-medium">Tradelink</span>.
-        Your data is secure. Need help? <a href="mailto:support@tradelinkpro.net" className="text-amber-400 hover:underline">Contact support</a>.
+        {t('client.footerLead')} <span className="text-amber-400 font-medium">Tradelink</span>.{' '}
+        {t('client.footerRest')} <a href="mailto:support@tradelinkpro.net" className="text-amber-400 hover:underline">{t('client.footerSupport')}</a>.
       </p>
     </div>
   );

@@ -10,6 +10,7 @@ import {
   CheckCircle2, AlertTriangle, ArrowLeft, Clock,
   Image as ImageIcon, ShieldCheck,
 } from 'lucide-react';
+import { useT, useLabels } from '../../../../i18n';
 
 interface ConfirmData {
   clientName: string;
@@ -28,6 +29,8 @@ export default function ConfirmCompletionPage() {
   const [data, setData] = useState<ConfirmData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const t = useT();
+  const { apiErrorMessage } = useLabels();
 
   useEffect(() => {
     async function load() {
@@ -35,7 +38,7 @@ export default function ConfirmCompletionPage() {
         const res = await clientApi.get(`/client/${token}`);
         setData(res.data.data);
       } catch {
-        toast.error('Invalid or expired link');
+        toast.error(t('client.invalidLink'));
       } finally {
         setLoading(false);
       }
@@ -47,10 +50,10 @@ export default function ConfirmCompletionPage() {
     setActionLoading(true);
     try {
       await clientApi.post(`/client/${token}/confirm`);
-      toast.success('Job confirmed as complete! Payment is being released.');
+      toast.success(t('clientConfirm.toast.success'));
       router.push(`/client/${token}`);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to confirm completion');
+      toast.error(apiErrorMessage(err, t('clientConfirm.toast.failed')));
     } finally {
       setActionLoading(false);
     }
@@ -62,7 +65,7 @@ export default function ConfirmCompletionPage() {
     return (
       <div className="max-w-lg mx-auto text-center py-16">
         <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-        <h1 className="text-xl font-heading font-bold text-white">Access Error</h1>
+        <h1 className="text-xl font-heading font-bold text-white">{t('client.accessError')}</h1>
       </div>
     );
   }
@@ -73,16 +76,16 @@ export default function ConfirmCompletionPage() {
       <div className="max-w-lg mx-auto space-y-6">
         <button onClick={() => router.push(`/client/${token}`)}
           className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="w-4 h-4" /> {t('client.back')}
         </button>
         <Card className="text-center py-8">
           <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-heading font-bold text-white mb-2">Job Confirmed!</h1>
+          <h1 className="text-2xl font-heading font-bold text-white mb-2">{t('clientConfirm.doneTitle')}</h1>
           <p className="text-surface-muted">
-            You&apos;ve confirmed this job as complete. Payment has been released to the contractor.
+            {t('clientConfirm.doneBody')}
           </p>
           <Button className="mt-6" onClick={() => router.push(`/client/${token}/rate`)}>
-            Rate Your Contractor
+            {t('clientConfirm.rateCta')}
           </Button>
         </Card>
       </div>
@@ -95,14 +98,13 @@ export default function ConfirmCompletionPage() {
       <div className="max-w-lg mx-auto space-y-6">
         <button onClick={() => router.push(`/client/${token}`)}
           className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="w-4 h-4" /> {t('client.back')}
         </button>
         <Card className="text-center py-8">
           <Clock className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-          <h1 className="text-xl font-heading font-bold text-white mb-2">Work Still in Progress</h1>
+          <h1 className="text-xl font-heading font-bold text-white mb-2">{t('clientConfirm.pendingTitle')}</h1>
           <p className="text-surface-muted">
-            The contractor has not yet marked this job as complete.
-            You&apos;ll be notified when it&apos;s ready for your review.
+            {t('clientConfirm.pendingBody')}
           </p>
         </Card>
       </div>
@@ -120,7 +122,7 @@ export default function ConfirmCompletionPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <button onClick={() => router.push(`/client/${token}`)}
         className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        <ArrowLeft className="w-4 h-4" /> {t('client.back')}
       </button>
 
       <Card>
@@ -129,10 +131,10 @@ export default function ConfirmCompletionPage() {
             <ShieldCheck className="w-7 h-7 text-emerald-400" />
           </div>
           <h1 className="text-xl font-heading font-bold text-white mb-1">
-            {data.contractor?.name} Marked the Job Complete
+            {t('clientConfirm.title', { name: data.contractor?.name ?? '' })}
           </h1>
           <p className="text-sm text-surface-muted">
-            Please review and confirm that the work has been done to your satisfaction.
+            {t('clientConfirm.subtitle')}
           </p>
         </div>
 
@@ -140,13 +142,13 @@ export default function ConfirmCompletionPage() {
         {data.job.completionPhotos && data.job.completionPhotos.length > 0 && (
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-amber-500" /> Completion Photos
+              <ImageIcon className="w-4 h-4 text-amber-500" /> {t('clientConfirm.photos')}
             </h3>
             <div className="grid grid-cols-2 gap-3">
               {data.job.completionPhotos.map((url, i) => (
                 <a key={i} href={url} target="_blank" rel="noopener noreferrer"
                   className="block rounded-xl overflow-hidden border border-surface-border hover:border-amber-500/30 transition">
-                  <img src={url} alt={`Completion photo ${i + 1}`}
+                  <img src={url} alt={t('clientConfirm.photoAlt', { n: i + 1 })}
                     className="w-full h-40 object-cover" />
                 </a>
               ))}
@@ -160,8 +162,8 @@ export default function ConfirmCompletionPage() {
             <div className="flex items-center gap-2 text-sm">
               <Clock className="w-4 h-4 text-amber-500 shrink-0" />
               <p className="text-slate-300">
-                If you don&apos;t respond, payment will auto-release in{' '}
-                <span className="text-amber-400 font-semibold">{daysRemaining} day{daysRemaining !== 1 ? 's' : ''}</span>.
+                {t('clientConfirm.autoReleaseLead')}{' '}
+                <span className="text-amber-400 font-semibold">{daysRemaining === 1 ? t('clientConfirm.dayOne', { count: daysRemaining }) : t('clientConfirm.dayMany', { count: daysRemaining })}</span>.
               </p>
             </div>
           </div>
@@ -170,16 +172,16 @@ export default function ConfirmCompletionPage() {
         {/* Action buttons */}
         <div className="flex gap-3">
           <Button className="flex-1" size="lg" onClick={handleConfirm} loading={actionLoading}>
-            <CheckCircle2 className="w-4 h-4" /> Confirm — Job is Done
+            <CheckCircle2 className="w-4 h-4" /> {t('clientConfirm.confirm')}
           </Button>
           <Button variant="danger" className="flex-1" size="lg"
             onClick={() => router.push(`/client/${token}/dispute`)}>
-            <AlertTriangle className="w-4 h-4" /> Raise a Dispute
+            <AlertTriangle className="w-4 h-4" /> {t('clientConfirm.dispute')}
           </Button>
         </div>
 
         <p className="text-[11px] text-surface-muted text-center mt-4">
-          By confirming, you authorize the release of escrowed funds to the contractor.
+          {t('clientConfirm.authorize')}
         </p>
       </Card>
     </div>

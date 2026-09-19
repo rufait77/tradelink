@@ -7,10 +7,10 @@ import { EmptyState } from '../../../components/ui/empty-state';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import { useAuthStore } from '../../../store/auth.store';
 import api from '../../../lib/api';
-import { formatRelativeTime } from '../../../lib/utils';
 import {
   MessageSquare, Clock, Users, Search, Circle,
 } from 'lucide-react';
+import { useT, useLabels, useFormat } from '../../../i18n';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -52,6 +52,9 @@ export default function MessagesPage() {
   const [dmConvos, setDmConvos] = useState<DmConversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const t = useT();
+  const { tradeLabel } = useLabels();
+  const { formatRelativeTime } = useFormat();
 
   useEffect(() => {
     async function load() {
@@ -86,8 +89,8 @@ export default function MessagesPage() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-heading font-bold text-white">Messages</h1>
-        <p className="text-sm text-surface-muted">Conversations with contractors and job threads</p>
+        <h1 className="text-2xl font-heading font-bold text-white">{t('messages.title')}</h1>
+        <p className="text-sm text-surface-muted">{t('messages.subtitle')}</p>
       </div>
 
       {/* Search */}
@@ -95,7 +98,7 @@ export default function MessagesPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
         <input
           type="text"
-          placeholder="Search conversations..."
+          placeholder={t('messages.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 bg-[#0a1628] border border-surface-border rounded-xl text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50"
@@ -114,7 +117,7 @@ export default function MessagesPage() {
           }`}
         >
           <Users className="w-4 h-4" />
-          Direct Messages
+          {t('messages.tab.direct')}
           {dmUnread > 0 && (
             <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-[#050d1a] rounded-full">{dmUnread}</span>
           )}
@@ -128,7 +131,7 @@ export default function MessagesPage() {
           }`}
         >
           <MessageSquare className="w-4 h-4" />
-          Job Messages
+          {t('messages.tab.jobs')}
           {jobUnread > 0 && (
             <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-[#050d1a] rounded-full">{jobUnread}</span>
           )}
@@ -143,8 +146,8 @@ export default function MessagesPage() {
         filteredDm.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="No direct messages"
-            description={search ? 'No conversations match your search.' : 'Start a conversation by visiting a contractor\'s profile and clicking "Message".'}
+            title={t('messages.dm.empty.title')}
+            description={search ? t('messages.empty.search') : t('messages.dm.empty.desc')}
           />
         ) : (
           <div className="space-y-2">
@@ -172,7 +175,7 @@ export default function MessagesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className={`text-sm font-semibold truncate ${conv.unreadCount > 0 ? 'text-white' : 'text-slate-300'}`}>
-                          {conv.partner?.name || 'Unknown'}
+                          {conv.partner?.name || t('messages.unknownUser')}
                         </p>
                         {conv.unreadCount > 0 && (
                           <Badge variant="amber">{conv.unreadCount}</Badge>
@@ -180,12 +183,12 @@ export default function MessagesPage() {
                       </div>
                       {conv.partner?.profile?.tradeTypes?.[0] && (
                         <p className="text-xs text-amber-500/60 truncate">
-                          {conv.partner.profile.tradeTypes[0].replace(/([A-Z])/g, ' $1').trim()}
+                          {tradeLabel(conv.partner.profile.tradeTypes[0])}
                         </p>
                       )}
                       {conv.lastMessage && (
                         <p className={`text-xs truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-slate-300' : 'text-slate-500'}`}>
-                          {conv.lastMessage.senderId === user?.id ? 'You: ' : ''}{conv.lastMessage.content}
+                          {conv.lastMessage.senderId === user?.id ? t('messages.youPrefix') : ''}{conv.lastMessage.content}
                         </p>
                       )}
                     </div>
@@ -209,8 +212,8 @@ export default function MessagesPage() {
         filteredJob.length === 0 ? (
           <EmptyState
             icon={MessageSquare}
-            title="No job conversations"
-            description={search ? 'No conversations match your search.' : 'Messages will appear here when you communicate about a job.'}
+            title={t('messages.job.empty.title')}
+            description={search ? t('messages.empty.search') : t('messages.job.empty.desc')}
           />
         ) : (
           <div className="space-y-2">

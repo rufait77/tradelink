@@ -6,13 +6,15 @@ import { Button } from '../../../../components/ui/button';
 import clientApi from '../../../../lib/clientApi';
 import { toast } from 'sonner';
 import { ArrowLeft, AlertTriangle, Send, CheckCircle2 } from 'lucide-react';
+import { useT, useLabels, type TranslationKey } from '../../../../i18n';
 
-const REPORT_TYPES = [
-  { value: 'not_responding', label: 'Contractor Not Responding', desc: 'No contact for 48+ hours after assignment' },
-  { value: 'off_platform', label: 'Off-Platform Activity', desc: 'Contractor asked to negotiate or pay outside Tradelink' },
-  { value: 'poor_quality', label: 'Quality Concern', desc: 'Work quality does not meet expectations' },
-  { value: 'unprofessional', label: 'Unprofessional Conduct', desc: 'Rude, late, or inappropriate behavior' },
-  { value: 'other', label: 'Other Issue', desc: 'Something else not listed above' },
+// `value` is the API enum; only the label and description are translated.
+const REPORT_TYPES: { value: string; labelKey: TranslationKey; descKey: TranslationKey }[] = [
+  { value: 'not_responding', labelKey: 'clientReport.type.notResponding', descKey: 'clientReport.type.notRespondingDesc' },
+  { value: 'off_platform', labelKey: 'clientReport.type.offPlatform', descKey: 'clientReport.type.offPlatformDesc' },
+  { value: 'poor_quality', labelKey: 'clientReport.type.quality', descKey: 'clientReport.type.qualityDesc' },
+  { value: 'unprofessional', labelKey: 'clientReport.type.unprofessional', descKey: 'clientReport.type.unprofessionalDesc' },
+  { value: 'other', labelKey: 'clientReport.type.other', descKey: 'clientReport.type.otherDesc' },
 ];
 
 export default function ReportPage() {
@@ -22,10 +24,12 @@ export default function ReportPage() {
   const [selectedType, setSelectedType] = useState('');
   const [description, setDescription] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const t = useT();
+  const { apiErrorMessage } = useLabels();
 
   async function handleSubmit() {
-    if (!selectedType) { toast.error('Please select a report type'); return; }
-    if (description.length < 10) { toast.error('Please describe the issue (at least 10 characters)'); return; }
+    if (!selectedType) { toast.error(t('clientReport.toast.pickType')); return; }
+    if (description.length < 10) { toast.error(t('clientReport.toast.tooShort')); return; }
 
     setSubmitLoading(true);
     try {
@@ -33,10 +37,10 @@ export default function ReportPage() {
         type: selectedType,
         description,
       });
-      toast.success('Report submitted successfully');
+      toast.success(t('clientReport.toast.success'));
       setSubmitted(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to submit report');
+      toast.error(apiErrorMessage(err, t('clientReport.toast.failed')));
     } finally {
       setSubmitLoading(false);
     }
@@ -47,17 +51,17 @@ export default function ReportPage() {
       <div className="max-w-lg mx-auto space-y-6">
         <button onClick={() => router.push(`/client/${token}`)}
           className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="w-4 h-4" /> {t('client.back')}
         </button>
         <Card className="text-center py-8">
           <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto mb-4" />
-          <h1 className="text-xl font-heading font-bold text-white mb-2">Report Received</h1>
+          <h1 className="text-xl font-heading font-bold text-white mb-2">{t('clientReport.receivedTitle')}</h1>
           <p className="text-surface-muted">
-            Thank you for reporting this. Our team will investigate within{' '}
-            <span className="text-amber-400 font-medium">24 hours</span> and take appropriate action.
+            {t('clientReport.receivedLead')}{' '}
+            <span className="text-amber-400 font-medium">{t('clientReport.receivedHours')}</span> {t('clientReport.receivedRest')}
           </p>
           <Button variant="outline" className="mt-6" onClick={() => router.push(`/client/${token}`)}>
-            Back to Dashboard
+            {t('client.back')}
           </Button>
         </Card>
       </div>
@@ -68,7 +72,7 @@ export default function ReportPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <button onClick={() => router.push(`/client/${token}`)}
         className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        <ArrowLeft className="w-4 h-4" /> {t('client.back')}
       </button>
 
       <Card>
@@ -77,16 +81,16 @@ export default function ReportPage() {
             <AlertTriangle className="w-5 h-5 text-red-400" />
           </div>
           <div>
-            <h1 className="text-lg font-heading font-bold text-white">Report an Issue</h1>
+            <h1 className="text-lg font-heading font-bold text-white">{t('clientReport.title')}</h1>
             <p className="text-xs text-surface-muted">
-              We take all reports seriously and will investigate promptly.
+              {t('clientReport.subtitle')}
             </p>
           </div>
         </div>
 
         {/* Report type selector */}
         <div className="mb-5">
-          <label className="label mb-2 block">What type of issue?</label>
+          <label className="label mb-2 block">{t('clientReport.typeLabel')}</label>
           <div className="space-y-2">
             {REPORT_TYPES.map((r) => (
               <button
@@ -99,9 +103,9 @@ export default function ReportPage() {
                 }`}
               >
                 <p className={`text-sm font-medium ${selectedType === r.value ? 'text-amber-400' : 'text-white'}`}>
-                  {r.label}
+                  {t(r.labelKey)}
                 </p>
-                <p className="text-xs text-surface-muted mt-0.5">{r.desc}</p>
+                <p className="text-xs text-surface-muted mt-0.5">{t(r.descKey)}</p>
               </button>
             ))}
           </div>
@@ -109,22 +113,22 @@ export default function ReportPage() {
 
         {/* Description */}
         <div className="mb-6">
-          <label className="label mb-2 block">Tell us more</label>
+          <label className="label mb-2 block">{t('clientReport.describeLabel')}</label>
           <textarea
             className="input-field resize-none w-full"
             rows={4}
-            placeholder="Please describe the issue in detail. Include dates, times, and specific examples if possible..."
+            placeholder={t('clientReport.describePlaceholder')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
 
         <Button variant="danger" className="w-full" size="lg" onClick={handleSubmit} loading={submitLoading}>
-          <Send className="w-4 h-4" /> Submit Report
+          <Send className="w-4 h-4" /> {t('clientReport.submit')}
         </Button>
 
         <p className="text-[11px] text-surface-muted text-center mt-4">
-          Reports are confidential. The contractor will not see your identity.
+          {t('clientReport.confidential')}
         </p>
       </Card>
     </div>
