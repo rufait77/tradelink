@@ -25,6 +25,8 @@ export const MOCK_SECTION_STRINGS = {
   ctaContractor: 'Join as a contractor',
   ctaReferrer: 'Join as a referrer',
   fullDemo: 'Open full-screen demo',
+  roleTablistLabel: 'Dashboard role',
+  browserUrl: 'tradelink · dashboard',
 } as const;
 
 const ROLE_OPTIONS: { role: MockRole; label: string; icon: typeof HardHat }[] = [
@@ -60,7 +62,7 @@ export function MockDashboardSection() {
 
         {/* Role toggle */}
         <div className="flex justify-center mb-6">
-          <div role="tablist" aria-label="Dashboard role" className="inline-flex p-1 rounded-2xl bg-navy-950 border border-surface-border/60">
+          <div role="tablist" aria-label={MOCK_SECTION_STRINGS.roleTablistLabel} className="inline-flex p-1 rounded-2xl bg-navy-950 border border-surface-border/60">
             {ROLE_OPTIONS.map((opt) => {
               const Icon = opt.icon;
               const active = role === opt.role;
@@ -101,7 +103,7 @@ export function MockDashboardSection() {
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
                 <span className="ml-3 flex-1 max-w-xs h-5 rounded-md bg-navy-950 border border-surface-border/40 text-[10px] text-surface-muted flex items-center px-2 truncate">
-                  tradelink · dashboard
+                  {MOCK_SECTION_STRINGS.browserUrl}
                 </span>
               </div>
               <MockDashboard role={role} className="rounded-none border-0 shadow-none" />

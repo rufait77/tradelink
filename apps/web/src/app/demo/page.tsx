@@ -14,6 +14,7 @@ const DEMO_STRINGS = {
   subtitle: 'Sample data only — nothing here is saved.',
   toggle: { contractor: 'Contractor', referrer: 'Referrer' },
   cta: 'Create your account',
+  roleTablistLabel: 'Dashboard role',
 } as const;
 
 const ROLE_OPTIONS: { role: MockRole; label: string; icon: typeof HardHat }[] = [
@@ -37,7 +38,7 @@ export default function DemoPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div role="tablist" aria-label="Dashboard role" className="inline-flex p-1 rounded-2xl bg-navy-900 border border-surface-border/60">
+            <div role="tablist" aria-label={DEMO_STRINGS.roleTablistLabel} className="inline-flex p-1 rounded-2xl bg-navy-900 border border-surface-border/60">
               {ROLE_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const active = role === opt.role;

@@ -36,6 +36,7 @@ export const MOCK_DASHBOARD_STRINGS = {
   pipelineJob: 'Water heater replacement',
   pipelineNote: 'Funds release automatically 5 days after the contractor marks it done.',
   demoBadge: 'Demo · sample data',
+  ariaLabel: 'Tradelink dashboard preview',
 } as const;
 
 const TONE_CLASS: Record<MockStat['tone'], string> = {
@@ -68,7 +69,7 @@ export function MockDashboard({ role, className }: MockDashboardProps) {
         'relative flex w-full overflow-hidden rounded-2xl border border-surface-border/60 bg-navy-950 shadow-glass text-left',
         className,
       )}
-      aria-label="Tradelink dashboard preview"
+      aria-label={MOCK_DASHBOARD_STRINGS.ariaLabel}
     >
       <MockSidebar role={role} name={persona.name} email={persona.email} />
 

@@ -40,12 +40,12 @@ router.post('/:id/reassign', requireAuth, reassignJob);
 // ─── Quote & Completion ─────────────────────────────────────────────────────
 router.post('/:id/quote', requireAuth, forbidReferrer, subscriptionGate, createQuote);
 router.get('/:id/quotes', requireAuth, getJobQuotes);
-router.post('/:id/contractor-complete', requireAuth, contractorCompleteJob);
+router.post('/:id/contractor-complete', requireAuth, forbidReferrer, contractorCompleteJob);
 router.post('/:id/completion-photos', requireAuth, uploadCompletionPhotos);
 
 // ─── Legacy flow (kept for backward compat, will be replaced) ───────────────
 router.post('/:id/claim', requireAuth, forbidReferrer, claimJob);
-router.post('/:id/start', requireAuth, startJob);
-router.post('/:id/complete', requireAuth, completeJob);
+router.post('/:id/start', requireAuth, forbidReferrer, startJob);
+router.post('/:id/complete', requireAuth, forbidReferrer, completeJob);
 
 export default router;

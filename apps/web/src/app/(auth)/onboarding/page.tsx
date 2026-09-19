@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -49,7 +49,11 @@ export default function OnboardingPage() {
   // Referrers skip the Trade Types step (and the license field) — they start at Location.
   const isReferrer = user?.role === 'referrer';
   const firstStep = isReferrer ? 1 : 0;
-  const [step, setStep] = useState(firstStep);
+  const [step, setStep] = useState(0);
+  // Reactive floor: user may hydrate after first render (hard refresh), so never show step 0 to a referrer.
+  useEffect(() => {
+    if (isReferrer && step < 1) setStep(1);
+  }, [isReferrer, step]);
   const [loading, setLoading] = useState(false);
   const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState('');
