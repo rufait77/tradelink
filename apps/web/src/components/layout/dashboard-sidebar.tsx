@@ -10,31 +10,33 @@ import {
   DollarSign, MessageSquare, Bell, User, Settings, CreditCard,
   Zap, LogOut,
 } from 'lucide-react';
+import { useT } from '../../i18n';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/jobs', label: 'Job Board', icon: Briefcase },
-  { href: '/dashboard/post-job', label: 'Post a Referral', icon: Send },
-  { href: '/dashboard/my-referrals', label: 'My Referrals', icon: ClipboardList },
-  { href: '/dashboard/my-jobs', label: 'My Jobs', icon: FolderOpen },
-  { href: '/dashboard/earnings', label: 'Earnings', icon: DollarSign },
-  { href: '/dashboard/messages', label: 'Messages', icon: MessageSquare },
-  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
-];
+  { href: '/dashboard', labelKey: 'sidebar.dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/jobs', labelKey: 'sidebar.jobBoard', icon: Briefcase },
+  { href: '/dashboard/post-job', labelKey: 'sidebar.postReferral', icon: Send },
+  { href: '/dashboard/my-referrals', labelKey: 'sidebar.myReferrals', icon: ClipboardList },
+  { href: '/dashboard/my-jobs', labelKey: 'sidebar.myJobs', icon: FolderOpen },
+  { href: '/dashboard/earnings', labelKey: 'sidebar.earnings', icon: DollarSign },
+  { href: '/dashboard/messages', labelKey: 'sidebar.messages', icon: MessageSquare },
+  { href: '/dashboard/notifications', labelKey: 'sidebar.notifications', icon: Bell },
+] as const;
 
 // Referrers cannot claim jobs or send quotes — hide contractor-only entry points.
-const REFERRER_HIDDEN_HREFS = ['/dashboard/jobs', '/dashboard/my-jobs'];
+const REFERRER_HIDDEN_HREFS: readonly string[] = ['/dashboard/jobs', '/dashboard/my-jobs'];
 
 const BOTTOM_ITEMS = [
-  { href: '/dashboard/profile', label: 'Profile', icon: User },
-  { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
-];
+  { href: '/dashboard/profile', labelKey: 'sidebar.profile', icon: User },
+  { href: '/dashboard/billing', labelKey: 'sidebar.billing', icon: CreditCard },
+  { href: '/dashboard/settings', labelKey: 'sidebar.settings', icon: Settings },
+] as const;
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const [dmUnread, setDmUnread] = useState(0);
+  const t = useT();
   const visibleNavItems = user?.role === 'referrer'
     ? NAV_ITEMS.filter((item) => !REFERRER_HIDDEN_HREFS.includes(item.href))
     : NAV_ITEMS;
@@ -79,11 +81,11 @@ export function DashboardSidebar() {
               )}
             >
               <Icon className={cn('w-[18px] h-[18px]', active ? 'text-amber-500' : '')} />
-              {item.label}
-              {item.label === 'Post a Referral' && (
+              {t(item.labelKey)}
+              {item.href === '/dashboard/post-job' && (
                 <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse-amber" />
               )}
-              {item.label === 'Messages' && dmUnread > 0 && (
+              {item.href === '/dashboard/messages' && dmUnread > 0 && (
                 <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-navy-950 rounded-full min-w-[18px] text-center">
                   {dmUnread > 99 ? '99+' : dmUnread}
                 </span>
@@ -108,7 +110,7 @@ export function DashboardSidebar() {
                 )}
               >
                 <Icon className={cn('w-[18px] h-[18px]', active ? 'text-amber-500' : '')} />
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             );
           })}
@@ -133,7 +135,7 @@ export function DashboardSidebar() {
           className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/5 transition-all"
         >
           <LogOut className="w-[18px] h-[18px]" />
-          Sign Out
+          {t('sidebar.signOut')}
         </button>
       </div>
     </aside>
