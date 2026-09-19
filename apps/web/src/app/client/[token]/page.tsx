@@ -139,7 +139,7 @@ export default function ClientDashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<unknown>(null);
   const t = useT();
   const { tradeLabel, statusLabel, escrowStatusLabel, apiErrorMessage } = useLabels();
   const { formatDate } = useFormat();
@@ -156,9 +156,10 @@ export default function ClientDashboardPage() {
         const res = await clientApi.get(`/client/${token}`);
         setData(res.data.data);
       } catch (err: any) {
-        const msg = apiErrorMessage(err, t('client.loadFailed'));
-        setError(msg);
-        toast.error(msg);
+        // Keep the error itself, not a rendered string, so the message below
+        // re-translates if the visitor switches language after it appears.
+        setError(err);
+        toast.error(apiErrorMessage(err, t('client.loadFailed')));
       } finally {
         setLoading(false);
       }
@@ -175,7 +176,9 @@ export default function ClientDashboardPage() {
           <AlertTriangle className="w-8 h-8 text-red-400" />
         </div>
         <h1 className="text-2xl font-heading font-bold text-white mb-2">{t('client.accessDenied')}</h1>
-        <p className="text-surface-muted">{error || t('client.accessExpired')}</p>
+        <p className="text-surface-muted">
+          {error ? apiErrorMessage(error, t('client.loadFailed')) : t('client.accessExpired')}
+        </p>
       </div>
     );
   }

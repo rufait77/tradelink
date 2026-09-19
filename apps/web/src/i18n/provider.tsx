@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_LOCALE,
   LOCALE_TAGS,
@@ -49,6 +49,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
   const [ready, setReady] = useState(false);
 
+  // `t` is captured by effects and callbacks that are created on mount and not
+  // re-created when the locale changes — for example a data-loading effect that
+  // reports an API failure. Resolving through a ref means such a stale closure
+  // still produces text in the locale that is active when it finally runs,
+  // rather than the default locale the page first rendered with.
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
+
   useEffect(() => {
     const stored = readStoredLocale();
     if (stored !== DEFAULT_LOCALE) setLocaleState(stored);
@@ -66,7 +74,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<I18nContextValue>(() => {
-    const t: TranslateFn = (key, vars) => translate(locale, key, vars);
+    // A fresh identity on every locale change, so `useMemo([t])` consumers
+    // (translated Zod schemas, option lists) rebuild when the language flips.
+    const t: TranslateFn = (key, vars) => translate(localeRef.current, key, vars);
     return { locale, setLocale, t, ready };
   }, [locale, setLocale, ready]);
 
