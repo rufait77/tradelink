@@ -1,6 +1,9 @@
 // ─── Mock dashboard data (pure front-end, no API) ─────────────────────────────
-// EVERY display string lives in MOCK_DATA_STRINGS below so Worker B can translate
-// the whole demo in one pass. The persona arrays underneath only reference it.
+// Every display string is a translation key resolved at render time, so the demo
+// follows the visitor's language exactly like the rest of the site. Personal
+// names, email addresses and dollar amounts stay as-is in both languages.
+
+import type { TranslateFn, TranslationKey } from '../../i18n';
 
 export type MockRole = 'contractor' | 'referrer';
 
@@ -10,75 +13,31 @@ export type MockNotification = { title: string; body: string; when: string; unre
 export type MockEarningsPoint = { month: string; earned: number };
 export type MockPipelineStep = { label: string; done: boolean; current?: boolean };
 
-export const MOCK_DATA_STRINGS = {
-  userNames: { contractor: 'Marcus Reed', referrer: 'Dana Whitfield' },
-  userEmails: { contractor: 'marcus@reedplumbing.com', referrer: 'dana.whitfield@gmail.com' },
-  trades: {
-    plumbing: 'Plumbing',
-    hvac: 'HVAC',
-    roofing: 'Roofing',
-    electrical: 'Electrical',
-    landscaping: 'Landscaping',
-    painting: 'Painting',
-  },
-  statuses: {
-    completed: 'Completed',
-    escrowFunded: 'Escrow Funded',
-    quoteSent: 'Quote Sent',
-    open: 'Open',
-    inProgress: 'In Progress',
-    assigned: 'Assigned',
-  },
-  months: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
-  // Relative-time labels shown next to jobs / notifications
-  when: {
-    h2: '2h ago', h3: '3h ago', h5: '5h ago',
-    d1: '1d ago', d2: '2d ago', d4: '4d ago', d5: '5d ago',
-    short: { h2: '2h', h3: '3h', d1: '1d', d2: '2d', d3: '3d', d4: '4d', d5: '5d' },
-  },
-  statLabels: {
-    totalEarned: 'Total Earned',
-    pending: 'Pending',
-    thisMonth: 'This Month',
-    profileRating: 'Profile Rating',
-    referralsPosted: 'Referrals Posted',
-    commissionRate: 'Commission Rate',
-  },
-  contractorJobs: {
-    waterHeater: 'Water heater replacement — 2-story home',
-    roofInspection: 'Full roof inspection + shingle repair',
-    miniSplit: 'Mini-split install, garage conversion',
-    exteriorRepaint: 'Exterior repaint — ranch style',
-  },
-  referrerJobs: {
-    gutter: 'Neighbor needs gutter + downspout repair',
-    drainage: 'Backyard drainage and sod',
-    panelUpgrade: 'Panel upgrade for EV charger',
-    faucet: 'Leaking kitchen faucet + disposal',
-  },
-  contractorNotifications: {
-    escrowPaid: { title: 'Client paid into escrow', body: 'Water heater replacement is funded. You can start work.' },
-    commissionPaid: { title: 'Commission paid', body: '$960 for "Mini-split install" hit your bank.' },
-    newInterest: { title: 'New interest in your referral', body: '3 contractors are interested in "Exterior repaint".' },
-    review: { title: 'Review received', body: 'Alicia P. left you 5 stars.' },
-  },
-  referrerNotifications: {
-    assigned: { title: 'Contractor assigned', body: 'You picked Reed Plumbing for "Gutter repair".' },
-    commissionPaid: { title: 'Commission paid', body: '$145 for "Panel upgrade" is on its way.' },
-    quoteApproved: { title: 'Quote approved', body: 'Client approved the $2,200 drainage quote.' },
-    interest: { title: 'Interest received', body: '2 contractors want "Kitchen faucet".' },
-  },
-  pipeline: {
-    posted: 'Posted',
-    assigned: 'Assigned',
-    quoteApproved: 'Quote approved',
-    escrowFunded: 'Escrow funded',
-    workDone: 'Work done',
-    paidOut: 'Paid out',
-  },
+// Names and emails are sample personas, not copy — they are not translated.
+export const MOCK_IDENTITIES = {
+  contractor: { name: 'Marcus Reed', email: 'marcus@reedplumbing.com' },
+  referrer: { name: 'Dana Whitfield', email: 'dana.whitfield@gmail.com' },
 } as const;
 
-const S = MOCK_DATA_STRINGS;
+const MONTH_KEYS: TranslationKey[] = [
+  'mockData.month.apr',
+  'mockData.month.may',
+  'mockData.month.jun',
+  'mockData.month.jul',
+  'mockData.month.aug',
+  'mockData.month.sep',
+];
+
+// Relative-time labels next to jobs and notifications, built from the shared
+// time keys so they read naturally in both languages.
+function when(t: TranslateFn, unit: 'h' | 'd', count: number): string {
+  return unit === 'h' ? t('time.hoursAgo', { count }) : t('time.daysAgo', { count });
+}
+
+/** Compact form used in the notification list, where space is tight. */
+function whenShort(t: TranslateFn, unit: 'h' | 'd', count: number): string {
+  return unit === 'h' ? t('time.hoursShort', { count }) : t('time.daysShort', { count });
+}
 
 const STATUS_CLASS = {
   completed: 'status-completed',
@@ -91,96 +50,99 @@ const STATUS_CLASS = {
 
 // ─── Contractor persona ───────────────────────────────────────────────────────
 
-export const CONTRACTOR_STATS: MockStat[] = [
-  { label: S.statLabels.totalEarned, value: '$4,820', tone: 'emerald' },
-  { label: S.statLabels.pending, value: '$640', tone: 'amber' },
-  { label: S.statLabels.thisMonth, value: '$1,180', tone: 'blue' },
-  { label: S.statLabels.profileRating, value: '4.9 ★', tone: 'amber' },
-];
+function contractorStats(t: TranslateFn): MockStat[] {
+  return [
+    { label: t('mockData.stat.totalEarned'), value: '$4,820', tone: 'emerald' },
+    { label: t('mockData.stat.pending'), value: '$640', tone: 'amber' },
+    { label: t('mockData.stat.thisMonth'), value: '$1,180', tone: 'blue' },
+    { label: t('mockData.stat.profileRating'), value: '4.9 ★', tone: 'amber' },
+  ];
+}
 
-export const CONTRACTOR_JOBS: MockJob[] = [
-  { title: S.contractorJobs.waterHeater, trade: S.trades.plumbing, status: S.statuses.escrowFunded, statusClass: STATUS_CLASS.escrowFunded, amount: '$2,400', when: S.when.h2 },
-  { title: S.contractorJobs.roofInspection, trade: S.trades.roofing, status: S.statuses.quoteSent, statusClass: STATUS_CLASS.quoteSent, amount: '$3,150', when: S.when.h5 },
-  { title: S.contractorJobs.miniSplit, trade: S.trades.hvac, status: S.statuses.completed, statusClass: STATUS_CLASS.completed, amount: '$4,800', when: S.when.d1 },
-  { title: S.contractorJobs.exteriorRepaint, trade: S.trades.painting, status: S.statuses.open, statusClass: STATUS_CLASS.open, amount: '$1,900', when: S.when.d2 },
-];
+function contractorJobs(t: TranslateFn): MockJob[] {
+  return [
+    { title: t('mockData.job.waterHeater'), trade: t('trade.Plumbing'), status: t('status.EscrowFunded'), statusClass: STATUS_CLASS.escrowFunded, amount: '$2,400', when: when(t, 'h', 2) },
+    { title: t('mockData.job.roofInspection'), trade: t('trade.Roofing'), status: t('status.QuoteSent'), statusClass: STATUS_CLASS.quoteSent, amount: '$3,150', when: when(t, 'h', 5) },
+    { title: t('mockData.job.miniSplit'), trade: t('trade.HVAC'), status: t('status.Completed'), statusClass: STATUS_CLASS.completed, amount: '$4,800', when: when(t, 'd', 1) },
+    { title: t('mockData.job.exteriorRepaint'), trade: t('trade.Painting'), status: t('status.Open'), statusClass: STATUS_CLASS.open, amount: '$1,900', when: when(t, 'd', 2) },
+  ];
+}
 
-export const CONTRACTOR_EARNINGS: MockEarningsPoint[] = [
-  { month: S.months[0], earned: 420 },
-  { month: S.months[1], earned: 690 },
-  { month: S.months[2], earned: 560 },
-  { month: S.months[3], earned: 980 },
-  { month: S.months[4], earned: 1010 },
-  { month: S.months[5], earned: 1180 },
-];
+function contractorNotifications(t: TranslateFn): MockNotification[] {
+  return [
+    { title: t('mockData.notif.escrowPaid.title'), body: t('mockData.notif.escrowPaid.body'), when: whenShort(t, 'h', 2), unread: true },
+    { title: t('mockData.notif.commissionPaid.title'), body: t('mockData.notif.commissionPaid.bodyContractor'), when: whenShort(t, 'd', 1), unread: true },
+    { title: t('mockData.notif.newInterest.title'), body: t('mockData.notif.newInterest.body'), when: whenShort(t, 'd', 2), unread: false },
+    { title: t('mockData.notif.review.title'), body: t('mockData.notif.review.body'), when: whenShort(t, 'd', 3), unread: false },
+  ];
+}
 
-export const CONTRACTOR_NOTIFICATIONS: MockNotification[] = [
-  { ...S.contractorNotifications.escrowPaid, when: S.when.short.h2, unread: true },
-  { ...S.contractorNotifications.commissionPaid, when: S.when.short.d1, unread: true },
-  { ...S.contractorNotifications.newInterest, when: S.when.short.d2, unread: false },
-  { ...S.contractorNotifications.review, when: S.when.short.d3, unread: false },
-];
+const CONTRACTOR_EARNINGS_VALUES = [420, 690, 560, 980, 1010, 1180];
 
 // ─── Referrer persona ─────────────────────────────────────────────────────────
 
-export const REFERRER_STATS: MockStat[] = [
-  { label: S.statLabels.totalEarned, value: '$310', tone: 'emerald' },
-  { label: S.statLabels.pending, value: '$85', tone: 'amber' },
-  { label: S.statLabels.referralsPosted, value: '7', tone: 'blue' },
-  { label: S.statLabels.commissionRate, value: '5%', tone: 'amber' }, // sample value; live rate shown in section caption
-];
+function referrerStats(t: TranslateFn): MockStat[] {
+  return [
+    { label: t('mockData.stat.totalEarned'), value: '$310', tone: 'emerald' },
+    { label: t('mockData.stat.pending'), value: '$85', tone: 'amber' },
+    { label: t('mockData.stat.referralsPosted'), value: '7', tone: 'blue' },
+    // Sample value; the live rate is shown in the section caption.
+    { label: t('mockData.stat.commissionRate'), value: '5%', tone: 'amber' },
+  ];
+}
 
-export const REFERRER_JOBS: MockJob[] = [
-  { title: S.referrerJobs.gutter, trade: S.trades.roofing, status: S.statuses.assigned, statusClass: STATUS_CLASS.assigned, amount: '$1,700', when: S.when.h3 },
-  { title: S.referrerJobs.drainage, trade: S.trades.landscaping, status: S.statuses.inProgress, statusClass: STATUS_CLASS.inProgress, amount: '$2,200', when: S.when.d1 },
-  { title: S.referrerJobs.panelUpgrade, trade: S.trades.electrical, status: S.statuses.completed, statusClass: STATUS_CLASS.completed, amount: '$2,900', when: S.when.d4 },
-  { title: S.referrerJobs.faucet, trade: S.trades.plumbing, status: S.statuses.open, statusClass: STATUS_CLASS.open, amount: '$450', when: S.when.d5 },
-];
+function referrerJobs(t: TranslateFn): MockJob[] {
+  return [
+    { title: t('mockData.job.gutter'), trade: t('trade.Roofing'), status: t('status.Assigned'), statusClass: STATUS_CLASS.assigned, amount: '$1,700', when: when(t, 'h', 3) },
+    { title: t('mockData.job.drainage'), trade: t('trade.Landscaping'), status: t('status.InProgress'), statusClass: STATUS_CLASS.inProgress, amount: '$2,200', when: when(t, 'd', 1) },
+    { title: t('mockData.job.panelUpgrade'), trade: t('trade.Electrical'), status: t('status.Completed'), statusClass: STATUS_CLASS.completed, amount: '$2,900', when: when(t, 'd', 4) },
+    { title: t('mockData.job.faucet'), trade: t('trade.Plumbing'), status: t('status.Open'), statusClass: STATUS_CLASS.open, amount: '$450', when: when(t, 'd', 5) },
+  ];
+}
 
-export const REFERRER_EARNINGS: MockEarningsPoint[] = [
-  { month: S.months[0], earned: 0 },
-  { month: S.months[1], earned: 45 },
-  { month: S.months[2], earned: 60 },
-  { month: S.months[3], earned: 35 },
-  { month: S.months[4], earned: 110 },
-  { month: S.months[5], earned: 145 },
-];
+function referrerNotifications(t: TranslateFn): MockNotification[] {
+  return [
+    { title: t('mockData.notif.assigned.title'), body: t('mockData.notif.assigned.body'), when: whenShort(t, 'h', 3), unread: true },
+    { title: t('mockData.notif.commissionPaid.title'), body: t('mockData.notif.commissionPaid.bodyReferrer'), when: whenShort(t, 'd', 4), unread: true },
+    { title: t('mockData.notif.quoteApproved.title'), body: t('mockData.notif.quoteApproved.body'), when: whenShort(t, 'd', 1), unread: false },
+    { title: t('mockData.notif.interest.title'), body: t('mockData.notif.interest.body'), when: whenShort(t, 'd', 5), unread: false },
+  ];
+}
 
-export const REFERRER_NOTIFICATIONS: MockNotification[] = [
-  { ...S.referrerNotifications.assigned, when: S.when.short.h3, unread: true },
-  { ...S.referrerNotifications.commissionPaid, when: S.when.short.d4, unread: true },
-  { ...S.referrerNotifications.quoteApproved, when: S.when.short.d1, unread: false },
-  { ...S.referrerNotifications.interest, when: S.when.short.d5, unread: false },
-];
+const REFERRER_EARNINGS_VALUES = [0, 45, 60, 35, 110, 145];
 
 // ─── Shared: job pipeline preview ─────────────────────────────────────────────
 
-export const MOCK_PIPELINE: MockPipelineStep[] = [
-  { label: S.pipeline.posted, done: true },
-  { label: S.pipeline.assigned, done: true },
-  { label: S.pipeline.quoteApproved, done: true },
-  { label: S.pipeline.escrowFunded, done: true, current: true },
-  { label: S.pipeline.workDone, done: false },
-  { label: S.pipeline.paidOut, done: false },
-];
+export function getMockPipeline(t: TranslateFn): MockPipelineStep[] {
+  return [
+    { label: t('mockData.pipeline.posted'), done: true },
+    { label: t('mockData.pipeline.assigned'), done: true },
+    { label: t('mockData.pipeline.quoteApproved'), done: true },
+    { label: t('mockData.pipeline.escrowFunded'), done: true, current: true },
+    { label: t('mockData.pipeline.workDone'), done: false },
+    { label: t('mockData.pipeline.paidOut'), done: false },
+  ];
+}
 
-export function getMockPersona(role: MockRole) {
+function earningsSeries(t: TranslateFn, values: number[]): MockEarningsPoint[] {
+  return values.map((earned, i) => ({ month: t(MONTH_KEYS[i]), earned }));
+}
+
+export function getMockPersona(t: TranslateFn, role: MockRole) {
   if (role === 'referrer') {
     return {
-      name: S.userNames.referrer,
-      email: S.userEmails.referrer,
-      stats: REFERRER_STATS,
-      jobs: REFERRER_JOBS,
-      earnings: REFERRER_EARNINGS,
-      notifications: REFERRER_NOTIFICATIONS,
+      ...MOCK_IDENTITIES.referrer,
+      stats: referrerStats(t),
+      jobs: referrerJobs(t),
+      earnings: earningsSeries(t, REFERRER_EARNINGS_VALUES),
+      notifications: referrerNotifications(t),
     };
   }
   return {
-    name: S.userNames.contractor,
-    email: S.userEmails.contractor,
-    stats: CONTRACTOR_STATS,
-    jobs: CONTRACTOR_JOBS,
-    earnings: CONTRACTOR_EARNINGS,
-    notifications: CONTRACTOR_NOTIFICATIONS,
+    ...MOCK_IDENTITIES.contractor,
+    stats: contractorStats(t),
+    jobs: contractorJobs(t),
+    earnings: earningsSeries(t, CONTRACTOR_EARNINGS_VALUES),
+    notifications: contractorNotifications(t),
   };
 }

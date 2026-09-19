@@ -44,6 +44,8 @@ export const enCommon = {
   'time.minutesAgo': '{count}m ago',
   'time.hoursAgo': '{count}h ago',
   'time.daysAgo': '{count}d ago',
+  'time.hoursShort': '{count}h',
+  'time.daysShort': '{count}d',
   'time.hoursLeft': '{count}h left',
   'time.minutesLeft': '{count}m left',
   'time.expired': 'Expired',

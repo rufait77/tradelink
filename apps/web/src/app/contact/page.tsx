@@ -7,9 +7,11 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import api from '@/lib/api';
+import { useT } from '../../i18n';
 
 export default function ContactPage() {
   const [loading, setLoading] = useState(false);
+  const t = useT();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,10 +24,10 @@ export default function ContactPage() {
         message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
       };
       await api.post('/settings/contact', data);
-      toast.success('Message sent! We\'ll get back to you within 24 hours.');
+      toast.success(t('contact.toast.success'));
       form.reset();
     } catch {
-      toast.error('Failed to send message. Please try again.');
+      toast.error(t('contact.toast.error'));
     } finally {
       setLoading(false);
     }
@@ -37,9 +39,9 @@ export default function ContactPage() {
       <main className="pt-24 pb-20">
         <div className="container-narrow px-4">
           <div className="text-center mb-12">
-            <h1 className="text-4xl sm:text-5xl font-heading font-bold text-white mb-4">Get In Touch</h1>
+            <h1 className="text-4xl sm:text-5xl font-heading font-bold text-white mb-4">{t('contact.title')}</h1>
             <p className="text-surface-muted max-w-lg mx-auto">
-              Have questions about Tradelink? We&apos;d love to hear from you.
+              {t('contact.subtitle')}
             </p>
           </div>
 
@@ -51,7 +53,7 @@ export default function ContactPage() {
                   <Mail className="w-5 h-5 text-amber-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-200">Email</p>
+                  <p className="text-sm font-medium text-slate-200">{t('contact.email')}</p>
                   <p className="text-xs text-surface-muted">Tradelinkpro.net@gmail.com</p>
                 </div>
               </div>
@@ -60,7 +62,7 @@ export default function ContactPage() {
                   <Phone className="w-5 h-5 text-amber-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-200">Phone</p>
+                  <p className="text-sm font-medium text-slate-200">{t('contact.phone')}</p>
                   <p className="text-xs text-surface-muted">(803) 394-6335</p>
                 </div>
               </div>
@@ -69,27 +71,27 @@ export default function ContactPage() {
                   <MapPin className="w-5 h-5 text-amber-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-200">Location</p>
-                  <p className="text-xs text-surface-muted">United States</p>
+                  <p className="text-sm font-medium text-slate-200">{t('contact.location')}</p>
+                  <p className="text-xs text-surface-muted">{t('contact.locationValue')}</p>
                 </div>
               </div>
             </div>
 
             {/* Contact form */}
             <form onSubmit={handleSubmit} className="md:col-span-3 glass-card p-6 space-y-4">
-              <Input label="Full Name" name="name" placeholder="John Smith" required />
-              <Input label="Email" name="email" type="email" placeholder="Tradelinkpro.net@gmail.com" required />
+              <Input label={t('contact.form.name')} name="name" placeholder={t('contact.form.namePlaceholder')} required />
+              <Input label={t('contact.form.email')} name="email" type="email" placeholder="Tradelinkpro.net@gmail.com" required />
               <div className="space-y-1.5">
-                <label className="label">Message</label>
+                <label className="label">{t('contact.form.message')}</label>
                 <textarea
                   name="message"
                   rows={5}
                   className="input-field resize-none"
-                  placeholder="Tell us how we can help..."
+                  placeholder={t('contact.form.messagePlaceholder')}
                   required
                 />
               </div>
-              <Button type="submit" loading={loading} className="w-full">Send Message</Button>
+              <Button type="submit" loading={loading} className="w-full">{t('contact.form.submit')}</Button>
             </form>
           </div>
         </div>

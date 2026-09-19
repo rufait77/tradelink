@@ -44,6 +44,8 @@ export const esCommon: Record<keyof typeof enCommon, string> = {
   'time.minutesAgo': 'hace {count} min',
   'time.hoursAgo': 'hace {count} h',
   'time.daysAgo': 'hace {count} d',
+  'time.hoursShort': '{count} h',
+  'time.daysShort': '{count} d',
   'time.hoursLeft': 'faltan {count} h',
   'time.minutesLeft': 'faltan {count} min',
   'time.expired': 'Vencido',

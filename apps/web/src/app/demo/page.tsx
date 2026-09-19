@@ -6,24 +6,17 @@ import { Button } from '../../components/ui/button';
 import { cn } from '../../lib/utils';
 import { MockDashboard } from '../../components/landing/mock-dashboard';
 import type { MockRole } from '../../components/landing/mock-data';
+import { LanguageSwitcher } from '../../components/layout/language-switcher';
+import { useT, type TranslationKey } from '../../i18n';
 
-// ─── Display strings ──────────────────────────────────────────────────────────
-const DEMO_STRINGS = {
-  back: 'Back to home',
-  title: 'Interactive demo',
-  subtitle: 'Sample data only — nothing here is saved.',
-  toggle: { contractor: 'Contractor', referrer: 'Referrer' },
-  cta: 'Create your account',
-  roleTablistLabel: 'Dashboard role',
-} as const;
-
-const ROLE_OPTIONS: { role: MockRole; label: string; icon: typeof HardHat }[] = [
-  { role: 'contractor', label: DEMO_STRINGS.toggle.contractor, icon: HardHat },
-  { role: 'referrer', label: DEMO_STRINGS.toggle.referrer, icon: UserRound },
+const ROLE_OPTIONS: { role: MockRole; labelKey: TranslationKey; icon: typeof HardHat }[] = [
+  { role: 'contractor', labelKey: 'role.contractor', icon: HardHat },
+  { role: 'referrer', labelKey: 'role.referrer', icon: UserRound },
 ];
 
 export default function DemoPage() {
   const [role, setRole] = useState<MockRole>('contractor');
+  const t = useT();
 
   return (
     <main className="min-h-screen bg-navy-950 px-4 py-6 sm:px-6 lg:px-10">
@@ -31,14 +24,15 @@ export default function DemoPage() {
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-surface-muted hover:text-slate-200 transition-colors mb-2">
-              <ArrowLeft className="w-4 h-4" /> {DEMO_STRINGS.back}
+              <ArrowLeft className="w-4 h-4" /> {t('demo.back')}
             </Link>
-            <h1 className="text-2xl font-heading font-bold text-white">{DEMO_STRINGS.title}</h1>
-            <p className="text-sm text-surface-muted">{DEMO_STRINGS.subtitle}</p>
+            <h1 className="text-2xl font-heading font-bold text-white">{t('demo.title')}</h1>
+            <p className="text-sm text-surface-muted">{t('demo.subtitle')}</p>
           </div>
 
           <div className="flex items-center gap-3">
-            <div role="tablist" aria-label={DEMO_STRINGS.roleTablistLabel} className="inline-flex p-1 rounded-2xl bg-navy-900 border border-surface-border/60">
+            <LanguageSwitcher />
+            <div role="tablist" aria-label={t('demo.roleTablistLabel')} className="inline-flex p-1 rounded-2xl bg-navy-900 border border-surface-border/60">
               {ROLE_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const active = role === opt.role;
@@ -55,14 +49,14 @@ export default function DemoPage() {
                         : 'text-slate-400 hover:text-slate-200',
                     )}
                   >
-                    <Icon className="w-4 h-4" /> {opt.label}
+                    <Icon className="w-4 h-4" /> {t(opt.labelKey)}
                   </button>
                 );
               })}
             </div>
             <Link href={`/signup?role=${role}`}>
               <Button size="sm">
-                {DEMO_STRINGS.cta} <ArrowRight className="w-4 h-4" />
+                {t('demo.cta')} <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>
