@@ -3,6 +3,7 @@ import { esLanding } from './dictionaries/es/landing';
 import { esLegal } from './dictionaries/es/legal';
 import { esAuth } from './dictionaries/es/auth';
 import { esDashboard } from './dictionaries/es/dashboard';
+import { esJobs } from './dictionaries/es/jobs';
 import type { Dictionary } from './en';
 
 export const es: Dictionary = {
@@ -11,4 +12,5 @@ export const es: Dictionary = {
   ...esLegal,
   ...esAuth,
   ...esDashboard,
+  ...esJobs,
 };

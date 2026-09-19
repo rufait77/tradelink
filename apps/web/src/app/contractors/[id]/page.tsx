@@ -8,6 +8,7 @@ import {
   CheckCircle2, User, ChevronRight, Send,
   ShieldCheck, FileCheck,
 } from 'lucide-react';
+import { useT, useLabels, useFormat, type TranslateFn } from '../../../i18n';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
 // Base URL for static assets (uploads). If API_BASE uses a subdomain (api.xxx), use it directly.
@@ -53,25 +54,18 @@ interface Review {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function formatTrade(t: string) {
-  return t.replace(/([A-Z])/g, ' $1').trim();
-}
-
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-}
-
-function timeAgo(d: string) {
+// Relative time, including the months bucket this page shows beyond 30 days.
+function timeAgo(t: TranslateFn, d: string) {
   const seconds = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return t('time.justNow');
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t('time.minutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('time.hoursAgo', { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return t('time.daysAgo', { count: days });
   const months = Math.floor(days / 30);
-  return `${months}mo ago`;
+  return t('contractor.time.monthsAgo', { count: months });
 }
 
 function renderStars(rating: number, size = 'w-4 h-4') {
@@ -101,6 +95,11 @@ export default function PublicProfilePage() {
   const [reviewTotal, setReviewTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
+  const { tradeLabel } = useLabels();
+  const { formatMonthYear } = useFormat();
+  const reviewCount = (count: number) =>
+    count === 1 ? t('contractor.reviewCountOne', { count }) : t('contractor.reviewCountMany', { count });
 
   useEffect(() => {
     async function load() {
@@ -132,7 +131,7 @@ export default function PublicProfilePage() {
       <div className="min-h-screen bg-[#050d1a] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Loading profile...</p>
+          <p className="text-slate-400 text-sm">{t('contractor.loading')}</p>
         </div>
       </div>
     );
@@ -146,20 +145,20 @@ export default function PublicProfilePage() {
           <div className="w-20 h-20 mx-auto rounded-2xl bg-red-500/10 flex items-center justify-center">
             <User className="w-10 h-10 text-red-400" />
           </div>
-          <h1 className="text-xl font-bold text-white">Contractor Not Found</h1>
-          <p className="text-slate-400 text-sm">This profile doesn&apos;t exist or has been removed.</p>
+          <h1 className="text-xl font-bold text-white">{t('contractor.notFound.title')}</h1>
+          <p className="text-slate-400 text-sm">{t('contractor.notFound.body')}</p>
           <button
             onClick={() => router.push('/')}
             className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-[#050d1a] font-semibold rounded-xl hover:bg-amber-400 transition"
           >
-            <ArrowLeft className="w-4 h-4" /> Go Home
+            <ArrowLeft className="w-4 h-4" /> {t('contractor.notFound.cta')}
           </button>
         </div>
       </div>
     );
   }
 
-  const memberSince = formatDate(profile.user?.createdAt || profile.createdAt);
+  const memberSince = formatMonthYear(profile.user?.createdAt || profile.createdAt);
   const hasLocation = profile.city && profile.state;
   const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('tradelink_token');
 
@@ -187,17 +186,17 @@ export default function PublicProfilePage() {
             {isLoggedIn ? (
               <Link href="/dashboard"
                 className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition">
-                Dashboard
+                {t('contractor.nav.dashboard')}
               </Link>
             ) : (
               <>
                 <Link href="/login"
                   className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition">
-                  Log In
+                  {t('contractor.nav.login')}
                 </Link>
                 <Link href="/signup"
                   className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] text-sm font-bold rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">
-                  Get Started
+                  {t('contractor.nav.getStarted')}
                 </Link>
               </>
             )}
@@ -217,7 +216,7 @@ export default function PublicProfilePage() {
             <div className="relative">
               <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-amber-500/30 shadow-2xl shadow-amber-500/10">
                 {profile.photoUrl ? (
-                  <img src={resolveUrl(profile.photoUrl)} alt={profile.user?.name || 'Contractor'}
+                  <img src={resolveUrl(profile.photoUrl)} alt={profile.user?.name || t('contractor.fallbackName')}
                     className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center">
@@ -239,19 +238,19 @@ export default function PublicProfilePage() {
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight"
                   style={{ fontFamily: 'Sora, sans-serif' }}>
-                  {profile.user?.name || 'Contractor'}
+                  {profile.user?.name || t('contractor.fallbackName')}
                 </h1>
                 {profile.isAdminVerified && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-xs font-semibold text-emerald-400">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Verified Pro
+                    <ShieldCheck className="w-3.5 h-3.5" /> {t('contractor.verifiedPro')}
                   </span>
                 )}
               </div>
 
               <p className="text-lg text-amber-400 font-medium mt-1.5">
                 {profile.tradeTypes.length > 0
-                  ? profile.tradeTypes.slice(0, 3).map(formatTrade).join(' · ')
-                  : 'Contractor'}
+                  ? profile.tradeTypes.slice(0, 3).map(tradeLabel).join(' · ')
+                  : t('contractor.fallbackName')}
               </p>
 
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 text-sm text-slate-400">
@@ -261,11 +260,11 @@ export default function PublicProfilePage() {
                   </span>
                 )}
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-slate-500" /> Member since {memberSince}
+                  <Calendar className="w-4 h-4 text-slate-500" /> {t('contractor.memberSince', { date: memberSince })}
                 </span>
                 {profile.avgResponseTime != null && profile.avgResponseTime > 0 && (
                   <span className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-slate-500" /> Avg response: {profile.avgResponseTime.toFixed(1)}h
+                    <Clock className="w-4 h-4 text-slate-500" /> {t('contractor.avgResponse', { hours: profile.avgResponseTime.toFixed(1) })}
                   </span>
                 )}
               </div>
@@ -288,19 +287,19 @@ export default function PublicProfilePage() {
                     return isOwnProfile ? (
                       <Link href="/dashboard/profile"
                         className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] font-bold text-sm rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">
-                        <User className="w-4 h-4" /> Edit Profile
+                        <User className="w-4 h-4" /> {t('contractor.editProfile')}
                       </Link>
                     ) : (
                       <Link href={`/dashboard/messages/dm/${profile.userId}`}
                         className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] font-bold text-sm rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">
-                        <MessageSquare className="w-4 h-4" /> Message
+                        <MessageSquare className="w-4 h-4" /> {t('contractor.message')}
                       </Link>
                     );
                   })()
                 ) : (
                   <Link href="/signup"
                     className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] font-bold text-sm rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">
-                    <Send className="w-4 h-4" /> Join to Connect
+                    <Send className="w-4 h-4" /> {t('contractor.joinToConnect')}
                   </Link>
                 )}
               </div>
@@ -318,22 +317,22 @@ export default function PublicProfilePage() {
                 {renderStars(profile.avgRating)}
               </div>
               <p className="text-2xl font-bold text-white">{profile.avgRating > 0 ? profile.avgRating.toFixed(1) : '—'}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{reviewTotal} review{reviewTotal !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{reviewCount(reviewTotal)}</p>
             </div>
             <div className="py-5 px-4 text-center">
               <Briefcase className="w-5 h-5 text-blue-400 mx-auto mb-1" />
               <p className="text-2xl font-bold text-white">{profile.totalJobsCompleted}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Jobs Completed</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('contractor.stat.jobs')}</p>
             </div>
             <div className="py-5 px-4 text-center">
               <Award className="w-5 h-5 text-purple-400 mx-auto mb-1" />
               <p className="text-2xl font-bold text-white">{profile.yearsExperience || '—'}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Years Experience</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('contractor.stat.experience')}</p>
             </div>
             <div className="py-5 px-4 text-center">
               <ExternalLink className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
               <p className="text-2xl font-bold text-white">{profile.totalReferrals || 0}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Referrals Made</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('contractor.stat.referrals')}</p>
             </div>
           </div>
         </div>
@@ -347,7 +346,7 @@ export default function PublicProfilePage() {
           <section>
             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"
               style={{ fontFamily: 'Sora, sans-serif' }}>
-              <User className="w-5 h-5 text-amber-500" /> About
+              <User className="w-5 h-5 text-amber-500" /> {t('contractor.about')}
             </h2>
             <div className="rounded-2xl bg-[#0a1628] border border-white/5 p-6">
               <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
@@ -360,13 +359,13 @@ export default function PublicProfilePage() {
           <section>
             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"
               style={{ fontFamily: 'Sora, sans-serif' }}>
-              <Briefcase className="w-5 h-5 text-amber-500" /> Trade Specialties
+              <Briefcase className="w-5 h-5 text-amber-500" /> {t('contractor.specialties')}
             </h2>
             <div className="flex flex-wrap gap-2">
-              {profile.tradeTypes.map((t) => (
-                <span key={t}
+              {profile.tradeTypes.map((trade) => (
+                <span key={trade}
                   className="px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium hover:bg-amber-500/15 transition">
-                  {formatTrade(t)}
+                  {tradeLabel(trade)}
                 </span>
               ))}
             </div>
@@ -377,47 +376,47 @@ export default function PublicProfilePage() {
         <section>
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"
             style={{ fontFamily: 'Sora, sans-serif' }}>
-            <Shield className="w-5 h-5 text-amber-500" /> Credentials & Verification
+            <Shield className="w-5 h-5 text-amber-500" /> {t('contractor.credentials')}
           </h2>
           <div className="rounded-2xl bg-[#0a1628] border border-white/5 p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <CredentialItem
                 icon={<CheckCircle2 className={`w-5 h-5 ${profile.isAdminVerified ? 'text-emerald-400' : 'text-slate-600'}`} />}
                 bgColor={profile.isAdminVerified ? 'bg-emerald-500/10' : 'bg-slate-800'}
-                title="Identity Verified"
-                subtitle={profile.isAdminVerified ? 'Verified by Tradelink admin' : 'Pending verification'}
+                title={t('contractor.cred.identity')}
+                subtitle={profile.isAdminVerified ? t('contractor.cred.identityYes') : t('contractor.cred.identityNo')}
               />
               <CredentialItem
                 icon={<Award className={`w-5 h-5 ${profile.licenseNumber ? 'text-blue-400' : 'text-slate-600'}`} />}
                 bgColor={profile.licenseNumber ? 'bg-blue-500/10' : 'bg-slate-800'}
-                title="Contractor License"
-                subtitle={profile.licenseNumber ? `License #${profile.licenseNumber}` : 'Not provided'}
+                title={t('contractor.cred.license')}
+                subtitle={profile.licenseNumber ? t('contractor.cred.licenseNumber', { number: profile.licenseNumber }) : t('contractor.cred.notProvided')}
               />
               <CredentialItem
                 icon={<FileCheck className="w-5 h-5 text-slate-600" />}
                 bgColor="bg-slate-800"
-                title="Insurance"
-                subtitle="Contact for details"
+                title={t('contractor.cred.insurance')}
+                subtitle={t('contractor.cred.insuranceBody')}
               />
               <CredentialItem
                 icon={<Calendar className="w-5 h-5 text-purple-400" />}
                 bgColor="bg-purple-500/10"
-                title="Experience"
-                subtitle={profile.yearsExperience > 0 ? `${profile.yearsExperience} years in the trade` : 'Not specified'}
+                title={t('contractor.cred.experience')}
+                subtitle={profile.yearsExperience > 0 ? t('contractor.cred.experienceYears', { years: profile.yearsExperience }) : t('contractor.cred.notSpecified')}
               />
             </div>
 
             {/* Certifications */}
             {profile.certifications && (profile.certifications as any[]).length > 0 && (
               <div className="mt-6 pt-6 border-t border-white/5">
-                <h3 className="text-sm font-semibold text-slate-300 mb-3">Certifications</h3>
+                <h3 className="text-sm font-semibold text-slate-300 mb-3">{t('contractor.certifications')}</h3>
                 <div className="space-y-2">
                   {(profile.certifications as any[]).map((cert: any, i: number) => (
                     <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-white/[0.02]">
                       <Award className={`w-4 h-4 ${cert.verified ? 'text-emerald-400' : 'text-slate-500'}`} />
                       <span className="text-sm text-slate-300">{cert.name}</span>
                       {cert.verified && (
-                        <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Verified</span>
+                        <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">{t('contractor.certVerified')}</span>
                       )}
                     </div>
                   ))}
@@ -432,14 +431,14 @@ export default function PublicProfilePage() {
           <section>
             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"
               style={{ fontFamily: 'Sora, sans-serif' }}>
-              <Star className="w-5 h-5 text-amber-500" /> Rating Breakdown
+              <Star className="w-5 h-5 text-amber-500" /> {t('contractor.breakdown')}
             </h2>
             <div className="rounded-2xl bg-[#0a1628] border border-white/5 p-6">
               <div className="grid grid-cols-3 gap-6">
                 {[
-                  { label: 'Client Rating', avg: avgOf(clientReviews), count: clientReviews.length, color: 'text-blue-400' },
-                  { label: 'Referral Quality', avg: avgOf(referralReviews), count: referralReviews.length, color: 'text-amber-400' },
-                  { label: 'Job Quality', avg: avgOf(jobReviews), count: jobReviews.length, color: 'text-emerald-400' },
+                  { label: t('contractor.breakdown.client'), avg: avgOf(clientReviews), count: clientReviews.length, color: 'text-blue-400' },
+                  { label: t('contractor.breakdown.referral'), avg: avgOf(referralReviews), count: referralReviews.length, color: 'text-amber-400' },
+                  { label: t('contractor.breakdown.job'), avg: avgOf(jobReviews), count: jobReviews.length, color: 'text-emerald-400' },
                 ].map(({ label, avg, count, color }) => (
                   <div key={label} className="text-center">
                     <div className="flex items-center justify-center gap-1 mb-1">
@@ -447,7 +446,7 @@ export default function PublicProfilePage() {
                       <span className="text-2xl font-bold text-white">{avg ? avg.toFixed(1) : '—'}</span>
                     </div>
                     <p className="text-xs text-slate-400">{label}</p>
-                    <p className="text-[10px] text-slate-600">{count} review{count !== 1 ? 's' : ''}</p>
+                    <p className="text-[10px] text-slate-600">{reviewCount(count)}</p>
                   </div>
                 ))}
               </div>
@@ -459,15 +458,15 @@ export default function PublicProfilePage() {
         <section>
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"
             style={{ fontFamily: 'Sora, sans-serif' }}>
-            <Star className="w-5 h-5 text-amber-500" /> Reviews
+            <Star className="w-5 h-5 text-amber-500" /> {t('contractor.reviews')}
             {reviewTotal > 0 && <span className="text-sm font-normal text-slate-500">({reviewTotal})</span>}
           </h2>
 
           {reviews.length === 0 ? (
             <div className="rounded-2xl bg-[#0a1628] border border-white/5 p-8 text-center">
               <Star className="w-10 h-10 text-slate-700 mx-auto mb-3" />
-              <p className="text-slate-400 text-sm">No reviews yet</p>
-              <p className="text-slate-600 text-xs mt-1">Reviews will appear after completed jobs</p>
+              <p className="text-slate-400 text-sm">{t('contractor.reviews.empty')}</p>
+              <p className="text-slate-600 text-xs mt-1">{t('contractor.reviews.emptyHint')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -494,20 +493,20 @@ export default function PublicProfilePage() {
                           <div className="flex items-center gap-2 mt-0.5">
                             <div className="flex items-center gap-0.5">{renderStars(review.rating, 'w-3.5 h-3.5')}</div>
                             <span className="text-xs text-slate-500">·</span>
-                            <span className="text-xs text-slate-500">{timeAgo(review.createdAt)}</span>
+                            <span className="text-xs text-slate-500">{timeAgo(t, review.createdAt)}</span>
                           </div>
                         </div>
                         <span className="text-xs text-slate-600 bg-white/5 px-2 py-0.5 rounded-full shrink-0">
-                          {review.dimension === 'client_facing' || review.type === 'client_to_contractor' ? 'Client'
-                            : review.dimension === 'referral_quality' || review.type === 'referee_to_contractor' ? 'Referral'
-                            : 'Job Quality'}
+                          {review.dimension === 'client_facing' || review.type === 'client_to_contractor' ? t('contractor.reviews.tagClient')
+                            : review.dimension === 'referral_quality' || review.type === 'referee_to_contractor' ? t('contractor.reviews.tagReferral')
+                            : t('contractor.reviews.tagJob')}
                         </span>
                       </div>
                       {(review.comment || review.text) && (
                         <p className="text-sm text-slate-400 mt-2.5 leading-relaxed">{review.comment || review.text}</p>
                       )}
                       {review.job?.title && (
-                        <p className="text-xs text-slate-600 mt-1.5">For: {review.job.title}</p>
+                        <p className="text-xs text-slate-600 mt-1.5">{t('contractor.reviews.forJob', { title: review.job.title })}</p>
                       )}
                     </div>
                   </div>
@@ -516,7 +515,7 @@ export default function PublicProfilePage() {
 
               {reviewTotal > reviews.length && (
                 <button className="w-full py-3 text-center text-sm font-medium text-amber-400 hover:text-amber-300 transition rounded-xl border border-white/5 hover:border-amber-500/20 bg-[#0a1628]">
-                  Show all {reviewTotal} reviews <ChevronRight className="w-4 h-4 inline ml-1" />
+                  {t('contractor.reviews.showAll', { count: reviewTotal })} <ChevronRight className="w-4 h-4 inline ml-1" />
                 </button>
               )}
             </div>
@@ -528,7 +527,7 @@ export default function PublicProfilePage() {
           <section>
             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"
               style={{ fontFamily: 'Sora, sans-serif' }}>
-              <MapPin className="w-5 h-5 text-amber-500" /> Service Area
+              <MapPin className="w-5 h-5 text-amber-500" /> {t('contractor.serviceArea')}
             </h2>
             <div className="rounded-2xl bg-[#0a1628] border border-white/5 p-6">
               <div className="flex items-center gap-3">
@@ -537,7 +536,7 @@ export default function PublicProfilePage() {
                 </div>
                 <div>
                   <p className="text-white font-medium">{profile.city}, {profile.state} {profile.zipCode}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">And surrounding areas</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{t('contractor.serviceAreaNote')}</p>
                 </div>
               </div>
             </div>
@@ -547,22 +546,22 @@ export default function PublicProfilePage() {
         {/* CTA Banner */}
         <section className="rounded-2xl bg-gradient-to-r from-amber-500/10 to-emerald-500/10 border border-amber-500/20 p-8 text-center">
           <h2 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'Sora, sans-serif' }}>
-            Ready to work with {(profile.user?.name || 'this contractor').split(' ')[0]}?
+            {t('contractor.cta.title', { name: (profile.user?.name || t('contractor.cta.fallbackName')).split(' ')[0] })}
           </h2>
           <p className="text-sm text-slate-400 mb-5 max-w-md mx-auto">
             {isLoggedIn
-              ? 'Send a message to discuss your project or browse their referral listings.'
-              : 'Join Tradelink to connect with verified contractors and start earning referral commissions.'}
+              ? t('contractor.cta.loggedIn')
+              : t('contractor.cta.loggedOut')}
           </p>
           {isLoggedIn ? (
             <Link href={`/dashboard/messages/dm/${profile.userId}`}
               className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] font-bold rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">
-              <MessageSquare className="w-5 h-5" /> Send a Message
+              <MessageSquare className="w-5 h-5" /> {t('contractor.cta.sendMessage')}
             </Link>
           ) : (
             <Link href="/signup"
               className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] font-bold rounded-xl hover:from-amber-400 hover:to-amber-500 transition shadow-lg shadow-amber-500/20">
-              Join Tradelink — It&apos;s Free <ChevronRight className="w-5 h-5" />
+              {t('contractor.cta.join')} <ChevronRight className="w-5 h-5" />
             </Link>
           )}
         </section>
@@ -575,12 +574,12 @@ export default function PublicProfilePage() {
             <div className="w-6 h-6 rounded-md bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
               <span className="text-[8px] font-black text-[#050d1a]">TL</span>
             </div>
-            <span className="text-sm text-slate-500">© {new Date().getFullYear()} Tradelink. All rights reserved.</span>
+            <span className="text-sm text-slate-500">{t('footer.copyright', { year: new Date().getFullYear() })}</span>
           </div>
           <div className="flex items-center gap-6 text-xs text-slate-600">
-            <Link href="/" className="hover:text-slate-400 transition">Home</Link>
-            <Link href="/login" className="hover:text-slate-400 transition">Log In</Link>
-            <Link href="/signup" className="hover:text-slate-400 transition">Sign Up</Link>
+            <Link href="/" className="hover:text-slate-400 transition">{t('contractor.footer.home')}</Link>
+            <Link href="/login" className="hover:text-slate-400 transition">{t('contractor.footer.login')}</Link>
+            <Link href="/signup" className="hover:text-slate-400 transition">{t('contractor.footer.signup')}</Link>
           </div>
         </div>
       </footer>

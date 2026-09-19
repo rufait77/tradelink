@@ -16,45 +16,42 @@ import {
   Send, ArrowLeft, DollarSign, User, MapPin,
   FileText, AlertCircle, Lock, Zap,
 } from 'lucide-react';
+import { apiErrorMessage, useT, useLabels, tradeLabel, type TranslateFn, type TranslationKey } from '../../../i18n';
 
-const TRADE_OPTIONS = [
+// Enum values sent to the API — only the displayed label is translated.
+const TRADE_VALUES = [
   'Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Welding','Drywall','Barber','Cosmetology','Esthetician','AutoMechanics','Other',
-].map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t }));
+];
 
-const URGENCY_OPTIONS = [
-  { label: 'Low — No rush', value: 'Low' },
-  { label: 'Medium — Within a few weeks', value: 'Medium' },
-  { label: 'High — Within a few days', value: 'High' },
-  { label: 'Emergency — ASAP', value: 'Emergency' },
+const URGENCY_VALUES: { value: string; labelKey: TranslationKey }[] = [
+  { value: 'Low', labelKey: 'postJob.urgency.low' },
+  { value: 'Medium', labelKey: 'postJob.urgency.medium' },
+  { value: 'High', labelKey: 'postJob.urgency.high' },
+  { value: 'Emergency', labelKey: 'postJob.urgency.emergency' },
 ];
 
 const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map((s) => ({ label: s, value: s }));
 
-const RADIUS_OPTIONS = [
-  { label: '5 miles', value: '5' },
-  { label: '10 miles', value: '10' },
-  { label: '15 miles', value: '15' },
-  { label: '25 miles', value: '25' },
-  { label: '50 miles', value: '50' },
-  { label: '100+ miles', value: '100' },
-];
+const RADIUS_VALUES = ['5', '10', '15', '25', '50', '100'];
 
-const jobSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters').max(150),
-  description: z.string().min(20, 'Description must be at least 20 characters').max(2000),
-  estimatedValue: z.number({ invalid_type_error: 'Enter a number' }).positive('Must be positive'),
-  streetAddress: z.string().min(5, 'Enter a street address'),
-  city: z.string().min(2, 'Enter a city'),
-  zipCode: z.string().regex(/^\d{5}$/, 'ZIP must be 5 digits'),
-  // Client contact
-  clientFirstName: z.string().min(1, 'First name is required').max(100),
-  clientLastName: z.string().max(100).optional(),
-  clientEmail: z.string().email('Enter a valid email'),
-  clientPhone: z.string().max(20).optional(),
-  clientNotes: z.string().max(1000).optional(),
-});
+function buildJobSchema(t: TranslateFn) {
+  return z.object({
+    title: z.string().min(5, t('postJob.validation.title')).max(150),
+    description: z.string().min(20, t('postJob.validation.description')).max(2000),
+    estimatedValue: z.number({ invalid_type_error: t('postJob.validation.number') }).positive(t('postJob.validation.positive')),
+    streetAddress: z.string().min(5, t('postJob.validation.street')),
+    city: z.string().min(2, t('postJob.validation.city')),
+    zipCode: z.string().regex(/^\d{5}$/, t('postJob.validation.zip')),
+    // Client contact
+    clientFirstName: z.string().min(1, t('postJob.validation.firstName')).max(100),
+    clientLastName: z.string().max(100).optional(),
+    clientEmail: z.string().email(t('postJob.validation.email')),
+    clientPhone: z.string().max(20).optional(),
+    clientNotes: z.string().max(1000).optional(),
+  });
+}
 
-type JobFormData = z.infer<typeof jobSchema>;
+type JobFormData = z.infer<ReturnType<typeof buildJobSchema>>;
 
 function PostJobContent() {
   const router = useRouter();
@@ -66,6 +63,18 @@ function PostJobContent() {
   const [serviceRadius, setServiceRadius] = useState('25');
   const [feePcts, setFeePcts] = useState({ platform: 5, commission: 20 });
   const [usingDefaultFees, setUsingDefaultFees] = useState(false);
+  const t = useT();
+  const { apiErrorMessage: toApiMessage } = useLabels();
+  const jobSchema = useMemo(() => buildJobSchema(t), [t]);
+  const TRADE_OPTIONS = useMemo(() => TRADE_VALUES.map((value) => ({ label: tradeLabel(t, value), value })), [t]);
+  const URGENCY_OPTIONS = useMemo(() => URGENCY_VALUES.map((o) => ({ label: t(o.labelKey), value: o.value })), [t]);
+  const RADIUS_OPTIONS = useMemo(
+    () => RADIUS_VALUES.map((value) => ({
+      label: value === '100' ? t('postJob.radius.milesPlus') : t('postJob.radius.miles', { count: value }),
+      value,
+    })),
+    [t],
+  );
 
   // Fetch real fee percentages from API
   useEffect(() => {
@@ -98,8 +107,8 @@ function PostJobContent() {
   }, [estimatedValue, feePcts]);
 
   async function onSubmit(data: JobFormData) {
-    if (!tradeType) { toast.error('Select a trade type'); return; }
-    if (!state) { toast.error('Select a state'); return; }
+    if (!tradeType) { toast.error(t('postJob.toast.pickTrade')); return; }
+    if (!state) { toast.error(t('postJob.toast.pickState')); return; }
 
     setLoading(true);
     try {
@@ -113,10 +122,10 @@ function PostJobContent() {
         budgetMin: data.estimatedValue * 0.8,
         budgetMax: data.estimatedValue * 1.2,
       });
-      toast.success('Referral posted! Contractors will start expressing interest.');
+      toast.success(t('postJob.toast.success'));
       router.push('/dashboard/my-referrals');
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to post referral');
+      toast.error(toApiMessage(err, t('postJob.toast.failed')));
     } finally {
       setLoading(false);
     }
@@ -126,10 +135,10 @@ function PostJobContent() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition mb-4">
-          <ArrowLeft className="w-4 h-4" /> Back
+          <ArrowLeft className="w-4 h-4" /> {t('common.back')}
         </button>
-        <h1 className="text-2xl font-heading font-bold text-white mb-1">Post a Referral</h1>
-        <p className="text-sm text-surface-muted">Got a lead you can&apos;t take? Post it and earn a {commissionPct}% commission when it&apos;s completed.</p>
+        <h1 className="text-2xl font-heading font-bold text-white mb-1">{t('postJob.title')}</h1>
+        <p className="text-sm text-surface-muted">{t('postJob.subtitle', { pct: commissionPct })}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -139,37 +148,37 @@ function PostJobContent() {
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
               <FileText className="w-4 h-4 text-amber-400" />
             </div>
-            <h2 className="text-base font-heading font-semibold text-white">Job Details</h2>
+            <h2 className="text-base font-heading font-semibold text-white">{t('postJob.section.details')}</h2>
           </div>
 
           <div className="space-y-4">
-            <Input label="Job Title" placeholder="e.g. Kitchen Renovation — Full Remodel" error={errors.title?.message as string} {...register('title')} />
+            <Input label={t('postJob.field.title')} placeholder={t('postJob.field.titlePlaceholder')} error={errors.title?.message as string} {...register('title')} />
 
             <div className="space-y-1.5">
-              <label className="label">Description</label>
+              <label className="label">{t('postJob.field.description')}</label>
               <textarea
                 className="input-field resize-none"
                 rows={4}
-                placeholder="Describe the scope, timeline expectations, and any details the contractor should know..."
+                placeholder={t('postJob.field.descriptionPlaceholder')}
                 {...register('description')}
               />
               {errors.description && <p className="text-xs text-red-400">{errors.description.message as string}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Select label="Trade Type" options={TRADE_OPTIONS} value={tradeType} onChange={setTradeType} placeholder="Select trade..." />
-              <Select label="Urgency" options={URGENCY_OPTIONS} value={urgency} onChange={setUrgency} />
+              <Select label={t('postJob.field.tradeType')} options={TRADE_OPTIONS} value={tradeType} onChange={setTradeType} placeholder={t('postJob.field.tradePlaceholder')} />
+              <Select label={t('postJob.field.urgency')} options={URGENCY_OPTIONS} value={urgency} onChange={setUrgency} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="Estimated Job Value ($)"
+                label={t('postJob.field.value')}
                 type="number"
-                placeholder="5000"
+                placeholder={t('postJob.field.valuePlaceholder')}
                 error={errors.estimatedValue?.message as string}
                 {...register('estimatedValue', { valueAsNumber: true })}
               />
-              <Select label="Service Radius" options={RADIUS_OPTIONS} value={serviceRadius} onChange={setServiceRadius} />
+              <Select label={t('postJob.field.radius')} options={RADIUS_OPTIONS} value={serviceRadius} onChange={setServiceRadius} />
             </div>
           </div>
         </Card>
@@ -181,27 +190,27 @@ function PostJobContent() {
               <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                 <DollarSign className="w-4 h-4 text-emerald-400" />
               </div>
-              <h2 className="text-base font-heading font-semibold text-white">Earnings Preview</h2>
+              <h2 className="text-base font-heading font-semibold text-white">{t('postJob.section.preview')}</h2>
             </div>
 
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="text-center p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                <p className="text-[11px] text-surface-muted mb-1">Your Commission ({feePcts.commission}%)</p>
+                <p className="text-[11px] text-surface-muted mb-1">{t('postJob.preview.yours', { pct: feePcts.commission })}</p>
                 <p className="text-lg font-heading font-bold text-emerald-400">{formatCurrency(feePreview.referralFee)}</p>
               </div>
               <div className="text-center p-3 rounded-xl bg-navy-900 border border-surface-border">
-                <p className="text-[11px] text-surface-muted mb-1">Contractor Gets ({100 - feePcts.commission - feePcts.platform}%)</p>
+                <p className="text-[11px] text-surface-muted mb-1">{t('postJob.preview.contractor', { pct: 100 - feePcts.commission - feePcts.platform })}</p>
                 <p className="text-lg font-heading font-bold text-white">{formatCurrency(feePreview.contractorGets)}</p>
               </div>
               <div className="text-center p-3 rounded-xl bg-navy-900 border border-surface-border">
-                <p className="text-[11px] text-surface-muted mb-1">Platform Fee ({feePcts.platform}%)</p>
+                <p className="text-[11px] text-surface-muted mb-1">{t('postJob.preview.platform', { pct: feePcts.platform })}</p>
                 <p className="text-lg font-heading font-bold text-surface-muted">{formatCurrency(feePreview.platformFee)}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 text-xs text-surface-muted">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span>Final amounts are calculated from the contractor&apos;s actual quote, not the estimate.</span>
+              <span>{t('postJob.preview.note')}</span>
             </div>
           </Card>
         )}
@@ -212,15 +221,15 @@ function PostJobContent() {
             <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
               <MapPin className="w-4 h-4 text-sky-400" />
             </div>
-            <h2 className="text-base font-heading font-semibold text-white">Job Location</h2>
+            <h2 className="text-base font-heading font-semibold text-white">{t('postJob.section.location')}</h2>
           </div>
 
           <div className="space-y-4">
-            <Input label="Street Address" error={errors.streetAddress?.message as string} {...register('streetAddress')} />
+            <Input label={t('postJob.field.street')} error={errors.streetAddress?.message as string} {...register('streetAddress')} />
             <div className="grid grid-cols-3 gap-3">
-              <Input label="City" error={errors.city?.message as string} {...register('city')} />
-              <Select label="State" options={US_STATES} value={state} onChange={setState} placeholder="State" />
-              <Input label="ZIP Code" error={errors.zipCode?.message as string} {...register('zipCode')} placeholder="77001" />
+              <Input label={t('postJob.field.city')} error={errors.city?.message as string} {...register('city')} />
+              <Select label={t('postJob.field.state')} options={US_STATES} value={state} onChange={setState} placeholder={t('postJob.field.statePlaceholder')} />
+              <Input label={t('postJob.field.zip')} error={errors.zipCode?.message as string} {...register('zipCode')} placeholder={t('postJob.field.zipPlaceholder')} />
             </div>
           </div>
         </Card>
@@ -232,27 +241,26 @@ function PostJobContent() {
               <User className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-base font-heading font-semibold text-white">Client Contact Info</h2>
-              <p className="text-xs text-surface-muted">Hidden from contractors until assigned</p>
+              <h2 className="text-base font-heading font-semibold text-white">{t('postJob.section.client')}</h2>
+              <p className="text-xs text-surface-muted">{t('postJob.client.hint')}</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Input label="First Name" error={errors.clientFirstName?.message as string} {...register('clientFirstName')} placeholder="John" />
-              <Input label="Last Name (optional)" error={errors.clientLastName?.message as string} {...register('clientLastName')} placeholder="Smith" />
+              <Input label={t('postJob.field.firstName')} error={errors.clientFirstName?.message as string} {...register('clientFirstName')} placeholder={t('postJob.field.firstNamePlaceholder')} />
+              <Input label={t('postJob.field.lastName')} error={errors.clientLastName?.message as string} {...register('clientLastName')} placeholder={t('postJob.field.lastNamePlaceholder')} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Email" type="email" error={errors.clientEmail?.message as string} {...register('clientEmail')} placeholder="john@example.com" />
-              <Input label="Phone (optional)" error={errors.clientPhone?.message as string} {...register('clientPhone')} placeholder="(555) 123-4567" />
+              <Input label={t('postJob.field.clientEmail')} type="email" error={errors.clientEmail?.message as string} {...register('clientEmail')} placeholder={t('postJob.field.clientEmailPlaceholder')} />
+              <Input label={t('postJob.field.clientPhone')} error={errors.clientPhone?.message as string} {...register('clientPhone')} placeholder={t('postJob.field.clientPhonePlaceholder')} />
             </div>
           </div>
 
           <div className="mt-4 flex items-start gap-2 p-3 rounded-xl bg-violet-500/5 border border-violet-500/10">
             <Lock className="w-4 h-4 text-violet-400 shrink-0 mt-0.5" />
             <p className="text-xs text-slate-300">
-              Client info is <span className="text-violet-400 font-medium">private</span> and only revealed to the assigned contractor.
-              The client will receive a secure portal link via email to approve quotes, pay, and track progress.
+              {t('postJob.client.privacyLead')} <span className="text-violet-400 font-medium">{t('postJob.client.privacyWord')}</span> {t('postJob.client.privacyRest')}
             </p>
           </div>
         </Card>
@@ -264,22 +272,22 @@ function PostJobContent() {
               <AlertCircle className="w-4 h-4 text-amber-400" />
             </div>
             <div>
-              <h2 className="text-base font-heading font-semibold text-white">Private Notes</h2>
-              <p className="text-xs text-surface-muted">Only visible to the assigned contractor</p>
+              <h2 className="text-base font-heading font-semibold text-white">{t('postJob.section.notes')}</h2>
+              <p className="text-xs text-surface-muted">{t('postJob.notes.hint')}</p>
             </div>
           </div>
 
           <textarea
             className="input-field resize-none w-full"
             rows={3}
-            placeholder="e.g. Access code is #1234. The client prefers morning appointments. Dog on premises..."
+            placeholder={t('postJob.notes.placeholder')}
             {...register('clientNotes')}
           />
         </Card>
 
         {/* ─── Submit ─── */}
         <Button type="submit" loading={loading} className="w-full" size="lg">
-          <Send className="w-4 h-4" /> Post Referral
+          <Send className="w-4 h-4" /> {t('postJob.submit')}
         </Button>
       </form>
     </div>

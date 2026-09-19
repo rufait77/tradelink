@@ -10,38 +10,24 @@ import { Input } from '../../../components/ui/input';
 import { EmptyState } from '../../../components/ui/empty-state';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
-import { formatCurrency, formatRelativeTime } from '../../../lib/utils';
+import { formatCurrency } from '../../../lib/utils';
 import { MapPin, Clock, Search, Briefcase, ChevronLeft, ChevronRight, Users, Timer, Navigation } from 'lucide-react';
 import { useAuthStore } from '../../../store/auth.store';
 import { useRouter } from 'next/navigation';
+import { useT, useLabels, useFormat, type TranslateFn, type TranslationKey } from '../../../i18n';
 
-// Referrer accounts cannot claim jobs — the board is contractor-only (API also returns 403).
-const REFERRER_BOARD_STRINGS = {
-  title: 'The job board is for contractors',
-  description: 'Referrer accounts post referrals and earn commission, but cannot claim jobs. Post a referral instead.',
-  action: 'Post a Referral',
-} as const;
+const RADIUS_VALUES = ['10', '25', '50', '100'] as const;
+const RADIUS_LABEL_KEYS: Record<string, TranslationKey> = {
+  '10': 'board.radius10',
+  '25': 'board.radius25',
+  '50': 'board.radius50',
+  '100': 'board.radius100',
+};
 
-const RADIUS_OPTIONS = [
-  { label: 'Within 10 mi', value: '10' },
-  { label: 'Within 25 mi', value: '25' },
-  { label: 'Within 50 mi', value: '50' },
-  { label: 'Within 100 mi', value: '100' },
-];
+// Enum values sent to the API — only the displayed label is translated.
+const TRADE_VALUES = ['Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Welding','Drywall','Barber','Cosmetology','Esthetician','AutoMechanics','Other'];
 
-const TRADE_OPTIONS = [
-  { label: 'All Trades', value: '' },
-  ...['Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Welding','Drywall','Barber','Cosmetology','Esthetician','AutoMechanics','Other']
-    .map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t })),
-];
-
-const URGENCY_OPTIONS = [
-  { label: 'Any Urgency', value: '' },
-  { label: 'Low', value: 'Low' },
-  { label: 'Medium', value: 'Medium' },
-  { label: 'High', value: 'High' },
-  { label: 'Emergency', value: 'Emergency' },
-];
+const URGENCY_VALUES = ['Low', 'Medium', 'High', 'Emergency'] as const;
 
 function getUrgencyClass(u: string) {
   switch (u) {
@@ -63,14 +49,16 @@ interface Job {
   _distanceMiles?: number | null;
 }
 
-function getInterestWindowLabel(end: string | null | undefined): { text: string; urgent: boolean } | null {
+const URGENT_WINDOW_HOURS = 4;
+
+function getInterestWindowLabel(t: TranslateFn, end: string | null | undefined): { text: string; urgent: boolean } | null {
   if (!end) return null;
   const diff = new Date(end).getTime() - Date.now();
-  if (diff <= 0) return { text: 'Window closed', urgent: false };
-  const hrs = Math.floor(diff / (1000 * 60 * 60));
-  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  if (hrs > 0) return { text: `${hrs}h ${mins}m left`, urgent: hrs < 4 };
-  return { text: `${mins}m left`, urgent: true };
+  if (diff <= 0) return { text: t('board.windowClosed'), urgent: false };
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours > 0) return { text: t('board.windowHours', { hours, minutes }), urgent: hours < URGENT_WINDOW_HOURS };
+  return { text: t('board.windowMinutes', { minutes }), urgent: true };
 }
 
 function JobBoardContent() {
@@ -87,6 +75,19 @@ function JobBoardContent() {
   const pageSize = 12;
   const isReferrer = useAuthStore((s) => s.user?.role === 'referrer');
   const router = useRouter();
+  const t = useT();
+  const { tradeLabel, urgencyLabel } = useLabels();
+  const { formatRelativeTime } = useFormat();
+
+  const RADIUS_OPTIONS = RADIUS_VALUES.map((value) => ({ label: t(RADIUS_LABEL_KEYS[value]), value }));
+  const TRADE_OPTIONS = [
+    { label: t('board.allTrades'), value: '' },
+    ...TRADE_VALUES.map((value) => ({ label: tradeLabel(value), value })),
+  ];
+  const URGENCY_OPTIONS = [
+    { label: t('board.anyUrgency'), value: '' },
+    ...URGENCY_VALUES.map((value) => ({ label: urgencyLabel(value), value })),
+  ];
 
   useEffect(() => {
     async function load() {
@@ -122,9 +123,9 @@ function JobBoardContent() {
     return (
       <EmptyState
         icon={Briefcase}
-        title={REFERRER_BOARD_STRINGS.title}
-        description={REFERRER_BOARD_STRINGS.description}
-        actionLabel={REFERRER_BOARD_STRINGS.action}
+        title={t('board.referrer.title')}
+        description={t('board.referrer.desc')}
+        actionLabel={t('board.referrer.action')}
         onAction={() => router.push('/dashboard/post-job')}
       />
     );
@@ -134,11 +135,11 @@ function JobBoardContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-white">Job Board</h1>
-          <p className="text-sm text-surface-muted">{total} open referrals available</p>
+          <h1 className="text-2xl font-heading font-bold text-white">{t('board.title')}</h1>
+          <p className="text-sm text-surface-muted">{t('board.openCount', { count: total })}</p>
         </div>
         <Link href="/dashboard/post-job">
-          <Button size="sm">Post a Referral</Button>
+          <Button size="sm">{t('board.postReferral')}</Button>
         </Link>
       </div>
 
@@ -146,24 +147,24 @@ function JobBoardContent() {
       <div className="glass-card p-4 flex flex-col sm:flex-row gap-3">
         <div className="flex-1">
           <Input
-            placeholder="Search by title or city..."
+            placeholder={t('board.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
           />
         </div>
-        <Select options={TRADE_OPTIONS} value={trade} onChange={(v) => { setTrade(v); setPage(1); }} placeholder="All Trades" />
-        <Select options={URGENCY_OPTIONS} value={urgency} onChange={(v) => { setUrgency(v); setPage(1); }} placeholder="Any Urgency" />
+        <Select options={TRADE_OPTIONS} value={trade} onChange={(v) => { setTrade(v); setPage(1); }} placeholder={t('board.allTrades')} />
+        <Select options={URGENCY_OPTIONS} value={urgency} onChange={(v) => { setUrgency(v); setPage(1); }} placeholder={t('board.anyUrgency')} />
       </div>
 
       {/* Geo radius filter */}
       <div className="glass-card p-4 flex flex-col sm:flex-row items-end gap-3">
         <div className="flex-1">
           <label className="block text-xs text-surface-muted mb-1 flex items-center gap-1">
-            <Navigation className="w-3 h-3 text-amber-400" /> Find jobs near you
+            <Navigation className="w-3 h-3 text-amber-400" /> {t('board.nearYou')}
           </label>
           <Input
-            placeholder="Enter your ZIP code"
+            placeholder={t('board.zipPlaceholder')}
             value={nearZip}
             onChange={(e) => { setNearZip(e.target.value.replace(/\D/g, '').slice(0, 5)); setPage(1); }}
             maxLength={5}
@@ -173,11 +174,11 @@ function JobBoardContent() {
           options={RADIUS_OPTIONS}
           value={radius}
           onChange={(v) => { setRadius(v); setPage(1); }}
-          placeholder="Radius"
+          placeholder={t('board.radiusPlaceholder')}
         />
         {nearZip.length === 5 && (
           <Button variant="ghost" size="sm" onClick={() => { setNearZip(''); setPage(1); }}>
-            Clear
+            {t('common.clear')}
           </Button>
         )}
       </div>
@@ -188,12 +189,12 @@ function JobBoardContent() {
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : filteredJobs.length === 0 ? (
-        <EmptyState icon={Briefcase} title="No jobs found" description="Try adjusting your filters or check back later." />
+        <EmptyState icon={Briefcase} title={t('board.empty.title')} description={t('board.empty.desc')} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredJobs.map((job) => {
             const interestCount = job._count?.interests ?? 0;
-            const windowInfo = getInterestWindowLabel(job.interestWindowEnd);
+            const windowInfo = getInterestWindowLabel(t, job.interestWindowEnd);
             const displayValue = job.estimatedValue || ((job.budgetMin + job.budgetMax) / 2);
 
             return (
@@ -201,8 +202,8 @@ function JobBoardContent() {
                 <Card hover className="h-full flex flex-col">
                   {/* Header badges */}
                   <div className="flex items-start justify-between mb-3">
-                    <Badge variant="amber">{job.tradeType.replace(/([A-Z])/g, ' $1').trim()}</Badge>
-                    <Badge variant="status" statusClass={getUrgencyClass(job.urgency)}>{job.urgency}</Badge>
+                    <Badge variant="amber">{tradeLabel(job.tradeType)}</Badge>
+                    <Badge variant="status" statusClass={getUrgencyClass(job.urgency)}>{urgencyLabel(job.urgency)}</Badge>
                   </div>
 
                   {/* Title + description */}
@@ -214,7 +215,7 @@ function JobBoardContent() {
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {job.city}, {job.state}
                       {job._distanceMiles != null && (
-                        <span className="text-amber-400 font-medium ml-1">• {job._distanceMiles} mi</span>
+                        <span className="text-amber-400 font-medium ml-1">• {t('board.distance', { miles: job._distanceMiles })}</span>
                       )}
                     </span>
                     <span className="font-medium text-emerald-400">
@@ -227,7 +228,7 @@ function JobBoardContent() {
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3 text-amber-400" />
                       <span className={interestCount > 0 ? 'text-amber-400' : ''}>
-                        {interestCount} interested
+                        {t('board.interested', { count: interestCount })}
                       </span>
                     </span>
                     {windowInfo ? (
@@ -251,7 +252,7 @@ function JobBoardContent() {
           <Button variant="ghost" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-surface-muted">Page {page} of {totalPages}</span>
+          <span className="text-sm text-surface-muted">{t('board.pageOf', { page, total: totalPages })}</span>
           <Button variant="ghost" size="sm" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
             <ChevronRight className="w-4 h-4" />
           </Button>
