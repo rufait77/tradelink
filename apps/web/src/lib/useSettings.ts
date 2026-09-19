@@ -6,6 +6,10 @@ interface PlatformSettings {
   platformFeePct: number;
   signupFee: string;
   subscriptionFee: string;
+  // Referrer role (Worker A)
+  referrerCommissionPct: number;
+  referrerSignupFee: string;
+  referrerRequiresSubscription: boolean;
 }
 
 const defaults: PlatformSettings = {
@@ -13,6 +17,9 @@ const defaults: PlatformSettings = {
   platformFeePct: 5,
   signupFee: '29.99',
   subscriptionFee: '9.99',
+  referrerCommissionPct: 5,
+  referrerSignupFee: '10.00',
+  referrerRequiresSubscription: false,
 };
 
 let cached: PlatformSettings | null = null;
@@ -34,6 +41,9 @@ export function usePlatformSettings() {
           platformFeePct: Number(d.platformFeePct) || defaults.platformFeePct,
           signupFee: String(d.signupFee ?? defaults.signupFee),
           subscriptionFee: String(d.subscriptionFee ?? defaults.subscriptionFee),
+          referrerCommissionPct: Number(d.referrerCommissionPct) || defaults.referrerCommissionPct,
+          referrerSignupFee: Number(d.referrerSignupFee ?? defaults.referrerSignupFee).toFixed(2),
+          referrerRequiresSubscription: d.referrerRequiresSubscription === true,
         };
       }).catch(() => {}).then(() => {});
     }
