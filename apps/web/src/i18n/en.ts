@@ -2,6 +2,7 @@ import { enCommon } from './dictionaries/en/common';
 import { enLanding } from './dictionaries/en/landing';
 import { enLegal } from './dictionaries/en/legal';
 import { enAuth } from './dictionaries/en/auth';
+import { enDashboard } from './dictionaries/en/dashboard';
 
 /**
  * The English dictionary is the source of truth for the key set.
@@ -13,6 +14,7 @@ export const en = {
   ...enLanding,
   ...enLegal,
   ...enAuth,
+  ...enDashboard,
 } as const;
 
 export type TranslationKey = keyof typeof en;

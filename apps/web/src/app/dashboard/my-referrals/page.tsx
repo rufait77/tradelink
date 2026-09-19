@@ -8,12 +8,14 @@ import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/empty-state';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
-import { formatCurrency, formatRelativeTime } from '../../../lib/utils';
+import { formatCurrency } from '../../../lib/utils';
 import { usePlatformSettings } from '../../../lib/useSettings';
 import {
   Send, MapPin, Clock, ChevronLeft, ChevronRight, Plus,
   Users, DollarSign, User, CheckCircle2, AlertTriangle,
 } from 'lucide-react';
+import { useT, useLabels, useFormat, type TranslateFn, type TranslationKey } from '../../../i18n';
+import { en } from '../../../i18n/en';
 
 function getStatusClass(s: string) {
   if (['Completed', 'ClientConfirmed'].includes(s)) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
@@ -22,23 +24,10 @@ function getStatusClass(s: string) {
   return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
 }
 
-function getStatusLabel(s: string): string {
-  const map: Record<string, string> = {
-    Open: 'Accepting Interest',
-    InterestClosed: 'Reviewing Interest',
-    Assigned: 'Contractor Assigned',
-    QuoteSent: 'Quote Sent to Client',
-    QuoteApproved: 'Quote Approved',
-    EscrowFunded: 'Payment Received',
-    InProgress: 'Work In Progress',
-    ContractorDone: 'Awaiting Confirmation',
-    ClientConfirmed: 'Client Confirmed',
-    Completed: 'Completed',
-    Disputed: 'Disputed',
-    Cancelled: 'Cancelled',
-    Expired: 'Expired',
-  };
-  return map[s] || s;
+// Referral-specific lifecycle wording; falls back to the raw status value.
+function getStatusLabel(t: TranslateFn, s: string): string {
+  const key = `referralStatus.${s}`;
+  return key in en ? t(key as TranslationKey) : s;
 }
 
 interface Job {
@@ -59,6 +48,14 @@ export default function MyReferralsPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const t = useT();
+  const { tradeLabel, escrowStatusLabel } = useLabels();
+  const { formatRelativeTime } = useFormat();
+  const FILTER_LABELS = {
+    all: t('myReferrals.filter.all'),
+    active: t('myReferrals.filter.active'),
+    completed: t('myReferrals.filter.completed'),
+  } as const;
 
   useEffect(() => {
     async function load() {
@@ -93,11 +90,11 @@ export default function MyReferralsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-white">My Referrals</h1>
-          <p className="text-sm text-surface-muted">Leads you&apos;ve posted — track their full lifecycle</p>
+          <h1 className="text-2xl font-heading font-bold text-white">{t('myReferrals.title')}</h1>
+          <p className="text-sm text-surface-muted">{t('myReferrals.subtitle')}</p>
         </div>
         <Link href="/dashboard/post-job">
-          <Button size="sm"><Plus className="w-4 h-4" /> Post Referral</Button>
+          <Button size="sm"><Plus className="w-4 h-4" /> {t('myReferrals.postReferral')}</Button>
         </Link>
       </div>
 
@@ -105,15 +102,15 @@ export default function MyReferralsPage() {
       <div className="grid grid-cols-3 gap-4">
         <Card className="text-center py-3">
           <p className="text-2xl font-heading font-bold text-amber-400">{activeCount}</p>
-          <p className="text-xs text-surface-muted">Active</p>
+          <p className="text-xs text-surface-muted">{t('myReferrals.stat.active')}</p>
         </Card>
         <Card className="text-center py-3">
           <p className="text-2xl font-heading font-bold text-emerald-400">{completedCount}</p>
-          <p className="text-xs text-surface-muted">Completed</p>
+          <p className="text-xs text-surface-muted">{t('myReferrals.stat.completed')}</p>
         </Card>
         <Card className="text-center py-3">
           <p className="text-2xl font-heading font-bold text-white">{formatCurrency(totalEarnings)}</p>
-          <p className="text-xs text-surface-muted">Est. Commission</p>
+          <p className="text-xs text-surface-muted">{t('myReferrals.stat.estCommission')}</p>
         </Card>
       </div>
 
@@ -123,13 +120,13 @@ export default function MyReferralsPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition capitalize ${
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
               filter === f
                 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                 : 'text-surface-muted hover:text-white'
             }`}
           >
-            {f} ({f === 'all' ? jobs.length : f === 'active' ? activeCount : completedCount})
+            {FILTER_LABELS[f]} ({f === 'all' ? jobs.length : f === 'active' ? activeCount : completedCount})
           </button>
         ))}
       </div>
@@ -139,9 +136,9 @@ export default function MyReferralsPage() {
       ) : filteredJobs.length === 0 ? (
         <EmptyState
           icon={Send}
-          title="No referrals yet"
-          description="Post your first referral to start earning commissions."
-          actionLabel="Post a Referral"
+          title={t('myReferrals.empty.title')}
+          description={t('myReferrals.empty.desc')}
+          actionLabel={t('myReferrals.empty.action')}
           onAction={() => router.push('/dashboard/post-job')}
         />
       ) : (
@@ -158,9 +155,9 @@ export default function MyReferralsPage() {
                     <div className="flex-1 min-w-0">
                       {/* Status + Trade */}
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <Badge variant="amber">{job.tradeType.replace(/([A-Z])/g, ' $1').trim()}</Badge>
+                        <Badge variant="amber">{tradeLabel(job.tradeType)}</Badge>
                         <Badge variant="status" statusClass={getStatusClass(job.status)}>
-                          {getStatusLabel(job.status)}
+                          {getStatusLabel(t, job.status)}
                         </Badge>
                       </div>
 
@@ -177,7 +174,7 @@ export default function MyReferralsPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Users className="w-3 h-3 text-amber-400" />
-                          <span className={interestCount > 0 ? 'text-amber-400' : ''}>{interestCount} interested</span>
+                          <span className={interestCount > 0 ? 'text-amber-400' : ''}>{t('myReferrals.interested', { count: interestCount })}</span>
                         </span>
                         {job.claimedBy && (
                           <span className="flex items-center gap-1 text-emerald-400">
@@ -190,10 +187,10 @@ export default function MyReferralsPage() {
                     {/* Right side — value + commission */}
                     <div className="text-right shrink-0">
                       <p className="text-sm font-semibold text-white">~{formatCurrency(displayValue)}</p>
-                      <p className="text-xs text-emerald-400">+{formatCurrency(commission)} commission</p>
+                      <p className="text-xs text-emerald-400">+{formatCurrency(commission)} {t('myReferrals.commissionSuffix')}</p>
                       {job.escrow && (
                         <Badge variant={job.escrow.status === 'funded' ? 'green' : 'amber'} className="mt-1 text-[10px]">
-                          Escrow: {job.escrow.status}
+                          {t('myReferrals.escrowPrefix')} {escrowStatusLabel(job.escrow.status)}
                         </Badge>
                       )}
                     </div>
@@ -208,7 +205,7 @@ export default function MyReferralsPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <Button variant="ghost" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}><ChevronLeft className="w-4 h-4" /></Button>
-          <span className="text-sm text-surface-muted">Page {page} of {totalPages}</span>
+          <span className="text-sm text-surface-muted">{t('myReferrals.pageOf', { page, total: totalPages })}</span>
           <Button variant="ghost" size="sm" disabled={page === totalPages} onClick={() => setPage(page + 1)}><ChevronRight className="w-4 h-4" /></Button>
         </div>
       )}

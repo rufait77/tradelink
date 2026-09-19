@@ -2,6 +2,7 @@ import { esCommon } from './dictionaries/es/common';
 import { esLanding } from './dictionaries/es/landing';
 import { esLegal } from './dictionaries/es/legal';
 import { esAuth } from './dictionaries/es/auth';
+import { esDashboard } from './dictionaries/es/dashboard';
 import type { Dictionary } from './en';
 
 export const es: Dictionary = {
@@ -9,4 +10,5 @@ export const es: Dictionary = {
   ...esLanding,
   ...esLegal,
   ...esAuth,
+  ...esDashboard,
 };

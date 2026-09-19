@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/auth.store';
 import { DashboardSidebar } from '../../components/layout/dashboard-sidebar';
 import { DashboardTopbar } from '../../components/layout/dashboard-topbar';
 import { PageLoader } from '../../components/ui/spinner';
+import { useT } from '../../i18n';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, token, fetchMe, needsOnboarding } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     async function init() {
@@ -38,7 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  if (loading) return <PageLoader text="Loading your dashboard..." />;
+  if (loading) return <PageLoader text={t('dash.loading')} />;
   if (!user) return null;
 
   return (

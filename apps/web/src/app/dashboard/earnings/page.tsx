@@ -6,9 +6,11 @@ import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/empty-state';
 import { SkeletonStats, SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
-import { formatCurrency, formatDate } from '../../../lib/utils';
+import { formatCurrency } from '../../../lib/utils';
 import { DollarSign, TrendingUp, Clock, CreditCard, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { useT, useLabels, useFormat, type TranslationKey } from '../../../i18n';
+import { en } from '../../../i18n/en';
 
 interface EarningsSummary {
   totalEarned: number; pendingAmount: number; thisMonthEarned: number; allTimeJobs: number;
@@ -25,6 +27,15 @@ export default function EarningsPage() {
   const [connectStatus, setConnectStatus] = useState<string>('not_connected');
   const [loading, setLoading] = useState(true);
   const [connectLoading, setConnectLoading] = useState(false);
+  const t = useT();
+  const { tradeLabel, apiErrorMessage } = useLabels();
+  const { formatDate } = useFormat();
+
+  // Commission payout states come from the API; fall back to the raw value.
+  function commissionStatusLabel(status: string) {
+    const key = `commissionStatus.${status}`;
+    return key in en ? t(key as TranslationKey) : status;
+  }
 
   useEffect(() => {
     async function load() {
@@ -58,7 +69,7 @@ export default function EarningsPage() {
       const res = await api.post('/payments/connect/onboard');
       window.location.href = res.data.data.url;
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to start Connect onboarding');
+      toast.error(apiErrorMessage(err, t('earnings.payout.error')));
     } finally {
       setConnectLoading(false);
     }
@@ -67,7 +78,7 @@ export default function EarningsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-heading font-bold text-white">Earnings</h1>
+        <h1 className="text-2xl font-heading font-bold text-white">{t('earnings.title')}</h1>
         <SkeletonStats count={4} />
         <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}</div>
       </div>
@@ -75,15 +86,15 @@ export default function EarningsPage() {
   }
 
   const stats = [
-    { icon: DollarSign, label: 'Total Earned', value: formatCurrency(summary?.totalEarned || 0), color: 'text-emerald-400' },
-    { icon: Clock, label: 'Pending', value: formatCurrency(summary?.pendingAmount || 0), color: 'text-amber-400' },
-    { icon: TrendingUp, label: 'This Month', value: formatCurrency(summary?.thisMonthEarned || 0), color: 'text-blue-400' },
-    { icon: CreditCard, label: 'Total Referral Jobs', value: String(summary?.allTimeJobs || 0), color: 'text-purple-400' },
+    { icon: DollarSign, label: t('earnings.stat.totalEarned'), value: formatCurrency(summary?.totalEarned || 0), color: 'text-emerald-400' },
+    { icon: Clock, label: t('earnings.stat.pending'), value: formatCurrency(summary?.pendingAmount || 0), color: 'text-amber-400' },
+    { icon: TrendingUp, label: t('earnings.stat.thisMonth'), value: formatCurrency(summary?.thisMonthEarned || 0), color: 'text-blue-400' },
+    { icon: CreditCard, label: t('earnings.stat.totalJobs'), value: String(summary?.allTimeJobs || 0), color: 'text-purple-400' },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-heading font-bold text-white">Earnings</h1>
+      <h1 className="text-2xl font-heading font-bold text-white">{t('earnings.title')}</h1>
 
       {/* KPI stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -109,22 +120,22 @@ export default function EarningsPage() {
       <Card>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-heading font-semibold text-white mb-1">Payout Account</h2>
+            <h2 className="text-lg font-heading font-semibold text-white mb-1">{t('earnings.payout.title')}</h2>
             <p className="text-sm text-surface-muted">
               {connectStatus === 'active'
-                ? 'Your Stripe account is connected. Payouts are automatic.'
+                ? t('earnings.payout.active')
                 : connectStatus === 'pending'
-                ? 'Your Stripe account setup is pending.'
-                : 'Connect your bank account to receive commission payouts.'}
+                ? t('earnings.payout.pending')
+                : t('earnings.payout.notConnected')}
             </p>
           </div>
           {connectStatus === 'active' ? (
-            <Badge variant="green">Connected</Badge>
+            <Badge variant="green">{t('earnings.payout.connected')}</Badge>
           ) : connectStatus === 'pending' ? (
-            <Badge variant="amber">Pending</Badge>
+            <Badge variant="amber">{t('earnings.payout.pendingBadge')}</Badge>
           ) : (
             <Button onClick={handleConnect} loading={connectLoading} size="sm">
-              <ExternalLink className="w-4 h-4" /> Connect Stripe
+              <ExternalLink className="w-4 h-4" /> {t('earnings.payout.connect')}
             </Button>
           )}
         </div>
@@ -132,9 +143,9 @@ export default function EarningsPage() {
 
       {/* Commission history */}
       <div>
-        <h2 className="text-lg font-heading font-semibold text-white mb-4">Commission History</h2>
+        <h2 className="text-lg font-heading font-semibold text-white mb-4">{t('earnings.history.title')}</h2>
         {commissions.length === 0 ? (
-          <EmptyState icon={DollarSign} title="No commissions yet" description="Commissions appear here when jobs you refer are completed." />
+          <EmptyState icon={DollarSign} title={t('earnings.history.empty.title')} description={t('earnings.history.empty.desc')} />
         ) : (
           <div className="space-y-2">
             {commissions.map((c) => (
@@ -142,7 +153,7 @@ export default function EarningsPage() {
                 <div>
                   <p className="text-sm font-medium text-slate-200">{c.job.title}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="amber">{c.job.tradeType}</Badge>
+                    <Badge variant="amber">{tradeLabel(c.job.tradeType)}</Badge>
                     <span className="text-xs text-surface-muted">{formatDate(c.createdAt)}</span>
                   </div>
                 </div>
@@ -152,7 +163,7 @@ export default function EarningsPage() {
                     variant={c.status === 'paid' ? 'green' : c.status === 'failed' ? 'red' : 'amber'}
                     className="mt-1"
                   >
-                    {c.status}
+                    {commissionStatusLabel(c.status)}
                   </Badge>
                 </div>
               </Card>

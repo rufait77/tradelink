@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/badge';
 import { SkeletonStats } from '../../components/ui/skeleton';
 import api from '../../lib/api';
 import { formatCurrency, getStatusClass } from '../../lib/utils';
+import { useT, useLabels } from '../../i18n';
 import {
   Briefcase, DollarSign, Send, TrendingUp,
   ArrowRight, Plus, Clock,
@@ -24,6 +25,8 @@ export default function DashboardHomePage() {
   const [loading, setLoading] = useState(true);
   // Referrers cannot claim jobs — hide the contractor-only job board entry point.
   const isReferrer = user?.role === 'referrer';
+  const t = useT();
+  const { tradeLabel, statusLabel } = useLabels();
 
   useEffect(() => {
     async function load() {
@@ -57,8 +60,8 @@ export default function DashboardHomePage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-white mb-1">Dashboard</h1>
-          <p className="text-sm text-surface-muted">Welcome back!</p>
+          <h1 className="text-2xl font-heading font-bold text-white mb-1">{t('dash.home.title')}</h1>
+          <p className="text-sm text-surface-muted">{t('dash.home.loadingSubtitle')}</p>
         </div>
         <SkeletonStats count={4} />
       </div>
@@ -66,10 +69,10 @@ export default function DashboardHomePage() {
   }
 
   const stats = [
-    { icon: DollarSign, label: 'Total Earned', value: formatCurrency(data?.earnings.totalEarned || 0), color: 'text-emerald-400' },
-    { icon: Clock, label: 'Pending', value: formatCurrency(data?.earnings.pendingAmount || 0), color: 'text-amber-400' },
-    { icon: TrendingUp, label: 'This Month', value: formatCurrency(data?.earnings.thisMonthEarned || 0), color: 'text-blue-400' },
-    { icon: Briefcase, label: 'Profile Rating', value: user?.profile?.avgRating ? `${user.profile.avgRating.toFixed(1)} ★` : 'No ratings yet', color: 'text-amber-400' },
+    { icon: DollarSign, label: t('dash.home.stat.totalEarned'), value: formatCurrency(data?.earnings.totalEarned || 0), color: 'text-emerald-400' },
+    { icon: Clock, label: t('dash.home.stat.pending'), value: formatCurrency(data?.earnings.pendingAmount || 0), color: 'text-amber-400' },
+    { icon: TrendingUp, label: t('dash.home.stat.thisMonth'), value: formatCurrency(data?.earnings.thisMonthEarned || 0), color: 'text-blue-400' },
+    { icon: Briefcase, label: t('dash.home.stat.rating'), value: user?.profile?.avgRating ? `${user.profile.avgRating.toFixed(1)} ★` : t('dash.home.stat.noRatings'), color: 'text-amber-400' },
   ];
 
   return (
@@ -78,12 +81,12 @@ export default function DashboardHomePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-heading font-bold text-white">
-            Welcome back, {user?.name?.split(' ')[0]}
+            {t('dash.home.welcome', { name: user?.name?.split(' ')[0] ?? '' })}
           </h1>
-          <p className="text-sm text-surface-muted">Here&apos;s what&apos;s happening with your referrals.</p>
+          <p className="text-sm text-surface-muted">{t('dash.home.subtitle')}</p>
         </div>
         <Link href="/dashboard/post-job">
-          <Button size="sm"><Plus className="w-4 h-4" /> Post Referral</Button>
+          <Button size="sm"><Plus className="w-4 h-4" /> {t('dash.home.postReferral')}</Button>
         </Link>
       </div>
 
@@ -110,9 +113,9 @@ export default function DashboardHomePage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { href: '/dashboard/post-job', icon: Send, label: 'Post a Referral', desc: 'Got a lead you can\'t take?' },
-          { href: '/dashboard/jobs', icon: Briefcase, label: 'Browse Job Board', desc: 'Find jobs to claim' },
-          { href: '/dashboard/earnings', icon: DollarSign, label: 'View Earnings', desc: 'Track your commissions' },
+          { href: '/dashboard/post-job', icon: Send, label: t('dash.home.action.post.label'), desc: t('dash.home.action.post.desc') },
+          { href: '/dashboard/jobs', icon: Briefcase, label: t('dash.home.action.browse.label'), desc: t('dash.home.action.browse.desc') },
+          { href: '/dashboard/earnings', icon: DollarSign, label: t('dash.home.action.earnings.label'), desc: t('dash.home.action.earnings.desc') },
         ].filter((action) => !(isReferrer && action.href === '/dashboard/jobs')).map((action) => {
           const Icon = action.icon;
           return (
@@ -130,15 +133,15 @@ export default function DashboardHomePage() {
       {/* Recent Activity */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-heading font-semibold text-white">Recent Activity</h2>
+          <h2 className="text-lg font-heading font-semibold text-white">{t('dash.home.recentActivity')}</h2>
           <Link href="/dashboard/my-referrals" className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1">
-            View all <ArrowRight className="w-3 h-3" />
+            {t('common.viewAll')} <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
         {data?.recentJobs.length === 0 ? (
           <Card>
             <p className="text-sm text-surface-muted text-center py-4">
-              No activity yet. <Link href="/dashboard/post-job" className="text-amber-400">Post your first referral</Link> to get started!
+              {t('dash.home.emptyPrefix')} <Link href="/dashboard/post-job" className="text-amber-400">{t('dash.home.emptyLink')}</Link> {t('dash.home.emptySuffix')}
             </p>
           </Card>
         ) : (
@@ -148,9 +151,9 @@ export default function DashboardHomePage() {
                 <Card hover className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-200">{job.title}</p>
-                    <p className="text-xs text-surface-muted">{job.tradeType}</p>
+                    <p className="text-xs text-surface-muted">{tradeLabel(job.tradeType)}</p>
                   </div>
-                  <Badge variant="status" statusClass={getStatusClass(job.status)}>{job.status}</Badge>
+                  <Badge variant="status" statusClass={getStatusClass(job.status)}>{statusLabel(job.status)}</Badge>
                 </Card>
               </Link>
             ))}
