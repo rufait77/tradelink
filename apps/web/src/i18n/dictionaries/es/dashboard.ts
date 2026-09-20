@@ -6,8 +6,8 @@ export const esDashboard: Record<keyof typeof enDashboard, string> = {
 
   // ─── Inicio del panel ───────────────────────────────────────────────────
   'dash.home.title': 'Panel',
-  'dash.home.loadingSubtitle': '¡Bienvenido de nuevo!',
-  'dash.home.welcome': 'Bienvenido de nuevo, {name}',
+  'dash.home.loadingSubtitle': '¡Hola de nuevo!',
+  'dash.home.welcome': 'Hola de nuevo, {name}',
   'dash.home.subtitle': 'Esto es lo que está pasando con tus referidos.',
   'dash.home.postReferral': 'Publicar referido',
   'dash.home.stat.totalEarned': 'Total ganado',
@@ -66,7 +66,7 @@ export const esDashboard: Record<keyof typeof enDashboard, string> = {
   'referralStatus.EscrowFunded': 'Pago recibido',
   'referralStatus.InProgress': 'Trabajo en curso',
   'referralStatus.ContractorDone': 'Esperando confirmación',
-  'referralStatus.ClientConfirmed': 'Cliente confirmó',
+  'referralStatus.ClientConfirmed': 'Confirmado por el cliente',
   'referralStatus.Completed': 'Completado',
   'referralStatus.Disputed': 'En disputa',
   'referralStatus.Cancelled': 'Cancelado',

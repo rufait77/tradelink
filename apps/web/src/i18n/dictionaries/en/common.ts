@@ -115,7 +115,7 @@ export const enCommon = {
 
   // ─── not-found / error pages ────────────────────────────────────────────
   'notFound.heading': 'Page Not Found',
-  'notFound.body': 'The page you’re looking for doesn’t exist or has been moved.',
+  'notFound.body': 'The page you\'re looking for doesn\'t exist or has been moved.',
   'notFound.cta': 'Back to Home',
   'errorPage.heading': 'Something Went Wrong',
   'errorPage.body': 'An unexpected error occurred. Please try again.',

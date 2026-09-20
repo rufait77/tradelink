@@ -109,7 +109,7 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
   'pricing.referrer.badge': 'NUEVO',
   'pricing.referrer.eyebrow': 'Referidor',
   'pricing.referrer.oneTime': 'pago único',
-  'pricing.referrer.desc': '¿No eres contratista? ¿Conoces gente que necesita trabajos? Refiere el trabajo, elige al profesional y gana {pct}% cuando se complete.',
+  'pricing.referrer.desc': '¿No eres contratista? ¿Conoces a alguien que necesita hacer arreglos o reparaciones? Refiere el trabajo, elige al profesional y gana {pct}% cuando se complete.',
   'pricing.referrer.subRequired': ' Requiere suscripción mensual.',
   'pricing.referrer.subNotRequired': ' Sin suscripción mensual.',
   'pricing.referrer.f1': 'Gana {pct}% de comisión por cada referido',
@@ -122,7 +122,7 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
   'pricing.breakdown.title': 'Desglose de la comisión',
   'pricing.breakdown.yours': 'Tu comisión por referido',
   'pricing.breakdown.platform': 'Tarifa de la plataforma',
-  'pricing.breakdown.contractor': 'Recibe el contratista contratado',
+  'pricing.breakdown.contractor': 'Lo que recibe el contratista',
   'pricing.cta': 'Comenzar',
 
   // ─── Página de contacto ─────────────────────────────────────────────────
@@ -149,7 +149,7 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
   'roleSelector.contractor.p2': 'Toma trabajos y envía cotizaciones',
   'roleSelector.contractor.p3': '${signupFee} pago único + ${subscriptionFee}/mes',
   'roleSelector.referrer.title': 'Referidor',
-  'roleSelector.referrer.tagline': '¿Conoces gente que necesita trabajos? Cobra por la recomendación.',
+  'roleSelector.referrer.tagline': '¿Conoces a alguien que necesita contratar a un profesional? Cobra por conectarlos.',
   'roleSelector.referrer.p1': 'Gana {pct}% por cada referido',
   'roleSelector.referrer.p2': 'No se requiere licencia ni oficio',
   'roleSelector.referrer.p3Sub': '${signupFee} pago único + plan mensual',
@@ -177,8 +177,8 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
   'demo.roleTablistLabel': 'Rol del panel',
 
   // ─── Estructura del panel de demostración ───────────────────────────────
-  'mockDash.welcome': 'Bienvenido de nuevo,',
-  'mockDash.headline': 'Bienvenido de nuevo, {name}',
+  'mockDash.welcome': 'Hola de nuevo,',
+  'mockDash.headline': 'Hola de nuevo, {name}',
   'mockDash.subline': 'Esto es lo que está pasando con tus referidos.',
   'mockDash.postReferral': 'Publicar referido',
   'mockDash.action.post.label': 'Publicar un referido',
@@ -217,8 +217,8 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
   'mockData.job.faucet': 'Llave de cocina con fuga + triturador',
 
   // ─── Datos de ejemplo: notificaciones ───────────────────────────────────
-  'mockData.notif.escrowPaid.title': 'El cliente pagó al depósito en garantía',
-  'mockData.notif.escrowPaid.body': 'El reemplazo del calentador de agua está financiado. Puedes empezar el trabajo.',
+  'mockData.notif.escrowPaid.title': 'El cliente depositó el pago en garantía',
+  'mockData.notif.escrowPaid.body': 'El reemplazo del calentador de agua ya tiene el pago en garantía. Puedes empezar el trabajo.',
   'mockData.notif.commissionPaid.title': 'Comisión pagada',
   'mockData.notif.commissionPaid.bodyContractor': '$960 por "Instalación de mini-split" llegaron a tu banco.',
   'mockData.notif.commissionPaid.bodyReferrer': '$145 por "Mejora de panel eléctrico" van en camino.',
@@ -237,7 +237,7 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
   'mockData.pipeline.posted': 'Publicado',
   'mockData.pipeline.assigned': 'Asignado',
   'mockData.pipeline.quoteApproved': 'Cotización aprobada',
-  'mockData.pipeline.escrowFunded': 'Depósito en garantía',
+  'mockData.pipeline.escrowFunded': 'Fondos depositados',
   'mockData.pipeline.workDone': 'Trabajo terminado',
   'mockData.pipeline.paidOut': 'Pagado',
 

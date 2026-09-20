@@ -8,7 +8,7 @@ export const enMessages = {
   'messages.tab.direct': 'Direct Messages',
   'messages.tab.jobs': 'Job Messages',
   'messages.dm.empty.title': 'No direct messages',
-  'messages.dm.empty.desc': 'Start a conversation by visiting a contractor’s profile and clicking "Message".',
+  'messages.dm.empty.desc': 'Start a conversation by visiting a contractor\'s profile and clicking "Message".',
   'messages.job.empty.title': 'No job conversations',
   'messages.job.empty.desc': 'Messages will appear here when you communicate about a job.',
   'messages.empty.search': 'No conversations match your search.',
@@ -26,6 +26,6 @@ export const enMessages = {
   'dm.report': 'Report',
   'dm.report.title': 'Report Message',
   'dm.report.body': 'This report will be sent to Tradelink admins for review. Please describe the issue.',
-  'dm.report.placeholder': 'Describe why you’re reporting this message...',
+  'dm.report.placeholder': 'Describe why you\'re reporting this message...',
   'dm.report.submit': 'Submit Report',
 } as const;

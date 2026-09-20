@@ -9,7 +9,7 @@ export const enDashboard = {
   'dash.home.title': 'Dashboard',
   'dash.home.loadingSubtitle': 'Welcome back!',
   'dash.home.welcome': 'Welcome back, {name}',
-  'dash.home.subtitle': 'Here’s what’s happening with your referrals.',
+  'dash.home.subtitle': 'Here\'s what\'s happening with your referrals.',
   'dash.home.postReferral': 'Post Referral',
   'dash.home.stat.totalEarned': 'Total Earned',
   'dash.home.stat.pending': 'Pending',
@@ -17,7 +17,7 @@ export const enDashboard = {
   'dash.home.stat.rating': 'Profile Rating',
   'dash.home.stat.noRatings': 'No ratings yet',
   'dash.home.action.post.label': 'Post a Referral',
-  'dash.home.action.post.desc': 'Got a lead you can’t take?',
+  'dash.home.action.post.desc': 'Got a lead you can\'t take?',
   'dash.home.action.browse.label': 'Browse Job Board',
   'dash.home.action.browse.desc': 'Find jobs to claim',
   'dash.home.action.earnings.label': 'View Earnings',
@@ -29,7 +29,7 @@ export const enDashboard = {
 
   // ─── My jobs ────────────────────────────────────────────────────────────
   'myJobs.title': 'My Jobs',
-  'myJobs.subtitle': 'Jobs you’ve claimed from other contractors',
+  'myJobs.subtitle': 'Jobs you\'ve claimed from other contractors',
   'myJobs.empty.title': 'No claimed jobs',
   'myJobs.empty.desc': 'Browse the job board and claim jobs that match your skills.',
   'myJobs.empty.action': 'Browse Job Board',
@@ -42,7 +42,7 @@ export const enDashboard = {
 
   // ─── My referrals ───────────────────────────────────────────────────────
   'myReferrals.title': 'My Referrals',
-  'myReferrals.subtitle': 'Leads you’ve posted — track their full lifecycle',
+  'myReferrals.subtitle': 'Leads you\'ve posted — track their full lifecycle',
   'myReferrals.postReferral': 'Post Referral',
   'myReferrals.stat.active': 'Active',
   'myReferrals.stat.completed': 'Completed',
@@ -104,7 +104,7 @@ export const enDashboard = {
   'notifications.unread': '{count} unread',
   'notifications.markAll': 'Mark All Read',
   'notifications.empty.title': 'No notifications',
-  'notifications.empty.desc': 'You’re all caught up!',
+  'notifications.empty.desc': 'You\'re all caught up!',
   'notifications.toast.allRead': 'All marked as read',
   'notifications.toast.failed': 'Failed',
 
@@ -120,7 +120,7 @@ export const enDashboard = {
   'settings.password.new': 'New Password',
   'settings.password.confirm': 'Confirm New Password',
   'settings.password.submit': 'Update Password',
-  'settings.password.mismatch': 'Passwords don’t match',
+  'settings.password.mismatch': 'Passwords don\'t match',
   'settings.password.success': 'Password changed!',
   'settings.password.failed': 'Failed to change password',
   'settings.actions.title': 'Account Actions',
@@ -138,7 +138,7 @@ export const enDashboard = {
   'billing.sub.periodEnds': 'Current period ends:',
   'billing.sub.willCancel': 'Will cancel at end of current period',
   'billing.sub.cancel': 'Cancel Subscription',
-  'billing.sub.cancelConfirm': 'Are you sure you want to cancel your subscription? You’ll retain access until the end of your billing period.',
+  'billing.sub.cancelConfirm': 'Are you sure you want to cancel your subscription? You\'ll retain access until the end of your billing period.',
   'billing.sub.cancelSuccess': 'Subscription will cancel at period end.',
   'billing.sub.prompt': 'Subscribe to unlock all Tradelink features including posting referrals and claiming jobs.',
   'billing.sub.submit': 'Subscribe — First Month Free, then ${fee}/mo',

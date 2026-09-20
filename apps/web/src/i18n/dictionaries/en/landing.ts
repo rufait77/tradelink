@@ -7,7 +7,7 @@ export const enLanding = {
   'home.hero.titleLead': 'Refer a Job.',
   'home.hero.titleAccent': 'Earn {pct}%',
   'home.hero.titleTrail': 'Commission.',
-  'home.hero.subtitle': 'Turn every lead you can’t handle into cash. Post a referral, let another contractor complete the job, and get paid automatically.',
+  'home.hero.subtitle': 'Turn every lead you can\'t handle into cash. Post a referral, let another contractor complete the job, and get paid automatically.',
   'home.hero.ctaPrimary': 'Start Earning Today',
   'home.hero.ctaSecondary': 'See How It Works',
   'home.hero.stat.commission': 'Commission Rate',
@@ -19,7 +19,7 @@ export const enLanding = {
   'home.steps.subtitle': 'Three simple steps to start earning commissions on referrals',
   'home.steps.label': 'Step {n}',
   'home.steps.post.title': 'Post a Referral',
-  'home.steps.post.desc': 'Got a lead you can’t take? Post it as a referral with budget, trade type, and location.',
+  'home.steps.post.desc': 'Got a lead you can\'t take? Post it as a referral with budget, trade type, and location.',
   'home.steps.claim.title': 'Another Contractor Claims It',
   'home.steps.claim.desc': 'A qualified contractor in the right area claims the job and completes the work.',
   'home.steps.paid.title': 'You Get Paid',
@@ -44,7 +44,7 @@ export const enLanding = {
   // ─── Home: FAQ ──────────────────────────────────────────────────────────
   'home.faq.title': 'Frequently Asked Questions',
   'home.faq.commission.q': 'How does the referral commission work?',
-  'home.faq.commission.a': 'When you refer a job and another contractor completes it, you earn {pct}% of the job’s total value. Payment is processed automatically through Stripe.',
+  'home.faq.commission.a': 'When you refer a job and another contractor completes it, you earn {pct}% of the job\'s total value. Payment is processed automatically through Stripe.',
   'home.faq.cost.q': 'What does it cost to join?',
   'home.faq.cost.a': 'There is a one-time signup fee of ${signupFee} plus a monthly subscription of ${subscriptionFee}/mo to access the full platform. First month is free!',
   'home.faq.paid.q': 'How do I get paid?',
@@ -52,11 +52,11 @@ export const enLanding = {
   'home.faq.trades.q': 'What trades are supported?',
   'home.faq.trades.a': 'We support all major trade categories including Landscaping, Roofing, HVAC, Plumbing, Electrical, Painting, Carpentry, Flooring, Masonry, Cleaning, Pressure Washing, Junk Removal, Window Installation, Siding, Clearing, General Contracting, Welding, Drywall Installation, Barber, Cosmetology, and Esthetician.',
   'home.faq.both.q': 'Can I both refer and claim jobs?',
-  'home.faq.both.a': 'Absolutely! You can post referral jobs for leads you can’t handle, and claim jobs from other contractors that match your skills.',
+  'home.faq.both.a': 'Absolutely! You can post referral jobs for leads you can\'t handle, and claim jobs from other contractors that match your skills.',
 
   // ─── Home: closing CTA ──────────────────────────────────────────────────
   'home.cta.title': 'Ready to Start Earning?',
-  'home.cta.subtitle': 'Join Tradelink today and turn every lead you can’t handle into passive income.',
+  'home.cta.subtitle': 'Join Tradelink today and turn every lead you can\'t handle into passive income.',
   'home.cta.button': 'Create Your Account',
 
   // ─── How it works page ──────────────────────────────────────────────────
@@ -74,7 +74,7 @@ export const enLanding = {
   'howItWorks.s2.d2': 'Post unlimited referrals',
   'howItWorks.s2.d3': 'Connect your bank via Stripe',
   'howItWorks.s3.title': 'Post a Referral',
-  'howItWorks.s3.desc': 'Got a lead you can’t take? Post it with budget, trade type, location, and any client notes.',
+  'howItWorks.s3.desc': 'Got a lead you can\'t take? Post it with budget, trade type, location, and any client notes.',
   'howItWorks.s3.d1': 'Set budget range',
   'howItWorks.s3.d2': 'Choose trade category',
   'howItWorks.s3.d3': 'Add client details',
@@ -110,7 +110,7 @@ export const enLanding = {
   'pricing.referrer.badge': 'NEW',
   'pricing.referrer.eyebrow': 'Referrer',
   'pricing.referrer.oneTime': 'one-time',
-  'pricing.referrer.desc': 'Not a contractor? Know people who need work done? Refer the job, pick the pro, and earn {pct}% when it’s completed.',
+  'pricing.referrer.desc': 'Not a contractor? Know people who need work done? Refer the job, pick the pro, and earn {pct}% when it\'s completed.',
   'pricing.referrer.subRequired': ' Requires a monthly subscription.',
   'pricing.referrer.subNotRequired': ' No monthly subscription.',
   'pricing.referrer.f1': 'Earn {pct}% commission on every referral',
@@ -128,7 +128,7 @@ export const enLanding = {
 
   // ─── Contact page ───────────────────────────────────────────────────────
   'contact.title': 'Get In Touch',
-  'contact.subtitle': 'Have questions about Tradelink? We’d love to hear from you.',
+  'contact.subtitle': 'Have questions about Tradelink? We\'d love to hear from you.',
   'contact.email': 'Email',
   'contact.phone': 'Phone',
   'contact.location': 'Location',
@@ -139,7 +139,7 @@ export const enLanding = {
   'contact.form.message': 'Message',
   'contact.form.messagePlaceholder': 'Tell us how we can help...',
   'contact.form.submit': 'Send Message',
-  'contact.toast.success': 'Message sent! We’ll get back to you within 24 hours.',
+  'contact.toast.success': 'Message sent! We\'ll get back to you within 24 hours.',
   'contact.toast.error': 'Failed to send message. Please try again.',
 
   // ─── Role selector (signup) ─────────────────────────────────────────────
@@ -180,10 +180,10 @@ export const enLanding = {
   // ─── Mock dashboard chrome ──────────────────────────────────────────────
   'mockDash.welcome': 'Welcome back,',
   'mockDash.headline': 'Welcome back, {name}',
-  'mockDash.subline': 'Here’s what’s happening with your referrals.',
+  'mockDash.subline': 'Here\'s what\'s happening with your referrals.',
   'mockDash.postReferral': 'Post Referral',
   'mockDash.action.post.label': 'Post a Referral',
-  'mockDash.action.post.desc': 'Got a lead you can’t take?',
+  'mockDash.action.post.desc': 'Got a lead you can\'t take?',
   'mockDash.action.browse.label': 'Browse Job Board',
   'mockDash.action.browse.desc': 'Find jobs to claim',
   'mockDash.action.earnings.label': 'View Earnings',

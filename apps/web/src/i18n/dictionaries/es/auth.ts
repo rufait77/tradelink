@@ -26,14 +26,14 @@ export const esAuth: Record<keyof typeof enAuth, string> = {
   'auth.validation.oneNumber': 'Un número',
 
   // ─── Inicio de sesión ───────────────────────────────────────────────────
-  'login.title': 'Bienvenido de nuevo',
+  'login.title': 'Hola de nuevo',
   'login.subtitle': 'Inicia sesión en tu cuenta de Tradelink.',
   'login.rememberMe': 'Recordarme',
   'login.forgotPassword': '¿Olvidaste tu contraseña?',
   'login.submit': 'Iniciar sesión',
   'login.noAccount': '¿No tienes cuenta?',
   'login.signUpLink': 'Regístrate',
-  'login.toast.success': '¡Bienvenido de nuevo!',
+  'login.toast.success': '¡Hola de nuevo!',
   'login.toast.failed': 'No se pudo iniciar sesión.',
   'login.toast.inactive': 'Primero completa el pago de registro.',
 
@@ -133,6 +133,6 @@ export const esAuth: Record<keyof typeof enAuth, string> = {
   'onboarding.validation.zip': 'El código postal debe tener 5 dígitos',
   'onboarding.toast.pickTrade': 'Elige al menos un tipo de oficio',
   'onboarding.toast.pickState': 'Elige tu estado',
-  'onboarding.toast.success': '¡Perfil completo! Bienvenido a Tradelink.',
+  'onboarding.toast.success': '¡Perfil completo! Te damos la bienvenida a Tradelink.',
   'onboarding.toast.failed': 'No se pudo guardar el perfil.',
 };

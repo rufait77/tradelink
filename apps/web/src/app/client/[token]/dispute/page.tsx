@@ -7,7 +7,7 @@ import { PageLoader } from '../../../../components/ui/spinner';
 import clientApi from '../../../../lib/clientApi';
 import { toast } from 'sonner';
 import { ArrowLeft, AlertTriangle, ShieldAlert, Send } from 'lucide-react';
-import { useT, useLabels, type TranslationKey } from '../../../../i18n';
+import { useT, useLabels, translate, type TranslationKey } from '../../../../i18n';
 
 // `value` is the API enum; only the label is translated.
 const DISPUTE_REASONS: { value: string; labelKey: TranslationKey }[] = [
@@ -52,8 +52,11 @@ export default function DisputePage() {
 
     setSubmitLoading(true);
     try {
+      // The prefix is persisted and read back by the admin app, so it stays
+      // English regardless of the locale the client portal is displayed in.
+      // Only the on-screen radio labels follow the active language.
       const reason = DISPUTE_REASONS.find(r => r.value === selectedReason);
-      const reasonLabel = reason ? t(reason.labelKey) : selectedReason;
+      const reasonLabel = reason ? translate('en', reason.labelKey) : selectedReason;
       await clientApi.post(`/client/${token}/dispute`, {
         reason: `${reasonLabel}: ${description}`,
       });
