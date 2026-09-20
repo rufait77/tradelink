@@ -7,10 +7,11 @@ import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
-import { formatDate } from '../../../lib/utils';
 import { CreditCard, Calendar, AlertTriangle, ExternalLink, CheckCircle2, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlatformSettings } from '../../../lib/useSettings';
+import { useT, useFormat, apiErrorMessage, type TranslationKey } from '../../../i18n';
+import { en } from '../../../i18n/en';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK || '');
 
@@ -36,6 +37,7 @@ function SubscribeForm({ onSuccess }: { onSuccess: () => void }) {
   const elements = useElements();
   const { subscriptionFee } = usePlatformSettings();
   const [loading, setLoading] = useState(false);
+  const t = useT();
 
   async function handleSubscribe(e: React.FormEvent) {
     e.preventDefault();
@@ -45,7 +47,7 @@ function SubscribeForm({ onSuccess }: { onSuccess: () => void }) {
     try {
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
-        toast.error('Card element not found');
+        toast.error(t('billing.sub.cardMissing'));
         return;
       }
 
@@ -56,7 +58,7 @@ function SubscribeForm({ onSuccess }: { onSuccess: () => void }) {
       });
 
       if (error) {
-        toast.error(error.message || 'Invalid card details');
+        toast.error(error.message || t('billing.sub.cardInvalid'));
         return;
       }
 
@@ -66,7 +68,7 @@ function SubscribeForm({ onSuccess }: { onSuccess: () => void }) {
       });
 
       if (res.data.data?.devMode) {
-        toast.success('Subscription activated (dev mode)!');
+        toast.success(t('billing.sub.devMode'));
         onSuccess();
         return;
       }
@@ -75,15 +77,15 @@ function SubscribeForm({ onSuccess }: { onSuccess: () => void }) {
       if (res.data.data?.clientSecret) {
         const { error: confirmError } = await stripe.confirmCardPayment(res.data.data.clientSecret);
         if (confirmError) {
-          toast.error(confirmError.message || 'Payment failed');
+          toast.error(confirmError.message || t('billing.sub.paymentFailed'));
           return;
         }
       }
 
-      toast.success('Subscription created successfully!');
+      toast.success(t('billing.sub.created'));
       onSuccess();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to create subscription');
+      toast.error(apiErrorMessage(err, t, t('billing.sub.createFailed')));
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ function SubscribeForm({ onSuccess }: { onSuccess: () => void }) {
         />
       </div>
       <Button type="submit" loading={loading} disabled={!stripe} className="w-full">
-        Subscribe — First Month Free, then ${subscriptionFee}/mo
+        {t('billing.sub.submit', { fee: subscriptionFee })}
       </Button>
     </form>
   );
@@ -119,6 +121,14 @@ export default function BillingPage() {
   const [connectStatus, setConnectStatus] = useState('not_connected');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const t = useT();
+  const { formatDate } = useFormat();
+
+  // Invoice states come from Stripe; fall back to the raw value.
+  function invoiceStatusLabel(status: string) {
+    const key = `invoiceStatus.${status}`;
+    return key in en ? t(key as TranslationKey) : status;
+  }
 
   const loadData = useCallback(async () => {
     try {
@@ -137,13 +147,13 @@ export default function BillingPage() {
   const sub = subData?.subscription;
 
   async function handleCancel() {
-    if (!confirm('Are you sure you want to cancel your subscription? You\'ll retain access until the end of your billing period.')) return;
+    if (!confirm(t('billing.sub.cancelConfirm'))) return;
     setActionLoading(true);
     try {
       await api.post('/payments/cancel-subscription');
-      toast.success('Subscription will cancel at period end.');
+      toast.success(t('billing.sub.cancelSuccess'));
       await loadData();
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Failed'); }
+    } catch (err: any) { toast.error(apiErrorMessage(err, t, t('billing.actionFailed'))); }
     finally { setActionLoading(false); }
   }
 
@@ -152,7 +162,7 @@ export default function BillingPage() {
     try {
       const res = await api.post('/payments/connect/onboard');
       window.location.href = res.data.data.url;
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Failed'); }
+    } catch (err: any) { toast.error(apiErrorMessage(err, t, t('billing.actionFailed'))); }
     finally { setActionLoading(false); }
   }
 
@@ -160,42 +170,42 @@ export default function BillingPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-heading font-bold text-white">Billing</h1>
+      <h1 className="text-2xl font-heading font-bold text-white">{t('billing.title')}</h1>
 
       {/* Subscription */}
       <Card>
         <div className="flex items-start justify-between mb-4">
           <h2 className="text-lg font-heading font-semibold text-white flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-amber-500" /> Subscription
+            <CreditCard className="w-5 h-5 text-amber-500" /> {t('billing.sub.title')}
           </h2>
-          {sub?.status === 'active' && <Badge variant="green">Active</Badge>}
-          {sub?.status === 'past_due' && <Badge variant="red">Past Due</Badge>}
-          {sub?.status === 'cancelled' && <Badge variant="red">Cancelled</Badge>}
-          {!sub && <Badge variant="default">No Subscription</Badge>}
+          {sub?.status === 'active' && <Badge variant="green">{t('billing.sub.active')}</Badge>}
+          {sub?.status === 'past_due' && <Badge variant="red">{t('billing.sub.pastDue')}</Badge>}
+          {sub?.status === 'cancelled' && <Badge variant="red">{t('billing.sub.cancelled')}</Badge>}
+          {!sub && <Badge variant="default">{t('billing.sub.none')}</Badge>}
         </div>
 
         {sub ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm text-surface-muted">
               <Calendar className="w-4 h-4" />
-              <span>Current period ends: <span className="text-slate-200">{formatDate(sub.currentPeriodEnd)}</span></span>
+              <span>{t('billing.sub.periodEnds')} <span className="text-slate-200">{formatDate(sub.currentPeriodEnd)}</span></span>
             </div>
             {sub.cancelAtPeriodEnd && (
               <div className="flex items-center gap-2 text-sm text-amber-400">
                 <AlertTriangle className="w-4 h-4" />
-                <span>Will cancel at end of current period</span>
+                <span>{t('billing.sub.willCancel')}</span>
               </div>
             )}
             {sub.status === 'active' && !sub.cancelAtPeriodEnd && (
               <Button variant="danger" size="sm" onClick={handleCancel} loading={actionLoading}>
-                Cancel Subscription
+                {t('billing.sub.cancel')}
               </Button>
             )}
           </div>
         ) : (
           <div>
             <p className="text-sm text-surface-muted mb-4">
-              Subscribe to unlock all Tradelink features including posting referrals and claiming jobs.
+              {t('billing.sub.prompt')}
             </p>
             <Elements
               stripe={stripePromise}
@@ -221,24 +231,24 @@ export default function BillingPage() {
       <Card>
         <div className="flex items-start justify-between mb-4">
           <h2 className="text-lg font-heading font-semibold text-white flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-emerald-400" /> Payout Account
+            <DollarSign className="w-5 h-5 text-emerald-400" /> {t('billing.payout.title')}
           </h2>
           {connectStatus === 'active' ? (
-            <Badge variant="green"><CheckCircle2 className="w-3 h-3 mr-1" /> Connected</Badge>
+            <Badge variant="green"><CheckCircle2 className="w-3 h-3 mr-1" /> {t('billing.payout.connected')}</Badge>
           ) : connectStatus === 'pending' ? (
-            <Badge variant="amber">Pending</Badge>
+            <Badge variant="amber">{t('billing.payout.pending')}</Badge>
           ) : (
-            <Badge variant="default">Not Connected</Badge>
+            <Badge variant="default">{t('billing.payout.notConnected')}</Badge>
           )}
         </div>
         <p className="text-sm text-surface-muted mb-4">
           {connectStatus === 'active'
-            ? 'Your bank account is connected. Commission payouts will be deposited automatically.'
-            : 'Connect your bank account via Stripe to receive commission payouts.'}
+            ? t('billing.payout.activeBody')
+            : t('billing.payout.inactiveBody')}
         </p>
         {connectStatus !== 'active' && (
           <Button variant="outline" onClick={handleConnect} loading={actionLoading}>
-            <ExternalLink className="w-4 h-4" /> {connectStatus === 'pending' ? 'Complete Setup' : 'Connect Stripe'}
+            <ExternalLink className="w-4 h-4" /> {connectStatus === 'pending' ? t('billing.payout.completeSetup') : t('billing.payout.connect')}
           </Button>
         )}
       </Card>
@@ -246,7 +256,7 @@ export default function BillingPage() {
       {/* Invoice History */}
       {subData?.invoices && subData.invoices.length > 0 && (
         <Card>
-          <h2 className="text-lg font-heading font-semibold text-white mb-4">Invoice History</h2>
+          <h2 className="text-lg font-heading font-semibold text-white mb-4">{t('billing.invoices.title')}</h2>
           <div className="space-y-2">
             {subData.invoices.map((inv) => (
               <div key={inv.id} className="flex items-center justify-between py-2 border-b border-surface-border last:border-b-0">
@@ -255,10 +265,10 @@ export default function BillingPage() {
                   <p className="text-xs text-surface-muted">{formatDate(inv.date)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={inv.status === 'paid' ? 'green' : 'amber'}>{inv.status}</Badge>
+                  <Badge variant={inv.status === 'paid' ? 'green' : 'amber'}>{invoiceStatusLabel(inv.status)}</Badge>
                   {inv.pdf && (
                     <a href={inv.pdf} target="_blank" rel="noopener noreferrer" className="text-xs text-amber-400 hover:underline">
-                      PDF
+                      {t('billing.invoices.pdf')}
                     </a>
                   )}
                 </div>

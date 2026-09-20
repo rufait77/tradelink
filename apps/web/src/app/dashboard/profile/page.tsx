@@ -9,10 +9,12 @@ import { useAuthStore } from '../../../store/auth.store';
 import api from '../../../lib/api';
 import { toast } from 'sonner';
 import { User, Camera, Save, Star, Briefcase, MapPin, ExternalLink } from 'lucide-react';
+import { useT, useLabels, tradeLabel } from '../../../i18n';
 
-const TRADE_OPTIONS = [
+// Enum values sent to the API — only the displayed label is translated.
+const TRADE_VALUES = [
   'Landscaping','Roofing','HVAC','Plumbing','Electrical','Painting','Carpentry','Flooring','Masonry','Cleaning','PressureWashing','JunkRemoval','WindowInstallation','Siding','Clearing','GeneralContracting','Welding','Drywall','Barber','Cosmetology','Esthetician','AutoMechanics','Other',
-].map((t) => ({ label: t.replace(/([A-Z])/g, ' $1').trim(), value: t }));
+];
 
 const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map((s) => ({ label: s, value: s }));
 
@@ -37,6 +39,9 @@ export default function ProfilePage() {
   const [yearsExperience, setYearsExperience] = useState(0);
   const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const t = useT();
+  const { apiErrorMessage } = useLabels();
+  const tradeOptions = TRADE_VALUES.map((value) => ({ label: tradeLabel(t, value), value }));
 
   const load = useCallback(async () => {
     try {
@@ -64,10 +69,10 @@ export default function ProfilePage() {
         tradeTypes: selectedTrades, bio, licenseNumber: licenseNumber || undefined,
         streetAddress, city, state, zipCode, yearsExperience: Number(yearsExperience),
       });
-      toast.success('Profile updated!');
+      toast.success(t('profile.toast.saved'));
       await fetchMe();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to save');
+      toast.error(apiErrorMessage(err, t('profile.toast.saveFailed')));
     } finally {
       setSaving(false);
     }
@@ -81,10 +86,10 @@ export default function ProfilePage() {
       const form = new FormData();
       form.append('photo', file);
       await api.post('/contractors/profile/photo', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      toast.success('Photo uploaded!');
+      toast.success(t('profile.toast.photoUploaded'));
       await load();
       await fetchMe();
-    } catch { toast.error('Failed to upload photo'); }
+    } catch { toast.error(t('profile.toast.photoFailed')); }
     finally { setUploading(false); }
   }
 
@@ -99,7 +104,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-heading font-bold text-white">My Profile</h1>
+        <h1 className="text-2xl font-heading font-bold text-white">{t('profile.title')}</h1>
         {user?.id && (
           <a
             href={`/contractors/${user.id}`}
@@ -107,7 +112,7 @@ export default function ProfilePage() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-amber-400 border border-amber-500/30 rounded-xl hover:bg-amber-500/10 transition"
           >
-            <ExternalLink className="w-4 h-4" /> View Public Profile
+            <ExternalLink className="w-4 h-4" /> {t('profile.viewPublic')}
           </a>
         )}
       </div>
@@ -116,7 +121,7 @@ export default function ProfilePage() {
       <Card className="flex flex-col sm:flex-row items-center gap-6">
         <div className="relative group">
           {profile?.photoUrl ? (
-            <img src={profile.photoUrl} alt="Profile" className="w-24 h-24 rounded-2xl object-cover" />
+            <img src={profile.photoUrl} alt={t('profile.photoAlt')} className="w-24 h-24 rounded-2xl object-cover" />
           ) : (
             <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center">
               <User className="w-10 h-10 text-amber-500" />
@@ -132,7 +137,7 @@ export default function ProfilePage() {
           <p className="text-sm text-surface-muted">{user?.email}</p>
           <div className="flex items-center gap-4 mt-3 justify-center sm:justify-start">
             <div className="flex items-center gap-1"><Star className="w-4 h-4 text-amber-500" /><span className="text-sm text-slate-200">{profile?.avgRating?.toFixed(1) || '0.0'}</span></div>
-            <div className="flex items-center gap-1"><Briefcase className="w-4 h-4 text-blue-400" /><span className="text-sm text-slate-200">{profile?.totalJobsCompleted || 0} jobs</span></div>
+            <div className="flex items-center gap-1"><Briefcase className="w-4 h-4 text-blue-400" /><span className="text-sm text-slate-200">{t('profile.jobsCount', { count: profile?.totalJobsCompleted || 0 })}</span></div>
             <div className="flex items-center gap-1"><MapPin className="w-4 h-4 text-emerald-400" /><span className="text-sm text-slate-200">{city}, {state}</span></div>
           </div>
         </div>
@@ -140,19 +145,19 @@ export default function ProfilePage() {
 
       {/* Trade types */}
       <Card>
-        <h3 className="text-lg font-heading font-semibold text-white mb-4">Trade Specialties</h3>
+        <h3 className="text-lg font-heading font-semibold text-white mb-4">{t('profile.trades.title')}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {TRADE_OPTIONS.map((t) => (
+          {tradeOptions.map((option) => (
             <button
-              key={t.value}
-              onClick={() => toggleTrade(t.value)}
+              key={option.value}
+              onClick={() => toggleTrade(option.value)}
               className={`p-2.5 rounded-xl text-xs font-medium text-left transition-all border ${
-                selectedTrades.includes(t.value)
+                selectedTrades.includes(option.value)
                   ? 'bg-amber-500/10 border-amber-500/50 text-amber-400'
                   : 'bg-navy-900 border-surface-border text-slate-300 hover:border-amber-500/30'
               }`}
             >
-              {t.label}
+              {option.label}
             </button>
           ))}
         </div>
@@ -160,30 +165,30 @@ export default function ProfilePage() {
 
       {/* Profile details */}
       <Card className="space-y-4">
-        <h3 className="text-lg font-heading font-semibold text-white">Profile Details</h3>
+        <h3 className="text-lg font-heading font-semibold text-white">{t('profile.details.title')}</h3>
         <div className="space-y-1.5">
-          <label className="label">Bio</label>
+          <label className="label">{t('profile.field.bio')}</label>
           <textarea className="input-field resize-none" rows={4} value={bio} onChange={(e) => setBio(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Input label="License Number" value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} />
-          <Input label="Years of Experience" type="number" value={yearsExperience} onChange={(e) => setYearsExperience(Number(e.target.value))} />
+          <Input label={t('profile.field.license')} value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} />
+          <Input label={t('profile.field.years')} type="number" value={yearsExperience} onChange={(e) => setYearsExperience(Number(e.target.value))} />
         </div>
       </Card>
 
       {/* Location */}
       <Card className="space-y-4">
-        <h3 className="text-lg font-heading font-semibold text-white">Service Area</h3>
-        <Input label="Street Address" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} />
+        <h3 className="text-lg font-heading font-semibold text-white">{t('profile.area.title')}</h3>
+        <Input label={t('profile.field.street')} value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} />
         <div className="grid grid-cols-3 gap-4">
-          <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} />
-          <Select label="State" options={US_STATES} value={state} onChange={setState} />
-          <Input label="ZIP Code" value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
+          <Input label={t('profile.field.city')} value={city} onChange={(e) => setCity(e.target.value)} />
+          <Select label={t('profile.field.state')} options={US_STATES} value={state} onChange={setState} />
+          <Input label={t('profile.field.zip')} value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
         </div>
       </Card>
 
       <Button onClick={handleSave} loading={saving} className="w-full" size="lg">
-        <Save className="w-4 h-4" /> Save Profile
+        <Save className="w-4 h-4" /> {t('profile.save')}
       </Button>
     </div>
   );

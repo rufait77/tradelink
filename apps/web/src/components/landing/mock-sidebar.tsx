@@ -5,34 +5,22 @@ import {
   DollarSign, MessageSquare, Bell, Zap,
 } from 'lucide-react';
 import type { MockRole } from './mock-data';
+import { useT, type TranslationKey } from '../../i18n';
 
-// ─── Display strings ──────────────────────────────────────────────────────────
-const SIDEBAR_STRINGS = {
-  brand: 'Tradelink',
-  nav: {
-    dashboard: 'Dashboard',
-    jobBoard: 'Job Board',
-    postReferral: 'Post a Referral',
-    myReferrals: 'My Referrals',
-    myJobs: 'My Jobs',
-    earnings: 'Earnings',
-    messages: 'Messages',
-    notifications: 'Notifications',
-  },
-  roleBadge: { contractor: 'Contractor', referrer: 'Referrer' },
-} as const;
+const BRAND = 'Tradelink';
 
-type NavItem = { key: string; label: string; icon: typeof LayoutDashboard; contractorOnly?: boolean; dot?: boolean; badge?: number };
+type NavItem = { key: string; labelKey: TranslationKey; icon: typeof LayoutDashboard; contractorOnly?: boolean; dot?: boolean; badge?: number };
 
+// Mirrors the real sidebar, so it reuses the same labels.
 const NAV: NavItem[] = [
-  { key: 'dashboard', label: SIDEBAR_STRINGS.nav.dashboard, icon: LayoutDashboard },
-  { key: 'jobs', label: SIDEBAR_STRINGS.nav.jobBoard, icon: Briefcase, contractorOnly: true },
-  { key: 'post', label: SIDEBAR_STRINGS.nav.postReferral, icon: Send, dot: true },
-  { key: 'referrals', label: SIDEBAR_STRINGS.nav.myReferrals, icon: ClipboardList },
-  { key: 'my-jobs', label: SIDEBAR_STRINGS.nav.myJobs, icon: FolderOpen, contractorOnly: true },
-  { key: 'earnings', label: SIDEBAR_STRINGS.nav.earnings, icon: DollarSign },
-  { key: 'messages', label: SIDEBAR_STRINGS.nav.messages, icon: MessageSquare, badge: 2 },
-  { key: 'notifications', label: SIDEBAR_STRINGS.nav.notifications, icon: Bell },
+  { key: 'dashboard', labelKey: 'sidebar.dashboard', icon: LayoutDashboard },
+  { key: 'jobs', labelKey: 'sidebar.jobBoard', icon: Briefcase, contractorOnly: true },
+  { key: 'post', labelKey: 'sidebar.postReferral', icon: Send, dot: true },
+  { key: 'referrals', labelKey: 'sidebar.myReferrals', icon: ClipboardList },
+  { key: 'my-jobs', labelKey: 'sidebar.myJobs', icon: FolderOpen, contractorOnly: true },
+  { key: 'earnings', labelKey: 'sidebar.earnings', icon: DollarSign },
+  { key: 'messages', labelKey: 'sidebar.messages', icon: MessageSquare, badge: 2 },
+  { key: 'notifications', labelKey: 'sidebar.notifications', icon: Bell },
 ];
 
 interface MockSidebarProps {
@@ -42,6 +30,7 @@ interface MockSidebarProps {
 }
 
 export function MockSidebar({ role, name, email }: MockSidebarProps) {
+  const t = useT();
   const items = NAV.filter((item) => !(role === 'referrer' && item.contractorOnly));
 
   return (
@@ -50,7 +39,7 @@ export function MockSidebar({ role, name, email }: MockSidebarProps) {
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
           <Zap className="w-4 h-4 text-navy-950" />
         </div>
-        <span className="text-base font-heading font-bold text-white">{SIDEBAR_STRINGS.brand}</span>
+        <span className="text-base font-heading font-bold text-white">{BRAND}</span>
       </div>
 
       <nav className="flex-1 px-2.5 py-3 space-y-0.5">
@@ -66,8 +55,8 @@ export function MockSidebar({ role, name, email }: MockSidebarProps) {
               )}
             >
               <Icon className={cn('w-4 h-4', active && 'text-amber-500')} />
-              {item.label}
-              {item.dot && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse-amber" />}
+              {t(item.labelKey)}
+              {item.dot &&<span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse-amber" />}
               {item.badge && (
                 <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-navy-950 rounded-full min-w-[18px] text-center">
                   {item.badge}
@@ -89,7 +78,7 @@ export function MockSidebar({ role, name, email }: MockSidebarProps) {
           </div>
         </div>
         <span className="mt-2 ml-2 inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-elevated text-slate-300 border border-surface-border">
-          {SIDEBAR_STRINGS.roleBadge[role]}
+          {role === 'referrer' ? t('role.referrer') : t('role.contractor')}
         </span>
       </div>
     </aside>

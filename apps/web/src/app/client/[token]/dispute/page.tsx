@@ -7,14 +7,16 @@ import { PageLoader } from '../../../../components/ui/spinner';
 import clientApi from '../../../../lib/clientApi';
 import { toast } from 'sonner';
 import { ArrowLeft, AlertTriangle, ShieldAlert, Send } from 'lucide-react';
+import { useT, useLabels, translate, type TranslationKey } from '../../../../i18n';
 
-const DISPUTE_REASONS = [
-  { value: 'incomplete_work', label: 'Work was not completed' },
-  { value: 'poor_quality', label: 'Work quality is unacceptable' },
-  { value: 'scope_mismatch', label: 'Scope doesn\'t match the quote' },
-  { value: 'damage', label: 'Contractor caused property damage' },
-  { value: 'no_show', label: 'Contractor never showed up' },
-  { value: 'other', label: 'Other issue' },
+// `value` is the API enum; only the label is translated.
+const DISPUTE_REASONS: { value: string; labelKey: TranslationKey }[] = [
+  { value: 'incomplete_work', labelKey: 'clientDispute.reason.incomplete' },
+  { value: 'poor_quality', labelKey: 'clientDispute.reason.quality' },
+  { value: 'scope_mismatch', labelKey: 'clientDispute.reason.scope' },
+  { value: 'damage', labelKey: 'clientDispute.reason.damage' },
+  { value: 'no_show', labelKey: 'clientDispute.reason.noShow' },
+  { value: 'other', labelKey: 'clientDispute.reason.other' },
 ];
 
 export default function DisputePage() {
@@ -26,6 +28,8 @@ export default function DisputePage() {
   const [selectedReason, setSelectedReason] = useState('');
   const [description, setDescription] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const t = useT();
+  const { apiErrorMessage } = useLabels();
 
   useEffect(() => {
     async function load() {
@@ -34,7 +38,7 @@ export default function DisputePage() {
         setJobStatus(res.data.data.job.status);
         if (res.data.data.job.status === 'Disputed') setSubmitted(true);
       } catch {
-        toast.error('Invalid or expired link');
+        toast.error(t('client.invalidLink'));
       } finally {
         setLoading(false);
       }
@@ -43,19 +47,23 @@ export default function DisputePage() {
   }, [token]);
 
   async function handleSubmit() {
-    if (!selectedReason) { toast.error('Please select a reason'); return; }
-    if (description.length < 20) { toast.error('Please describe the issue in at least 20 characters'); return; }
+    if (!selectedReason) { toast.error(t('clientDispute.toast.pickReason')); return; }
+    if (description.length < 20) { toast.error(t('clientDispute.toast.tooShort')); return; }
 
     setSubmitLoading(true);
     try {
-      const reasonLabel = DISPUTE_REASONS.find(r => r.value === selectedReason)?.label || selectedReason;
+      // The prefix is persisted and read back by the admin app, so it stays
+      // English regardless of the locale the client portal is displayed in.
+      // Only the on-screen radio labels follow the active language.
+      const reason = DISPUTE_REASONS.find(r => r.value === selectedReason);
+      const reasonLabel = reason ? translate('en', reason.labelKey) : selectedReason;
       await clientApi.post(`/client/${token}/dispute`, {
         reason: `${reasonLabel}: ${description}`,
       });
-      toast.success('Dispute filed successfully. An admin will review your case.');
+      toast.success(t('clientDispute.toast.success'));
       setSubmitted(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to submit dispute');
+      toast.error(apiErrorMessage(err, t('clientDispute.toast.failed')));
     } finally {
       setSubmitLoading(false);
     }
@@ -68,16 +76,16 @@ export default function DisputePage() {
       <div className="max-w-lg mx-auto space-y-6">
         <button onClick={() => router.push(`/client/${token}`)}
           className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="w-4 h-4" /> {t('client.back')}
         </button>
         <Card className="text-center py-8">
           <ShieldAlert className="w-14 h-14 text-amber-400 mx-auto mb-4" />
-          <h1 className="text-xl font-heading font-bold text-white mb-2">Dispute Filed</h1>
+          <h1 className="text-xl font-heading font-bold text-white mb-2">{t('clientDispute.filedTitle')}</h1>
           <p className="text-surface-muted mb-2">
-            Your dispute has been submitted. Our team will review your case and the contractor&apos;s response within <span className="text-amber-400 font-medium">48 hours</span>.
+            {t('clientDispute.filedLead')} <span className="text-amber-400 font-medium">{t('clientDispute.filedHours')}</span>.
           </p>
           <p className="text-xs text-surface-muted">
-            Escrowed funds are frozen until the dispute is resolved.
+            {t('clientDispute.filedNote')}
           </p>
         </Card>
       </div>
@@ -91,13 +99,13 @@ export default function DisputePage() {
       <div className="max-w-lg mx-auto space-y-6">
         <button onClick={() => router.push(`/client/${token}`)}
           className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="w-4 h-4" /> {t('client.back')}
         </button>
         <Card className="text-center py-8">
           <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-          <h1 className="text-xl font-heading font-bold text-white mb-2">Cannot File a Dispute</h1>
+          <h1 className="text-xl font-heading font-bold text-white mb-2">{t('clientDispute.blockedTitle')}</h1>
           <p className="text-surface-muted">
-            A dispute can only be filed when the job is in progress, funded, or marked as complete by the contractor.
+            {t('clientDispute.blockedBody')}
           </p>
         </Card>
       </div>
@@ -108,7 +116,7 @@ export default function DisputePage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <button onClick={() => router.push(`/client/${token}`)}
         className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        <ArrowLeft className="w-4 h-4" /> {t('client.back')}
       </button>
 
       <Card>
@@ -117,9 +125,9 @@ export default function DisputePage() {
             <AlertTriangle className="w-5 h-5 text-red-400" />
           </div>
           <div>
-            <h1 className="text-lg font-heading font-bold text-white">Raise a Dispute</h1>
+            <h1 className="text-lg font-heading font-bold text-white">{t('clientDispute.title')}</h1>
             <p className="text-xs text-surface-muted">
-              Tell us what went wrong. Our team will review both sides.
+              {t('clientDispute.subtitle')}
             </p>
           </div>
         </div>
@@ -127,14 +135,13 @@ export default function DisputePage() {
         {/* Warning */}
         <div className="mb-6 p-4 rounded-xl bg-red-500/5 border border-red-500/10">
           <p className="text-sm text-slate-300">
-            <span className="text-red-400 font-medium">Important:</span> Filing a dispute will freeze any escrowed funds
-            until our admin team resolves the issue. This typically takes 24–48 hours.
+            <span className="text-red-400 font-medium">{t('clientDispute.warningWord')}</span> {t('clientDispute.warningBody')}
           </p>
         </div>
 
         {/* Reason selector */}
         <div className="mb-5">
-          <label className="label mb-2 block">What went wrong?</label>
+          <label className="label mb-2 block">{t('clientDispute.reasonLabel')}</label>
           <div className="grid grid-cols-2 gap-2">
             {DISPUTE_REASONS.map((r) => (
               <button
@@ -146,7 +153,7 @@ export default function DisputePage() {
                     : 'border-surface-border bg-surface-elevated text-surface-muted hover:border-surface-muted'
                 }`}
               >
-                {r.label}
+                {t(r.labelKey)}
               </button>
             ))}
           </div>
@@ -154,19 +161,19 @@ export default function DisputePage() {
 
         {/* Description */}
         <div className="mb-6">
-          <label className="label mb-2 block">Describe the issue</label>
+          <label className="label mb-2 block">{t('clientDispute.describeLabel')}</label>
           <textarea
             className="input-field resize-none w-full"
             rows={5}
-            placeholder="Please provide details about the issue. Include specific examples and any relevant information that will help us understand the situation..."
+            placeholder={t('clientDispute.describePlaceholder')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <p className="text-xs text-surface-muted mt-1">{description.length}/500 characters (min 20)</p>
+          <p className="text-xs text-surface-muted mt-1">{t('clientDispute.charCount', { count: description.length })}</p>
         </div>
 
         <Button variant="danger" className="w-full" size="lg" onClick={handleSubmit} loading={submitLoading}>
-          <Send className="w-4 h-4" /> Submit Dispute
+          <Send className="w-4 h-4" /> {t('clientDispute.submit')}
         </Button>
       </Card>
     </div>

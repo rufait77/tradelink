@@ -8,7 +8,7 @@ import { Input } from '../../../../components/ui/input';
 import { PageLoader } from '../../../../components/ui/spinner';
 import { useAuthStore } from '../../../../store/auth.store';
 import api from '../../../../lib/api';
-import { formatCurrency, formatDate, formatRelativeTime } from '../../../../lib/utils';
+import { formatCurrency } from '../../../../lib/utils';
 import { usePlatformSettings } from '../../../../lib/useSettings';
 import { toast } from 'sonner';
 import {
@@ -17,6 +17,8 @@ import {
   FileText, Calendar, Phone, Mail, Lock, Camera,
   AlertTriangle, Timer, XCircle, RotateCcw, Trash2, Play,
 } from 'lucide-react';
+import { useT, useLabels, useFormat, type TranslationKey } from '../../../../i18n';
+import { en } from '../../../../i18n/en';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
 const ASSETS_BASE = API_BASE.endsWith('/api') ? API_BASE.slice(0, -4) : API_BASE.replace(/\/+$/, '');
@@ -132,6 +134,16 @@ export default function JobDetailPage() {
   // Active tab for referee view
   const [activeTab, setActiveTab] = useState<'details' | 'interests' | 'quotes'>('details');
 
+  const t = useT();
+  const { tradeLabel, statusLabel, urgencyLabel, apiErrorMessage } = useLabels();
+  const { formatDate, formatRelativeTime } = useFormat();
+
+  // Quote review states come from the API; fall back to the raw value.
+  function quoteStatusLabel(status: string) {
+    const key = `quoteStatus.${status}`;
+    return key in en ? t(key as TranslationKey) : status;
+  }
+
   // ─── Load Data ────────────────────────────────────────────────────────
 
   async function loadJob() {
@@ -141,7 +153,7 @@ export default function JobDetailPage() {
       setJob(jobData);
       return jobData;
     } catch {
-      toast.error('Job not found');
+      toast.error(t('jobDetail.notFound'));
       router.push('/dashboard/jobs');
       return null;
     }
@@ -201,7 +213,9 @@ export default function JobDetailPage() {
 
   const isOwner = user?.id === job?.postedBy?.id;
   const isAssigned = user?.id === job?.claimedBy?.id;
-  const isBrowser = !isOwner && !isAssigned;
+  // Referrers cannot express interest in or claim jobs — enforced server-side too.
+  const isReferrer = user?.role === 'referrer';
+  const isBrowser = !isOwner && !isAssigned && !isReferrer;
   const displayValue = job?.estimatedValue || ((job?.budgetMin ?? 0) + (job?.budgetMax ?? 0)) / 2;
 
   // ─── Actions ──────────────────────────────────────────────────────────
@@ -210,12 +224,12 @@ export default function JobDetailPage() {
     setActionLoading(true);
     try {
       await api.post(`/jobs/${id}/interest`, { message: interestMessage || undefined });
-      toast.success('Interest expressed! The referee will review your profile.');
+      toast.success(t('jobDetail.interest.toastSuccess'));
       const res = await api.get(`/jobs/${id}/my-interest`);
       setMyInterest(res.data.data?.interest);
       setInterestMessage('');
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to express interest');
+      toast.error(apiErrorMessage(err, t('jobDetail.interest.toastFailed')));
     } finally {
       setActionLoading(false);
     }
@@ -225,10 +239,10 @@ export default function JobDetailPage() {
     setActionLoading(true);
     try {
       await api.delete(`/jobs/${id}/interest`);
-      toast.success('Interest withdrawn.');
+      toast.success(t('jobDetail.interest.toastWithdrawn'));
       setMyInterest(null);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to withdraw');
+      toast.error(apiErrorMessage(err, t('jobDetail.interest.toastWithdrawFailed')));
     } finally {
       setActionLoading(false);
     }
@@ -238,14 +252,14 @@ export default function JobDetailPage() {
     setActionLoading(true);
     try {
       await api.post(`/jobs/${id}/assign/${contractorId}`);
-      toast.success('Contractor assigned! They will be notified.');
+      toast.success(t('jobDetail.interests.toastAssigned'));
       const jobData = await loadJob();
       if (jobData) {
         const intRes = await api.get(`/jobs/${id}/interests`).catch(() => ({ data: { data: { interests: [] } } }));
         setInterests(intRes.data.data?.interests || []);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to assign');
+      toast.error(apiErrorMessage(err, t('jobDetail.interests.toastAssignFailed')));
     } finally {
       setActionLoading(false);
     }
@@ -255,10 +269,10 @@ export default function JobDetailPage() {
     setActionLoading(true);
     try {
       await api.post(`/jobs/${id}/reassign`, { action });
-      toast.success(action === 'reopen' ? 'Referral re-opened!' : 'Referral marked as dead.');
+      toast.success(action === 'reopen' ? t('jobDetail.toastReopened') : t('jobDetail.toastMarkedDead'));
       await loadJob();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed');
+      toast.error(apiErrorMessage(err, t('jobDetail.toastFailed')));
     } finally {
       setActionLoading(false);
     }
@@ -266,7 +280,7 @@ export default function JobDetailPage() {
 
   async function handleCreateQuote() {
     if (!quoteAmount || !quoteScope || !quoteDate) {
-      toast.error('Fill in all quote fields');
+      toast.error(t('jobDetail.quotes.toastIncomplete'));
       return;
     }
     setActionLoading(true);
@@ -276,14 +290,14 @@ export default function JobDetailPage() {
         scope: quoteScope,
         scheduledDate: quoteDate,
       });
-      toast.success('Quote sent to client!');
+      toast.success(t('jobDetail.quotes.toastSent'));
       setShowQuoteForm(false);
       setQuoteAmount(''); setQuoteScope(''); setQuoteDate('');
       const qRes = await api.get(`/jobs/${id}/quotes`);
       setQuotes(qRes.data.data?.quotes || []);
       await loadJob();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to create quote');
+      toast.error(apiErrorMessage(err, t('jobDetail.quotes.toastFailed')));
     } finally {
       setActionLoading(false);
     }
@@ -293,10 +307,10 @@ export default function JobDetailPage() {
     setActionLoading(true);
     try {
       await api.post(`/jobs/${id}/start`);
-      toast.success('Job started! Status updated to In Progress.');
+      toast.success(t('jobDetail.toastStarted'));
       await loadJob();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to start job');
+      toast.error(apiErrorMessage(err, t('jobDetail.toastStartFailed')));
     } finally {
       setActionLoading(false);
     }
@@ -306,11 +320,11 @@ export default function JobDetailPage() {
     setActionLoading(true);
     try {
       await api.post(`/jobs/${id}/contractor-complete`, { notes: completionNotes || undefined });
-      toast.success('Job marked as complete! Waiting for client confirmation.');
+      toast.success(t('jobDetail.toastComplete'));
       setShowCompleteModal(false);
       await loadJob();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to mark complete');
+      toast.error(apiErrorMessage(err, t('jobDetail.toastCompleteFailed')));
     } finally {
       setActionLoading(false);
     }
@@ -321,14 +335,14 @@ export default function JobDetailPage() {
     setSendingMsg(true);
     try {
       const receiverId = user?.id === job.postedBy.id ? job.claimedBy?.id : job.postedBy.id;
-      if (!receiverId) { toast.error('No one to message yet.'); return; }
+      if (!receiverId) { toast.error(t('jobDetail.messages.noRecipient')); return; }
       await api.post('/messages', { receiverId, jobId: job.id, content: newMessage.trim() });
       setNewMessage('');
       const msgRes = await api.get(`/messages/${id}`);
       const msgData = msgRes.data.data;
       setMessages(Array.isArray(msgData) ? msgData : Array.isArray(msgData?.messages) ? msgData.messages : []);
     } catch {
-      toast.error('Failed to send message');
+      toast.error(t('jobDetail.messages.sendFailed'));
     } finally {
       setSendingMsg(false);
     }
@@ -342,7 +356,7 @@ export default function JobDetailPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-surface-muted hover:text-white transition">
-        <ArrowLeft className="w-4 h-4" /> Back
+        <ArrowLeft className="w-4 h-4" /> {t('common.back')}
       </button>
 
       {/* ─── Header Card ─── */}
@@ -350,15 +364,15 @@ export default function JobDetailPage() {
         <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <Badge variant="amber">{job.tradeType.replace(/([A-Z])/g, ' $1').trim()}</Badge>
-              <Badge variant="status" statusClass={getStatusClass(job.status)}>{job.status.replace(/([A-Z])/g, ' $1').trim()}</Badge>
-              <Badge variant="status" statusClass={getUrgencyClass(job.urgency)}>{job.urgency}</Badge>
+              <Badge variant="amber">{tradeLabel(job.tradeType)}</Badge>
+              <Badge variant="status" statusClass={getStatusClass(job.status)}>{statusLabel(job.status)}</Badge>
+              <Badge variant="status" statusClass={getUrgencyClass(job.urgency)}>{urgencyLabel(job.urgency)}</Badge>
             </div>
             <h1 className="text-2xl font-heading font-bold text-white">{job.title}</h1>
           </div>
           <div className="text-right">
             <p className="text-2xl font-heading font-bold text-emerald-400">~{formatCurrency(displayValue)}</p>
-            <p className="text-xs text-surface-muted">Estimated Value</p>
+            <p className="text-xs text-surface-muted">{t('jobDetail.estimatedValue')}</p>
           </div>
         </div>
 
@@ -375,11 +389,11 @@ export default function JobDetailPage() {
           </div>
           <div className="flex items-center gap-2 text-sm text-surface-muted">
             <User className="w-4 h-4 text-amber-500" />
-            <span>By {job.postedBy.name}</span>
+            <span>{t('jobDetail.postedBy', { name: job.postedBy.name })}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-surface-muted">
             <Users className="w-4 h-4 text-amber-500" />
-            <span>{job._count?.interests ?? 0} interested</span>
+            <span>{t('jobDetail.interested', { count: job._count?.interests ?? 0 })}</span>
           </div>
         </div>
       </Card>
@@ -392,20 +406,20 @@ export default function JobDetailPage() {
           {myInterest ? (
             <div className="text-center py-4">
               <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
-              <h2 className="text-lg font-heading font-bold text-white mb-1">Interest Expressed!</h2>
+              <h2 className="text-lg font-heading font-bold text-white mb-1">{t('jobDetail.interest.expressedTitle')}</h2>
               <p className="text-sm text-surface-muted mb-4">
-                The referee will review your profile and notify you if selected.
+                {t('jobDetail.interest.expressedBody')}
               </p>
               {myInterest.status === 'pending' && (
                 <Button variant="danger" size="sm" onClick={handleWithdrawInterest} loading={actionLoading}>
-                  <XCircle className="w-4 h-4" /> Withdraw Interest
+                  <XCircle className="w-4 h-4" /> {t('jobDetail.interest.withdraw')}
                 </Button>
               )}
               {myInterest.status === 'selected' && (
-                <Badge variant="green" className="text-sm px-4 py-1.5">✅ You&apos;ve been selected!</Badge>
+                <Badge variant="green" className="text-sm px-4 py-1.5">{t('jobDetail.interest.selected')}</Badge>
               )}
               {myInterest.status === 'rejected' && (
-                <Badge variant="red" className="text-sm px-4 py-1.5">Another contractor was chosen</Badge>
+                <Badge variant="red" className="text-sm px-4 py-1.5">{t('jobDetail.interest.rejected')}</Badge>
               )}
             </div>
           ) : job.status === 'Open' || job.status === 'InterestClosed' ? (
@@ -414,25 +428,25 @@ export default function JobDetailPage() {
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                   <Briefcase className="w-4 h-4 text-amber-400" />
                 </div>
-                <h2 className="text-base font-heading font-semibold text-white">Express Interest</h2>
+                <h2 className="text-base font-heading font-semibold text-white">{t('jobDetail.interest.title')}</h2>
               </div>
               <div className="space-y-3">
                 <textarea
                   className="input-field resize-none w-full"
                   rows={3}
-                  placeholder="Optional: Tell the referee why you're a great fit for this job..."
+                  placeholder={t('jobDetail.interest.placeholder')}
                   value={interestMessage}
                   onChange={(e) => setInterestMessage(e.target.value)}
                 />
                 <Button className="w-full" onClick={handleExpressInterest} loading={actionLoading}>
-                  <Send className="w-4 h-4" /> Express Interest
+                  <Send className="w-4 h-4" /> {t('jobDetail.interest.submit')}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="text-center py-4">
               <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-              <p className="text-sm text-surface-muted">This job is no longer accepting new interest.</p>
+              <p className="text-sm text-surface-muted">{t('jobDetail.interest.closed')}</p>
             </div>
           )}
         </Card>
@@ -455,7 +469,7 @@ export default function JobDetailPage() {
                     : 'text-surface-muted hover:text-white'
                 }`}
               >
-                {tab === 'details' ? 'Details' : tab === 'interests' ? `Interests (${interests.length})` : `Quotes (${quotes.length})`}
+                {tab === 'details' ? t('jobDetail.tab.details') : tab === 'interests' ? t('jobDetail.tab.interests', { count: interests.length }) : t('jobDetail.tab.quotes', { count: quotes.length })}
               </button>
             ))}
           </div>
@@ -466,7 +480,7 @@ export default function JobDetailPage() {
               {interests.length === 0 ? (
                 <Card className="text-center py-8">
                   <Users className="w-10 h-10 text-surface-muted mx-auto mb-3" />
-                  <p className="text-sm text-surface-muted">No contractors have expressed interest yet.</p>
+                  <p className="text-sm text-surface-muted">{t('jobDetail.interests.empty')}</p>
                 </Card>
               ) : (
                 interests.map((int) => (
@@ -487,13 +501,13 @@ export default function JobDetailPage() {
                           </span>
                         )}
                         {int.contractor.profile?.totalJobsCompleted !== undefined && (
-                          <span className="text-xs text-surface-muted">{int.contractor.profile.totalJobsCompleted} jobs</span>
+                          <span className="text-xs text-surface-muted">{t('jobDetail.interests.jobsCount', { count: int.contractor.profile.totalJobsCompleted })}</span>
                         )}
                       </div>
                       {int.contractor.profile?.tradeTypes && (
                         <div className="flex gap-1 flex-wrap mb-2">
-                          {int.contractor.profile.tradeTypes.slice(0, 3).map((t) => (
-                            <Badge key={t} variant="default" className="text-[10px] py-0">{t.replace(/([A-Z])/g, ' $1').trim()}</Badge>
+                          {int.contractor.profile.tradeTypes.slice(0, 3).map((trade) => (
+                            <Badge key={trade} variant="default" className="text-[10px] py-0">{tradeLabel(trade)}</Badge>
                           ))}
                         </div>
                       )}
@@ -505,19 +519,19 @@ export default function JobDetailPage() {
                     {int.status === 'pending' && ['Open','InterestClosed'].includes(job.status) && (
                       <div className="flex flex-col gap-1.5 shrink-0">
                         <Button size="sm" onClick={() => handleAssign(int.contractor.id)} loading={actionLoading}>
-                          Assign
+                          {t('jobDetail.interests.assign')}
                         </Button>
                         <button
                           onClick={() => window.open(`/contractors/${int.contractor.id}`, '_blank')}
                           className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition"
                         >
-                          View Profile
+                          {t('jobDetail.interests.viewProfile')}
                         </button>
                         <button
                           onClick={() => router.push(`/dashboard/messages/dm/${int.contractor.id}`)}
                           className="px-3 py-1.5 text-xs font-medium text-amber-400 hover:text-amber-300 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 rounded-lg transition"
                         >
-                          Message
+                          {t('jobDetail.interests.message')}
                         </button>
                       </div>
                     )}
@@ -533,7 +547,7 @@ export default function JobDetailPage() {
               {quotes.length === 0 ? (
                 <Card className="text-center py-8">
                   <FileText className="w-10 h-10 text-surface-muted mx-auto mb-3" />
-                  <p className="text-sm text-surface-muted">No quotes have been submitted yet.</p>
+                  <p className="text-sm text-surface-muted">{t('jobDetail.quotes.empty')}</p>
                 </Card>
               ) : (
                 quotes.map((q) => (
@@ -541,7 +555,7 @@ export default function JobDetailPage() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Badge variant={q.status === 'approved' ? 'green' : q.status === 'rejected' ? 'red' : 'amber'}>
-                          {q.status}
+                          {quoteStatusLabel(q.status)}
                         </Badge>
                         <span className="text-xs text-surface-muted">{formatRelativeTime(q.createdAt)}</span>
                       </div>
@@ -549,7 +563,7 @@ export default function JobDetailPage() {
                     </div>
                     <p className="text-sm text-slate-300 mb-2">{q.scope}</p>
                     <div className="flex items-center gap-2 text-xs text-surface-muted">
-                      <Calendar className="w-3 h-3" /> Scheduled: {formatDate(q.scheduledDate)}
+                      <Calendar className="w-3 h-3" /> {t('jobDetail.quotes.scheduled')} {formatDate(q.scheduledDate)}
                     </div>
                   </Card>
                 ))
@@ -564,7 +578,7 @@ export default function JobDetailPage() {
                 <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
                   <Lock className="w-4 h-4 text-violet-400" />
                 </div>
-                <h2 className="text-base font-heading font-semibold text-white">Client Contact Info</h2>
+                <h2 className="text-base font-heading font-semibold text-white">{t('jobDetail.client.title')}</h2>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2 text-slate-300">
@@ -588,7 +602,7 @@ export default function JobDetailPage() {
               </div>
               {job.clientLead.notes && (
                 <div className="mt-3 p-3 rounded-xl bg-navy-900 border border-surface-border">
-                  <p className="text-xs text-surface-muted mb-1">Private Notes</p>
+                  <p className="text-xs text-surface-muted mb-1">{t('jobDetail.client.privateNotes')}</p>
                   <p className="text-sm text-slate-300">{job.clientLead.notes}</p>
                 </div>
               )}
@@ -600,10 +614,10 @@ export default function JobDetailPage() {
             <Card>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => handleReassign('reopen')} loading={actionLoading}>
-                  <RotateCcw className="w-4 h-4" /> Re-list Referral
+                  <RotateCcw className="w-4 h-4" /> {t('jobDetail.relist')}
                 </Button>
                 <Button variant="danger" onClick={() => handleReassign('mark_dead')} loading={actionLoading}>
-                  <Trash2 className="w-4 h-4" /> Mark as Dead
+                  <Trash2 className="w-4 h-4" /> {t('jobDetail.markDead')}
                 </Button>
               </div>
             </Card>
@@ -624,8 +638,8 @@ export default function JobDetailPage() {
                   <User className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
-                  <h2 className="text-base font-heading font-semibold text-white">Client Details</h2>
-                  <p className="text-xs text-surface-muted">Reach out to coordinate the job</p>
+                  <h2 className="text-base font-heading font-semibold text-white">{t('jobDetail.clientDetails.title')}</h2>
+                  <p className="text-xs text-surface-muted">{t('jobDetail.clientDetails.hint')}</p>
                 </div>
               </div>
 
@@ -633,14 +647,14 @@ export default function JobDetailPage() {
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-navy-900 border border-surface-border">
                   <User className="w-5 h-5 text-emerald-400" />
                   <div>
-                    <p className="text-xs text-surface-muted">Name</p>
+                    <p className="text-xs text-surface-muted">{t('jobDetail.clientDetails.name')}</p>
                     <p className="text-white font-medium">{job.clientLead.firstName} {job.clientLead.lastName}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-navy-900 border border-surface-border">
                   <Mail className="w-5 h-5 text-emerald-400" />
                   <div>
-                    <p className="text-xs text-surface-muted">Email</p>
+                    <p className="text-xs text-surface-muted">{t('jobDetail.clientDetails.email')}</p>
                     <a href={`mailto:${job.clientLead.email}`} className="text-amber-400 hover:underline">{job.clientLead.email}</a>
                   </div>
                 </div>
@@ -648,7 +662,7 @@ export default function JobDetailPage() {
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-navy-900 border border-surface-border">
                     <Phone className="w-5 h-5 text-emerald-400" />
                     <div>
-                      <p className="text-xs text-surface-muted">Phone</p>
+                      <p className="text-xs text-surface-muted">{t('jobDetail.clientDetails.phone')}</p>
                       <a href={`tel:${job.clientLead.phone}`} className="text-amber-400 hover:underline">{job.clientLead.phone}</a>
                     </div>
                   </div>
@@ -656,7 +670,7 @@ export default function JobDetailPage() {
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-navy-900 border border-surface-border">
                   <MapPin className="w-5 h-5 text-emerald-400" />
                   <div>
-                    <p className="text-xs text-surface-muted">Address</p>
+                    <p className="text-xs text-surface-muted">{t('jobDetail.clientDetails.address')}</p>
                     <p className="text-white">{job.clientLead.streetAddress}, {job.clientLead.city}, {job.clientLead.state} {job.clientLead.zipCode}</p>
                   </div>
                 </div>
@@ -664,7 +678,7 @@ export default function JobDetailPage() {
 
               {job.clientLead.notes && (
                 <div className="mt-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
-                  <p className="text-xs text-amber-400 font-medium mb-1">Notes from Referee</p>
+                  <p className="text-xs text-amber-400 font-medium mb-1">{t('jobDetail.clientDetails.refereeNotes')}</p>
                   <p className="text-sm text-slate-300">{job.clientLead.notes}</p>
                 </div>
               )}
@@ -678,11 +692,11 @@ export default function JobDetailPage() {
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                   <FileText className="w-4 h-4 text-amber-400" />
                 </div>
-                <h2 className="text-base font-heading font-semibold text-white">Quotes</h2>
+                <h2 className="text-base font-heading font-semibold text-white">{t('jobDetail.quotes.title')}</h2>
               </div>
               {(job.status === 'Assigned' || job.status === 'QuoteSent') && !showQuoteForm && (
                 <Button size="sm" onClick={() => setShowQuoteForm(true)}>
-                  <DollarSign className="w-4 h-4" /> {quotes.length > 0 ? 'Revise Quote' : 'Create Quote'}
+                  <DollarSign className="w-4 h-4" /> {quotes.length > 0 ? t('jobDetail.quotes.revise') : t('jobDetail.quotes.create')}
                 </Button>
               )}
             </div>
@@ -694,7 +708,7 @@ export default function JobDetailPage() {
                   <div key={q.id} className="p-4 rounded-xl bg-navy-900 border border-surface-border">
                     <div className="flex items-center justify-between mb-2">
                       <Badge variant={q.status === 'approved' ? 'green' : q.status === 'rejected' ? 'red' : 'amber'}>
-                        {q.status}
+                        {quoteStatusLabel(q.status)}
                       </Badge>
                       <span className="text-lg font-heading font-bold text-emerald-400">{formatCurrency(q.amount)}</span>
                     </div>
@@ -713,25 +727,25 @@ export default function JobDetailPage() {
               <div className="space-y-4 p-4 rounded-xl bg-surface-elevated border border-surface-border">
                 <div className="grid grid-cols-2 gap-4">
                   <Input
-                    label="Quote Amount ($)"
+                    label={t('jobDetail.quotes.amount')}
                     type="number"
-                    placeholder="5000"
+                    placeholder={t('jobDetail.quotes.amountPlaceholder')}
                     value={quoteAmount}
                     onChange={(e) => setQuoteAmount(e.target.value)}
                   />
                   <Input
-                    label="Scheduled Date"
+                    label={t('jobDetail.quotes.date')}
                     type="date"
                     value={quoteDate}
                     onChange={(e) => setQuoteDate(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="label">Scope of Work</label>
+                  <label className="label">{t('jobDetail.quotes.scope')}</label>
                   <textarea
                     className="input-field resize-none w-full"
                     rows={4}
-                    placeholder="Describe in detail what you will do, materials included, timeline, etc..."
+                    placeholder={t('jobDetail.quotes.scopePlaceholder')}
                     value={quoteScope}
                     onChange={(e) => setQuoteScope(e.target.value)}
                   />
@@ -741,15 +755,15 @@ export default function JobDetailPage() {
                 {parseFloat(quoteAmount) > 0 && (
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
-                      <p className="text-[10px] text-surface-muted">You Get ({100 - commissionPct - platformFeePct}%)</p>
+                      <p className="text-[10px] text-surface-muted">{t('jobDetail.quotes.youGet', { pct: 100 - commissionPct - platformFeePct })}</p>
                       <p className="text-sm font-bold text-emerald-400">{formatCurrency(parseFloat(quoteAmount) * (1 - commissionPct / 100 - platformFeePct / 100))}</p>
                     </div>
                     <div className="p-2 rounded-lg bg-navy-900 border border-surface-border">
-                      <p className="text-[10px] text-surface-muted">Referral ({commissionPct}%)</p>
+                      <p className="text-[10px] text-surface-muted">{t('jobDetail.quotes.referral', { pct: commissionPct })}</p>
                       <p className="text-sm font-bold text-white">{formatCurrency(parseFloat(quoteAmount) * commissionPct / 100)}</p>
                     </div>
                     <div className="p-2 rounded-lg bg-navy-900 border border-surface-border">
-                      <p className="text-[10px] text-surface-muted">Platform ({platformFeePct}%)</p>
+                      <p className="text-[10px] text-surface-muted">{t('jobDetail.quotes.platform', { pct: platformFeePct })}</p>
                       <p className="text-sm font-bold text-surface-muted">{formatCurrency(parseFloat(quoteAmount) * platformFeePct / 100)}</p>
                     </div>
                   </div>
@@ -757,15 +771,15 @@ export default function JobDetailPage() {
 
                 <div className="flex gap-3">
                   <Button className="flex-1" onClick={handleCreateQuote} loading={actionLoading}>
-                    <Send className="w-4 h-4" /> Send Quote to Client
+                    <Send className="w-4 h-4" /> {t('jobDetail.quotes.send')}
                   </Button>
-                  <Button variant="outline" onClick={() => setShowQuoteForm(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setShowQuoteForm(false)}>{t('common.cancel')}</Button>
                 </div>
               </div>
             )}
 
             {quotes.length === 0 && !showQuoteForm && (
-              <p className="text-sm text-surface-muted text-center py-2">No quotes yet. Create one to send to the client.</p>
+              <p className="text-sm text-surface-muted text-center py-2">{t('jobDetail.quotes.noneYet')}</p>
             )}
           </Card>
 
@@ -773,9 +787,9 @@ export default function JobDetailPage() {
           {['Assigned', 'QuoteApproved'].includes(job.status) && (
             <Card>
               <Button className="w-full" size="lg" onClick={handleStartJob} loading={actionLoading}>
-                <Play className="w-4 h-4" /> Start Job
+                <Play className="w-4 h-4" /> {t('jobDetail.start')}
               </Button>
-              <p className="text-xs text-surface-muted text-center mt-2">Click to begin work and notify the referee</p>
+              <p className="text-xs text-surface-muted text-center mt-2">{t('jobDetail.startHint')}</p>
             </Card>
           )}
 
@@ -784,23 +798,23 @@ export default function JobDetailPage() {
             <Card>
               {!showCompleteModal ? (
                 <Button className="w-full" size="lg" onClick={() => setShowCompleteModal(true)}>
-                  <Camera className="w-4 h-4" /> Mark Job as Complete
+                  <Camera className="w-4 h-4" /> {t('jobDetail.markComplete')}
                 </Button>
               ) : (
                 <div className="space-y-4">
-                  <h2 className="text-base font-heading font-semibold text-white">Mark as Complete</h2>
+                  <h2 className="text-base font-heading font-semibold text-white">{t('jobDetail.completeTitle')}</h2>
                   <textarea
                     className="input-field resize-none w-full"
                     rows={3}
-                    placeholder="Any completion notes (optional)..."
+                    placeholder={t('jobDetail.completePlaceholder')}
                     value={completionNotes}
                     onChange={(e) => setCompletionNotes(e.target.value)}
                   />
                   <div className="flex gap-3">
                     <Button className="flex-1" onClick={handleMarkComplete} loading={actionLoading}>
-                      <CheckCircle2 className="w-4 h-4" /> Confirm Complete
+                      <CheckCircle2 className="w-4 h-4" /> {t('jobDetail.confirmComplete')}
                     </Button>
-                    <Button variant="outline" onClick={() => setShowCompleteModal(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => setShowCompleteModal(false)}>{t('common.cancel')}</Button>
                   </div>
                 </div>
               )}
@@ -812,11 +826,11 @@ export default function JobDetailPage() {
             <Card className="border-amber-500/20">
               <div className="text-center py-4">
                 <Timer className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-                <h2 className="text-lg font-heading font-bold text-white mb-1">Waiting for Client Confirmation</h2>
+                <h2 className="text-lg font-heading font-bold text-white mb-1">{t('jobDetail.waiting.title')}</h2>
                 <p className="text-sm text-surface-muted">
-                  The client will confirm the job is complete. If no response,
+                  {t('jobDetail.waiting.body')}
                   {job.autoReleaseAt && (
-                    <span className="text-amber-400 font-medium"> funds auto-release on {formatDate(job.autoReleaseAt)}</span>
+                    <span className="text-amber-400 font-medium"> {t('jobDetail.waiting.autoRelease', { date: formatDate(job.autoReleaseAt) })}</span>
                   )}
                 </p>
               </div>
@@ -831,12 +845,12 @@ export default function JobDetailPage() {
       {(isOwner || isAssigned) && (
         <Card>
           <h2 className="text-lg font-heading font-semibold text-white mb-4 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-amber-500" /> Messages
+            <MessageSquare className="w-5 h-5 text-amber-500" /> {t('jobDetail.messages.title')}
           </h2>
 
           <div className="space-y-3 max-h-80 overflow-y-auto mb-4">
             {messages.length === 0 ? (
-              <p className="text-sm text-surface-muted text-center py-4">No messages yet</p>
+              <p className="text-sm text-surface-muted text-center py-4">{t('jobDetail.messages.empty')}</p>
             ) : (
               messages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
@@ -855,7 +869,7 @@ export default function JobDetailPage() {
 
           <div className="flex gap-2">
             <Input
-              placeholder="Type a message..."
+              placeholder={t('jobDetail.messages.placeholder')}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -871,10 +885,10 @@ export default function JobDetailPage() {
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowRatingModal(false)}>
           <div className="bg-surface-card border border-surface-border rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-foreground mb-1">
-              {isOwner ? `Rate ${job?.claimedBy?.name}` : 'Rate this referral'}
+              {isOwner ? t('jobDetail.rating.titleOwner', { name: job?.claimedBy?.name ?? '' }) : t('jobDetail.rating.titleContractor')}
             </h3>
             <p className="text-sm text-surface-muted mb-4">
-              {isOwner ? 'How was the contractor\'s work?' : 'How was the quality of this job referral?'}
+              {isOwner ? t('jobDetail.rating.promptOwner') : t('jobDetail.rating.promptContractor')}
             </p>
 
             {/* Stars */}
@@ -899,12 +913,12 @@ export default function JobDetailPage() {
               value={ratingText}
               onChange={e => setRatingText(e.target.value)}
               rows={3}
-              placeholder="Share your experience (optional)..."
+              placeholder={t('jobDetail.rating.placeholder')}
               className="w-full bg-surface-elevated border border-surface-border rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-surface-muted focus:outline-none focus:border-amber-500 mb-4"
             />
 
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => setShowRatingModal(false)}>Cancel</Button>
+              <Button variant="outline" className="flex-1" onClick={() => setShowRatingModal(false)}>{t('common.cancel')}</Button>
               <Button className="flex-1" loading={submittingRating} disabled={ratingValue === 0}
                 onClick={async () => {
                   setSubmittingRating(true);
@@ -916,16 +930,16 @@ export default function JobDetailPage() {
                       text: ratingText || undefined,
                       dimension: isOwner ? 'referral_quality' : 'job_quality',
                     });
-                    toast.success('Review submitted! Thank you.');
+                    toast.success(t('jobDetail.rating.toastSuccess'));
                     setHasRated(true);
                     setShowRatingModal(false);
                   } catch (err: any) {
-                    toast.error(err.response?.data?.error || 'Failed to submit review');
+                    toast.error(apiErrorMessage(err, t('jobDetail.rating.toastFailed')));
                   } finally {
                     setSubmittingRating(false);
                   }
                 }}>
-                Submit Review
+                {t('jobDetail.rating.submit')}
               </Button>
             </div>
           </div>
@@ -938,7 +952,7 @@ export default function JobDetailPage() {
           <button onClick={() => setShowRatingModal(true)}
             className="bg-gradient-to-r from-amber-500 to-amber-600 text-[#050d1a] px-5 py-3 rounded-2xl shadow-xl shadow-amber-500/25 font-semibold text-sm flex items-center gap-2 hover:scale-105 transition-transform">
             <Star size={18} className="fill-current" />
-            {isOwner ? `Rate ${job?.claimedBy?.name ?? 'contractor'}` : 'Rate this referral'}
+            {isOwner ? t('jobDetail.rating.titleOwner', { name: job?.claimedBy?.name ?? t('jobDetail.rating.fallbackName') }) : t('jobDetail.rating.titleContractor')}
           </button>
         </div>
       )}

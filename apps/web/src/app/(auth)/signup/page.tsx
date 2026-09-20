@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -11,27 +11,32 @@ import { toast } from 'sonner';
 import api from '../../../lib/api';
 import { Eye, EyeOff } from 'lucide-react';
 import { RoleSelector, type SelectableRole } from '../../../components/auth/role-selector';
+import { apiErrorMessage, useT, type TranslateFn } from '../../../i18n';
 
-const signupSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
-  email: z.string().email('Invalid email address'),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
-    .regex(/[0-9]/, 'Must contain at least one number'),
-  confirmPassword: z.string(),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
+function buildSignupSchema(t: TranslateFn) {
+  return z.object({
+    name: z.string().min(2, t('auth.validation.nameMin')).max(100),
+    email: z.string().email(t('auth.validation.email')),
+    password: z.string()
+      .min(8, t('auth.validation.passwordMin'))
+      .regex(/[A-Z]/, t('auth.validation.passwordUpper'))
+      .regex(/[0-9]/, t('auth.validation.passwordNumber')),
+    confirmPassword: z.string(),
+  }).refine((d) => d.password === d.confirmPassword, {
+    message: t('auth.validation.passwordMismatch'),
+    path: ['confirmPassword'],
+  });
+}
 
-type SignupInput = z.infer<typeof signupSchema>;
+type SignupInput = z.infer<ReturnType<typeof buildSignupSchema>>;
 
 export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<SelectableRole>('contractor');
+  const t = useT();
+  const signupSchema = useMemo(() => buildSignupSchema(t), [t]);
 
   // Preselect role from ?role=referrer (landing-page CTAs). window read avoids a Suspense boundary.
   useEffect(() => {
@@ -56,7 +61,7 @@ export default function SignupPage() {
       const { devMode, clientSecret, userId } = res.data.data;
 
       if (devMode) {
-        toast.success('Account created! Check your email to verify.');
+        toast.success(t('signup.toast.created'));
         router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
       } else {
         // Store for payment page
@@ -66,8 +71,7 @@ export default function SignupPage() {
         router.push('/signup/payment');
       }
     } catch (err: any) {
-      const message = err.response?.data?.error || 'Registration failed. Please try again.';
-      toast.error(message);
+      toast.error(apiErrorMessage(err, t, t('signup.toast.failed')));
     } finally {
       setLoading(false);
     }
@@ -75,31 +79,31 @@ export default function SignupPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-heading font-bold text-white mb-1">Create your account</h1>
+      <h1 className="text-2xl font-heading font-bold text-white mb-1">{t('signup.title')}</h1>
       <p className="text-sm text-surface-muted mb-8">
-        Join thousands of contractors earning referral commissions.
+        {t('signup.subtitle')}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <RoleSelector value={role} onChange={setRole} />
         <Input
-          label="Full Name"
-          placeholder="John Smith"
+          label={t('auth.field.fullName')}
+          placeholder={t('auth.field.fullNamePlaceholder')}
           error={errors.name?.message}
           {...register('name')}
         />
         <Input
-          label="Email Address"
+          label={t('auth.field.email')}
           type="email"
-          placeholder="john@example.com"
+          placeholder={t('auth.field.emailPlaceholder')}
           error={errors.email?.message}
           {...register('email')}
         />
         <div className="relative">
           <Input
-            label="Password"
+            label={t('auth.field.password')}
             type={showPw ? 'text' : 'password'}
-            placeholder="Min 8 chars, 1 uppercase, 1 number"
+            placeholder={t('auth.field.passwordRule')}
             error={errors.password?.message}
             {...register('password')}
           />
@@ -112,30 +116,30 @@ export default function SignupPage() {
           </button>
         </div>
         <Input
-          label="Confirm Password"
+          label={t('auth.field.confirmPassword')}
           type="password"
-          placeholder="Re-enter your password"
+          placeholder={t('auth.field.confirmPasswordPlaceholder')}
           error={errors.confirmPassword?.message}
           {...register('confirmPassword')}
         />
 
         <Button type="submit" loading={loading} className="w-full" size="lg">
-          Create Account
+          {t('signup.submit')}
         </Button>
       </form>
 
       <p className="text-sm text-surface-muted text-center mt-6">
-        Already have an account?{' '}
+        {t('signup.haveAccount')}{' '}
         <Link href="/login" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
-          Log in
+          {t('signup.loginLink')}
         </Link>
       </p>
 
       <p className="text-xs text-surface-muted text-center mt-4">
-        By signing up, you agree to our{' '}
-        <Link href="/terms" className="text-amber-500/80 hover:text-amber-400">Terms</Link>{' '}
-        and{' '}
-        <Link href="/privacy" className="text-amber-500/80 hover:text-amber-400">Privacy Policy</Link>.
+        {t('signup.legalPrefix')}{' '}
+        <Link href="/terms" className="text-amber-500/80 hover:text-amber-400">{t('signup.legalTerms')}</Link>{' '}
+        {t('signup.legalAnd')}{' '}
+        <Link href="/privacy" className="text-amber-500/80 hover:text-amber-400">{t('signup.legalPrivacy')}</Link>.
       </p>
     </div>
   );

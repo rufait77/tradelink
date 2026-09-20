@@ -1,0 +1,196 @@
+// Shared chrome: navbar, footer, sidebar, topbar, generic UI, enum labels.
+// Placeholders use {name} syntax and are filled by the `t()` helper.
+
+export const enCommon = {
+  // ─── Generic actions / words ────────────────────────────────────────────
+  'common.save': 'Save',
+  'common.saving': 'Saving...',
+  'common.cancel': 'Cancel',
+  'common.close': 'Close',
+  'common.back': 'Back',
+  'common.next': 'Next',
+  'common.continue': 'Continue',
+  'common.submit': 'Submit',
+  'common.submitting': 'Submitting...',
+  'common.confirm': 'Confirm',
+  'common.delete': 'Delete',
+  'common.edit': 'Edit',
+  'common.send': 'Send',
+  'common.sending': 'Sending...',
+  'common.loading': 'Loading...',
+  'common.search': 'Search',
+  'common.filter': 'Filter',
+  'common.clear': 'Clear',
+  'common.viewAll': 'View all',
+  'common.viewDetails': 'View Details',
+  'common.optional': 'Optional',
+  'common.required': 'Required',
+  'common.yes': 'Yes',
+  'common.no': 'No',
+  'common.of': 'of',
+  'common.page': 'Page',
+  'common.previous': 'Previous',
+  'common.retry': 'Try Again',
+  'common.copied': 'Copied to clipboard',
+  'common.na': 'N/A',
+  'common.none': 'None',
+  'common.all': 'All',
+  'common.and': 'and',
+  'common.perMonth': '/month',
+  'common.oneTime': 'one-time',
+
+  // ─── Relative time ──────────────────────────────────────────────────────
+  'time.justNow': 'just now',
+  'time.minutesAgo': '{count}m ago',
+  'time.hoursAgo': '{count}h ago',
+  'time.daysAgo': '{count}d ago',
+  'time.hoursShort': '{count}h',
+  'time.daysShort': '{count}d',
+  'time.hoursLeft': '{count}h left',
+  'time.minutesLeft': '{count}m left',
+  'time.expired': 'Expired',
+
+  // ─── Language switcher ──────────────────────────────────────────────────
+  'language.label': 'Language',
+  'language.change': 'Change language',
+
+  // ─── Public navbar ──────────────────────────────────────────────────────
+  'nav.home': 'Home',
+  'nav.howItWorks': 'How It Works',
+  'nav.pricing': 'Pricing',
+  'nav.contact': 'Contact',
+  'nav.dashboard': 'Dashboard',
+  'nav.login': 'Log In',
+  'nav.getStarted': 'Get Started',
+  'nav.openMenu': 'Open menu',
+  'nav.closeMenu': 'Close menu',
+
+  // ─── Footer ─────────────────────────────────────────────────────────────
+  'footer.tagline': 'The contractor referral platform that pays. Earn {pct}% commission on every completed job you refer.',
+  'footer.group.product': 'Product',
+  'footer.group.company': 'Company',
+  'footer.group.trades': 'Trades',
+  'footer.link.howItWorks': 'How It Works',
+  'footer.link.pricing': 'Pricing',
+  'footer.link.getStarted': 'Get Started',
+  'footer.link.contact': 'Contact',
+  'footer.link.terms': 'Terms of Service',
+  'footer.link.privacy': 'Privacy Policy',
+  'footer.copyright': '© {year} Tradelink. All rights reserved.',
+  'footer.builtBy': 'Built by',
+
+  // ─── Dashboard sidebar ──────────────────────────────────────────────────
+  'sidebar.dashboard': 'Dashboard',
+  'sidebar.jobBoard': 'Job Board',
+  'sidebar.postReferral': 'Post a Referral',
+  'sidebar.myReferrals': 'My Referrals',
+  'sidebar.myJobs': 'My Jobs',
+  'sidebar.earnings': 'Earnings',
+  'sidebar.messages': 'Messages',
+  'sidebar.notifications': 'Notifications',
+  'sidebar.profile': 'Profile',
+  'sidebar.billing': 'Billing',
+  'sidebar.settings': 'Settings',
+  'sidebar.signOut': 'Sign Out',
+
+  // ─── Dashboard topbar ───────────────────────────────────────────────────
+  'topbar.welcomeBack': 'Welcome back,',
+  'topbar.notifications': 'Notifications',
+  'topbar.yourProfile': 'Your profile',
+
+  // ─── Client portal chrome ───────────────────────────────────────────────
+  'clientPortal.badge': 'Client Portal',
+
+  // ─── Auth layout side panel ─────────────────────────────────────────────
+  'authLayout.titleLead': 'Turn Every Lead Into',
+  'authLayout.titleAccent': 'Passive Income',
+  'authLayout.subtitle': 'The contractor referral platform that pays you {pct}% commission on every completed job.',
+  'authLayout.stat.commission': 'Commission',
+  'authLayout.stat.signupFee': 'Signup Fee',
+  'authLayout.stat.tradeTypes': 'Trade Types',
+
+  // ─── Generic UI components ──────────────────────────────────────────────
+  'ui.select.placeholder': 'Select...',
+  'ui.emptyState.title': 'Nothing here yet',
+
+  // ─── not-found / error pages ────────────────────────────────────────────
+  'notFound.heading': 'Page Not Found',
+  'notFound.body': 'The page you\'re looking for doesn\'t exist or has been moved.',
+  'notFound.cta': 'Back to Home',
+  'errorPage.heading': 'Something Went Wrong',
+  'errorPage.body': 'An unexpected error occurred. Please try again.',
+  'errorPage.cta': 'Try Again',
+
+  // ─── Trade type labels ──────────────────────────────────────────────────
+  'trade.Landscaping': 'Landscaping',
+  'trade.Roofing': 'Roofing',
+  'trade.HVAC': 'HVAC',
+  'trade.Plumbing': 'Plumbing',
+  'trade.Electrical': 'Electrical',
+  'trade.Painting': 'Painting',
+  'trade.Carpentry': 'Carpentry',
+  'trade.Flooring': 'Flooring',
+  'trade.Masonry': 'Masonry',
+  'trade.Cleaning': 'Cleaning',
+  'trade.PressureWashing': 'Pressure Washing',
+  'trade.JunkRemoval': 'Junk Removal',
+  'trade.WindowInstallation': 'Window Installation',
+  'trade.Siding': 'Siding',
+  'trade.Clearing': 'Clearing',
+  'trade.GeneralContracting': 'General Contracting',
+  'trade.Welding': 'Welding',
+  'trade.Drywall': 'Drywall',
+  'trade.Barber': 'Barber',
+  'trade.Cosmetology': 'Cosmetology',
+  'trade.Esthetician': 'Esthetician',
+  'trade.AutoMechanics': 'Auto Mechanics',
+  'trade.Other': 'Other',
+
+  // ─── Job status labels ──────────────────────────────────────────────────
+  'status.Open': 'Open',
+  'status.InterestClosed': 'Interest Closed',
+  'status.Assigned': 'Assigned',
+  'status.QuoteSent': 'Quote Sent',
+  'status.QuoteApproved': 'Quote Approved',
+  'status.EscrowFunded': 'Escrow Funded',
+  'status.InProgress': 'In Progress',
+  'status.ContractorDone': 'Contractor Done',
+  'status.ClientConfirmed': 'Client Confirmed',
+  'status.Completed': 'Completed',
+  'status.Disputed': 'Disputed',
+  'status.Cancelled': 'Cancelled',
+  'status.Expired': 'Expired',
+
+  // ─── Urgency labels ─────────────────────────────────────────────────────
+  'urgency.Low': 'Low',
+  'urgency.Medium': 'Medium',
+  'urgency.High': 'High',
+  'urgency.Emergency': 'Emergency',
+
+  // ─── Escrow status labels ───────────────────────────────────────────────
+  'escrowStatus.pending': 'Pending',
+  'escrowStatus.funded': 'Funded',
+  'escrowStatus.released': 'Released',
+  'escrowStatus.refunded': 'Refunded',
+  'escrowStatus.disputed': 'Disputed',
+
+  // ─── User roles ─────────────────────────────────────────────────────────
+  'role.contractor': 'Contractor',
+  'role.referrer': 'Referrer',
+
+  // ─── API error codes (client-side mapping) ──────────────────────────────
+  'apiError.generic': 'Something went wrong. Please try again.',
+  'apiError.network': 'Could not reach the server. Check your connection and try again.',
+  'apiError.INVALID_CREDENTIALS': 'Incorrect email or password.',
+  'apiError.EMAIL_EXISTS': 'An account with that email already exists.',
+  'apiError.EMAIL_NOT_VERIFIED': 'Please verify your email address before logging in.',
+  'apiError.UNAUTHORIZED': 'Your session has expired. Please log in again.',
+  'apiError.FORBIDDEN': 'You do not have permission to do that.',
+  'apiError.NOT_FOUND': 'We could not find what you were looking for.',
+  'apiError.VALIDATION_ERROR': 'Please check the form and try again.',
+  'apiError.SUBSCRIPTION_REQUIRED': 'An active subscription is required for this action.',
+  'apiError.REFERRER_NOT_ALLOWED': 'Referrer accounts cannot claim jobs or send quotes.',
+  'apiError.RATE_LIMITED': 'Too many requests. Please wait a moment and try again.',
+  'apiError.PAYMENT_FAILED': 'The payment could not be processed. Please try another card.',
+  'apiError.INVALID_TOKEN': 'This link is invalid or has expired.',
+} as const;

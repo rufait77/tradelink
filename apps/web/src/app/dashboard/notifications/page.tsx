@@ -5,10 +5,10 @@ import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/empty-state';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import api from '../../../lib/api';
-import { formatRelativeTime } from '../../../lib/utils';
 import { Bell, CheckCheck, Briefcase, DollarSign, Star, MessageSquare, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useT, useFormat } from '../../../i18n';
 
 interface Notification {
   id: string; type: string; title: string;
@@ -27,6 +27,8 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
+  const t = useT();
+  const { formatRelativeTime } = useFormat();
 
   async function load() {
     try {
@@ -42,9 +44,9 @@ export default function NotificationsPage() {
     setMarkingAll(true);
     try {
       await api.put('/notifications/read-all');
-      toast.success('All marked as read');
+      toast.success(t('notifications.toast.allRead'));
       await load();
-    } catch { toast.error('Failed'); }
+    } catch { toast.error(t('notifications.toast.failed')); }
     finally { setMarkingAll(false); }
   }
 
@@ -61,12 +63,12 @@ export default function NotificationsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-white">Notifications</h1>
-          <p className="text-sm text-surface-muted">{unreadCount} unread</p>
+          <h1 className="text-2xl font-heading font-bold text-white">{t('notifications.title')}</h1>
+          <p className="text-sm text-surface-muted">{t('notifications.unread', { count: unreadCount })}</p>
         </div>
         {unreadCount > 0 && (
           <Button variant="outline" size="sm" onClick={markAllRead} loading={markingAll}>
-            <CheckCheck className="w-4 h-4" /> Mark All Read
+            <CheckCheck className="w-4 h-4" /> {t('notifications.markAll')}
           </Button>
         )}
       </div>
@@ -74,7 +76,7 @@ export default function NotificationsPage() {
       {loading ? (
         <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}</div>
       ) : notifications.length === 0 ? (
-        <EmptyState icon={Bell} title="No notifications" description="You're all caught up!" />
+        <EmptyState icon={Bell} title={t('notifications.empty.title')} description={t('notifications.empty.desc')} />
       ) : (
         <div className="space-y-2">
           {notifications.map((n) => {

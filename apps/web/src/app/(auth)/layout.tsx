@@ -2,11 +2,19 @@
 import { Zap } from 'lucide-react';
 import Link from 'next/link';
 import { usePlatformSettings } from '../../lib/useSettings';
+import { useT } from '../../i18n';
+import { LanguageSwitcher } from '../../components/layout/language-switcher';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { commissionPct, signupFee } = usePlatformSettings();
+  const t = useT();
   return (
-    <div className="min-h-screen bg-navy-950 flex">
+    <div className="min-h-screen bg-navy-950 flex relative">
+      {/* Language switcher — fixed to the top right across every auth screen */}
+      <div className="absolute top-4 right-4 z-30">
+        <LanguageSwitcher />
+      </div>
+
       {/* Left panel — branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-navy-900 flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
@@ -21,19 +29,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </Link>
 
           <h2 className="text-3xl font-heading font-bold text-white leading-tight mb-4">
-            Turn Every Lead Into{' '}
-            <span className="gradient-text">Passive Income</span>
+            {t('authLayout.titleLead')}{' '}
+            <span className="gradient-text">{t('authLayout.titleAccent')}</span>
           </h2>
           <p className="text-surface-muted text-lg leading-relaxed">
-            The contractor referral platform that pays you {commissionPct}% commission on every completed job.
+            {t('authLayout.subtitle', { pct: commissionPct })}
           </p>
         </div>
 
         <div className="relative z-10 grid grid-cols-3 gap-6">
           {[
-            { value: `${commissionPct}%`, label: 'Commission' },
-            { value: `$${signupFee}`, label: 'Signup Fee' },
-            { value: '10+', label: 'Trade Types' },
+            { value: `${commissionPct}%`, label: t('authLayout.stat.commission') },
+            { value: `$${signupFee}`, label: t('authLayout.stat.signupFee') },
+            { value: '10+', label: t('authLayout.stat.tradeTypes') },
           ].map((stat) => (
             <div key={stat.label}>
               <p className="text-2xl font-heading font-bold gradient-text">{stat.value}</p>

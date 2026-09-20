@@ -6,6 +6,7 @@ import { Send, UserCheck, DollarSign, FileText, CreditCard, ArrowRight } from 'l
 import Link from 'next/link';
 import { Button } from '../../components/ui/button';
 import { usePlatformSettings } from '../../lib/useSettings';
+import { useT, type TranslateFn } from '../../i18n';
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -15,39 +16,40 @@ const fadeUp: Variants = {
   }),
 };
 
-function getSteps(commissionPct: number, signupFee: string, subscriptionFee: string) {
+function getSteps(t: TranslateFn, commissionPct: number, signupFee: string, subscriptionFee: string) {
   return [
     {
-      icon: FileText, step: '01', title: 'Create Your Account',
-      desc: `Sign up with your email, pay the one-time $${signupFee} signup fee, and verify your email address.`,
-      details: ['Complete contractor profile', 'Select your trade specialties', 'Set your service area'],
+      icon: FileText, step: '01', title: t('howItWorks.s1.title'),
+      desc: t('howItWorks.s1.desc', { signupFee }),
+      details: [t('howItWorks.s1.d1'), t('howItWorks.s1.d2'), t('howItWorks.s1.d3')],
     },
     {
-      icon: CreditCard, step: '02', title: 'Activate Subscription',
-      desc: `Subscribe for $${subscriptionFee}/month to unlock full access to the job board and referral platform.`,
-      details: ['Access entire job board', 'Post unlimited referrals', 'Connect your bank via Stripe'],
+      icon: CreditCard, step: '02', title: t('howItWorks.s2.title'),
+      desc: t('howItWorks.s2.desc', { subscriptionFee }),
+      details: [t('howItWorks.s2.d1'), t('howItWorks.s2.d2'), t('howItWorks.s2.d3')],
     },
     {
-      icon: Send, step: '03', title: 'Post a Referral',
-      desc: 'Got a lead you can\'t take? Post it with budget, trade type, location, and any client notes.',
-      details: ['Set budget range', 'Choose trade category', 'Add client details'],
+      icon: Send, step: '03', title: t('howItWorks.s3.title'),
+      desc: t('howItWorks.s3.desc'),
+      details: [t('howItWorks.s3.d1'), t('howItWorks.s3.d2'), t('howItWorks.s3.d3')],
     },
     {
-      icon: UserCheck, step: '04', title: 'Contractor Claims the Job',
-      desc: 'A qualified contractor in the area sees your referral, claims it, and starts the work.',
-      details: ['Verified contractors only', 'Real-time notifications', 'In-app messaging'],
+      icon: UserCheck, step: '04', title: t('howItWorks.s4.title'),
+      desc: t('howItWorks.s4.desc'),
+      details: [t('howItWorks.s4.d1'), t('howItWorks.s4.d2'), t('howItWorks.s4.d3')],
     },
     {
-      icon: DollarSign, step: '05', title: 'Get Paid Automatically',
-      desc: `When the job is marked complete, you receive a ${commissionPct}% commission deposited straight to your bank.`,
-      details: ['2-3 day bank deposit', 'Track all earnings', 'Commission history dashboard'],
+      icon: DollarSign, step: '05', title: t('howItWorks.s5.title'),
+      desc: t('howItWorks.s5.desc', { pct: commissionPct }),
+      details: [t('howItWorks.s5.d1'), t('howItWorks.s5.d2'), t('howItWorks.s5.d3')],
     },
   ];
 }
 
 export default function HowItWorksPage() {
   const { commissionPct, signupFee, subscriptionFee } = usePlatformSettings();
-  const STEPS = getSteps(commissionPct, signupFee, subscriptionFee);
+  const t = useT();
+  const STEPS = getSteps(t, commissionPct, signupFee, subscriptionFee);
 
   return (
     <>
@@ -56,10 +58,10 @@ export default function HowItWorksPage() {
         <div className="container-wide px-4">
           <motion.div className="text-center mb-20" initial="hidden" animate="visible">
             <motion.h1 variants={fadeUp} custom={0} className="text-4xl sm:text-5xl font-heading font-bold text-white mb-4">
-              How Tradelink Works
+              {t('howItWorks.title')}
             </motion.h1>
             <motion.p variants={fadeUp} custom={1} className="text-lg text-surface-muted max-w-2xl mx-auto">
-              From sign-up to payout in five simple steps
+              {t('howItWorks.subtitle')}
             </motion.p>
           </motion.div>
 
@@ -105,7 +107,7 @@ export default function HowItWorksPage() {
             viewport={{ once: true }}
           >
             <Link href="/signup">
-              <Button size="lg">Get Started Now <ArrowRight className="w-4 h-4" /></Button>
+              <Button size="lg">{t('howItWorks.cta')} <ArrowRight className="w-4 h-4" /></Button>
             </Link>
           </motion.div>
         </div>

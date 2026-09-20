@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { Bell, Menu, X } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import api from '../../lib/api';
+import { useT } from '../../i18n';
+import { LanguageSwitcher } from './language-switcher';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
 const ASSETS_BASE = API_BASE.endsWith('/api') ? API_BASE.slice(0, -4) : API_BASE.replace(/\/+$/, '');
@@ -21,6 +23,7 @@ interface DashboardTopbarProps {
 export function DashboardTopbar({ onMenuToggle, menuOpen }: DashboardTopbarProps) {
   const { user } = useAuthStore();
   const [unreadCount, setUnreadCount] = useState(0);
+  const t = useT();
 
   useEffect(() => {
     async function fetchUnread() {
@@ -40,6 +43,7 @@ export function DashboardTopbar({ onMenuToggle, menuOpen }: DashboardTopbarProps
     <header className="sticky top-0 z-20 h-16 bg-navy-900/80 backdrop-blur-xl border-b border-surface-border/30 flex items-center justify-between px-4 lg:px-8">
       {/* Mobile menu toggle */}
       <button
+        aria-label={menuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
         className="lg:hidden p-2 rounded-lg text-slate-300 hover:bg-surface-elevated"
         onClick={onMenuToggle}
       >
@@ -49,15 +53,18 @@ export function DashboardTopbar({ onMenuToggle, menuOpen }: DashboardTopbarProps
       {/* Greeting */}
       <div className="hidden lg:block">
         <p className="text-sm text-surface-muted">
-          Welcome back, <span className="text-slate-200 font-medium">{user?.name}</span>
+          {t('topbar.welcomeBack')} <span className="text-slate-200 font-medium">{user?.name}</span>
         </p>
       </div>
 
       {/* Right side */}
       <div className="flex items-center gap-3">
+        <LanguageSwitcher />
+
         {/* Notification bell */}
         <Link
           href="/dashboard/notifications"
+          aria-label={t('topbar.notifications')}
           className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-surface-elevated transition"
         >
           <Bell className="w-5 h-5" />
@@ -71,6 +78,7 @@ export function DashboardTopbar({ onMenuToggle, menuOpen }: DashboardTopbarProps
         {/* User avatar */}
         <Link
           href="/dashboard/profile"
+          aria-label={t('topbar.yourProfile')}
           className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-surface-elevated transition"
         >
           {user?.profile?.photoUrl ? (

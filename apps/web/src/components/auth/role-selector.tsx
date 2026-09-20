@@ -2,29 +2,7 @@
 import { Check, HardHat, UserRound } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { usePlatformSettings } from '../../lib/useSettings';
-
-// ─── Display strings ──────────────────────────────────────────────────────────
-export const ROLE_SELECTOR_STRINGS = {
-  label: 'I am joining as a…',
-  contractor: {
-    title: 'Contractor',
-    tagline: 'Licensed pro. Refer and claim jobs.',
-    perks: (commissionPct: number, signupFee: string, subscriptionFee: string) => [
-      `Earn ${commissionPct}% on jobs you refer`,
-      'Claim jobs and send quotes',
-      `$${signupFee} one-time + $${subscriptionFee}/mo`,
-    ],
-  },
-  referrer: {
-    title: 'Referrer',
-    tagline: 'Know people who need work done? Get paid for the intro.',
-    perks: (commissionPct: number, signupFee: string, requiresSubscription: boolean) => [
-      `Earn ${commissionPct}% on every referral`,
-      'No license or trade required',
-      requiresSubscription ? `$${signupFee} one-time + monthly plan` : `$${signupFee} one-time, no monthly fee`,
-    ],
-  },
-} as const;
+import { useT } from '../../i18n';
 
 export type SelectableRole = 'contractor' | 'referrer';
 
@@ -36,27 +14,38 @@ interface RoleSelectorProps {
 
 export function RoleSelector({ value, onChange, className }: RoleSelectorProps) {
   const s = usePlatformSettings();
+  const t = useT();
 
   const options: { role: SelectableRole; title: string; tagline: string; perks: string[]; icon: typeof HardHat }[] = [
     {
       role: 'contractor',
       icon: HardHat,
-      title: ROLE_SELECTOR_STRINGS.contractor.title,
-      tagline: ROLE_SELECTOR_STRINGS.contractor.tagline,
-      perks: ROLE_SELECTOR_STRINGS.contractor.perks(s.commissionPct, s.signupFee, s.subscriptionFee),
+      title: t('roleSelector.contractor.title'),
+      tagline: t('roleSelector.contractor.tagline'),
+      perks: [
+        t('roleSelector.contractor.p1', { pct: s.commissionPct }),
+        t('roleSelector.contractor.p2'),
+        t('roleSelector.contractor.p3', { signupFee: s.signupFee, subscriptionFee: s.subscriptionFee }),
+      ],
     },
     {
       role: 'referrer',
       icon: UserRound,
-      title: ROLE_SELECTOR_STRINGS.referrer.title,
-      tagline: ROLE_SELECTOR_STRINGS.referrer.tagline,
-      perks: ROLE_SELECTOR_STRINGS.referrer.perks(s.referrerCommissionPct, s.referrerSignupFee, s.referrerRequiresSubscription),
+      title: t('roleSelector.referrer.title'),
+      tagline: t('roleSelector.referrer.tagline'),
+      perks: [
+        t('roleSelector.referrer.p1', { pct: s.referrerCommissionPct }),
+        t('roleSelector.referrer.p2'),
+        s.referrerRequiresSubscription
+          ? t('roleSelector.referrer.p3Sub', { signupFee: s.referrerSignupFee })
+          : t('roleSelector.referrer.p3NoSub', { signupFee: s.referrerSignupFee }),
+      ],
     },
   ];
 
   return (
     <fieldset className={cn('space-y-2', className)}>
-      <legend className="label">{ROLE_SELECTOR_STRINGS.label}</legend>
+      <legend className="label">{t('roleSelector.label')}</legend>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup">
         {options.map((opt) => {
           const Icon = opt.icon;

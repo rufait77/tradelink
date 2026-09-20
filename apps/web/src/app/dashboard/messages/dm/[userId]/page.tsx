@@ -7,11 +7,11 @@ import { Button } from '../../../../../components/ui/button';
 import { useAuthStore } from '../../../../../store/auth.store';
 import api from '../../../../../lib/api';
 import { getSocket, emitTyping, emitStopTyping } from '../../../../../lib/socket';
-import { formatRelativeTime } from '../../../../../lib/utils';
 import {
   ArrowLeft, Send, Smile, Flag, Paperclip, Check, CheckCheck,
   MoreHorizontal, X, Star, MapPin, ExternalLink, User,
 } from 'lucide-react';
+import { apiErrorMessage, useT, useLabels, useFormat } from '../../../../../i18n';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
 const ASSETS_BASE = API_BASE.endsWith('/api')
@@ -59,6 +59,10 @@ export default function DmChatPage() {
   const [reportingMsg, setReportingMsg] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState('');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+
+  const t = useT();
+  const { tradeLabel } = useLabels();
+  const { formatRelativeTime } = useFormat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -158,12 +162,12 @@ export default function DmChatPage() {
       emitStopTyping(partnerId);
       inputRef.current?.focus();
     } catch (err: any) {
-      const msg = err?.response?.data?.error || 'Failed to send message';
+      const msg = apiErrorMessage(err, t, t('dm.sendFailed'));
       alert(msg);
     } finally {
       setSending(false);
     }
-  }, [input, partnerId, sending]);
+  }, [input, partnerId, sending, t]);
 
   // ─── Typing indicator ──────────────────────────────────────
   const handleInputChange = (val: string) => {
@@ -206,8 +210,8 @@ export default function DmChatPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center">
         <User className="w-12 h-12 text-slate-600" />
-        <p className="text-slate-400">User not found</p>
-        <Button onClick={() => router.push('/dashboard/messages')}>Back to Messages</Button>
+        <p className="text-slate-400">{t('dm.userNotFound')}</p>
+        <Button onClick={() => router.push('/dashboard/messages')}>{t('dm.backToMessages')}</Button>
       </div>
     );
   }
@@ -240,7 +244,7 @@ export default function DmChatPage() {
             </p>
             <div className="flex items-center gap-2 text-xs text-slate-500">
               {partner.profile?.tradeTypes?.[0] && (
-                <span>{partner.profile.tradeTypes[0].replace(/([A-Z])/g, ' $1').trim()}</span>
+                <span>{tradeLabel(partner.profile.tradeTypes[0])}</span>
               )}
               {partner.profile?.city && partner.profile?.state && (
                 <span className="flex items-center gap-0.5">
@@ -265,7 +269,7 @@ export default function DmChatPage() {
               <Send className="w-7 h-7 text-amber-500" />
             </div>
             <p className="text-slate-400 text-sm">
-              Start a conversation with {partner.name.split(' ')[0]}
+              {t('dm.startConversation', { name: partner.name.split(' ')[0] })}
             </p>
           </div>
         ) : (
@@ -334,7 +338,7 @@ export default function DmChatPage() {
                       <button
                         onClick={() => setShowEmojiFor(showEmojiFor === msg.id ? null : msg.id)}
                         className="p-1 rounded-md hover:bg-white/10 text-slate-500 hover:text-slate-300"
-                        title="React"
+                        title={t('dm.react')}
                       >
                         <Smile className="w-3.5 h-3.5" />
                       </button>
@@ -342,7 +346,7 @@ export default function DmChatPage() {
                         <button
                           onClick={() => { setReportingMsg(msg.id); setMenuOpen(null); }}
                           className="p-1 rounded-md hover:bg-white/10 text-slate-500 hover:text-red-400"
-                          title="Report"
+                          title={t('dm.report')}
                         >
                           <Flag className="w-3.5 h-3.5" />
                         </button>
@@ -375,7 +379,7 @@ export default function DmChatPage() {
               <div className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '150ms' }} />
               <div className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="text-xs text-slate-500">{partner.name.split(' ')[0]} is typing...</span>
+            <span className="text-xs text-slate-500">{t('dm.typing', { name: partner.name.split(' ')[0] })}</span>
           </div>
         )}
 
@@ -391,7 +395,7 @@ export default function DmChatPage() {
             value={input}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder={`Message ${partner.name.split(' ')[0]}...`}
+            placeholder={t('dm.inputPlaceholder', { name: partner.name.split(' ')[0] })}
             className="flex-1 px-4 py-3 bg-[#0a1628] border border-surface-border rounded-xl text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50"
             style={{ color: '#e2e8f0' }}
           />
@@ -411,7 +415,7 @@ export default function DmChatPage() {
           <div className="bg-surface-card border border-surface-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Flag className="w-5 h-5 text-red-400" /> Report Message
+                <Flag className="w-5 h-5 text-red-400" /> {t('dm.report.title')}
               </h3>
               <button onClick={() => { setReportingMsg(null); setReportReason(''); }}
                 className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400">
@@ -419,23 +423,23 @@ export default function DmChatPage() {
               </button>
             </div>
             <p className="text-sm text-slate-400 mb-4">
-              This report will be sent to Tradelink admins for review. Please describe the issue.
+              {t('dm.report.body')}
             </p>
             <textarea
               value={reportReason}
               onChange={(e) => setReportReason(e.target.value)}
-              placeholder="Describe why you're reporting this message..."
+              placeholder={t('dm.report.placeholder')}
               rows={3}
               className="w-full px-3 py-2 bg-[#050d1a] border border-surface-border rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none"
             />
             <div className="flex gap-2 mt-4 justify-end">
               <button onClick={() => { setReportingMsg(null); setReportReason(''); }}
                 className="px-4 py-2 text-sm text-slate-400 hover:text-white transition">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={handleReport} disabled={!reportReason.trim()}
                 className="px-4 py-2 text-sm font-semibold bg-red-500 text-white rounded-xl hover:bg-red-400 disabled:opacity-50 transition">
-                Submit Report
+                {t('dm.report.submit')}
               </button>
             </div>
           </div>

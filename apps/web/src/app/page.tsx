@@ -11,46 +11,47 @@ import {
 import { useState } from 'react';
 import { usePlatformSettings } from '../lib/useSettings';
 import { MockDashboardSection } from '../components/landing/mock-dashboard-section';
+import { useT, type TranslateFn } from '../i18n';
 
 const TRADE_CATEGORIES = [
-  { name: 'Landscaping', icon: '🌿' },
-  { name: 'Roofing', icon: '🏠' },
-  { name: 'HVAC', icon: '❄️' },
-  { name: 'Plumbing', icon: '🔧' },
-  { name: 'Electrical', icon: '⚡' },
-  { name: 'Painting', icon: '🎨' },
-  { name: 'Carpentry', icon: '🪚' },
-  { name: 'Flooring', icon: '🪵' },
-  { name: 'Pressure Washing', icon: '💦' },
-  { name: 'Junk Removal', icon: '🚛' },
-  { name: 'Window Installation', icon: '🪟' },
-  { name: 'Siding', icon: '🏗️' },
-  { name: 'Masonry', icon: '🧱' },
-  { name: 'Clearing', icon: '🌲' },
-  { name: 'Welding', icon: '🔥' },
-  { name: 'Drywall', icon: '🪨' },
-  { name: 'Barber', icon: '💈' },
-  { name: 'Cosmetology', icon: '💅' },
-  { name: 'Esthetician', icon: '✨' },
-  { name: 'Auto Mechanics', icon: '🔧' },
-];
+  { key: 'trade.Landscaping', icon: '🌿' },
+  { key: 'trade.Roofing', icon: '🏠' },
+  { key: 'trade.HVAC', icon: '❄️' },
+  { key: 'trade.Plumbing', icon: '🔧' },
+  { key: 'trade.Electrical', icon: '⚡' },
+  { key: 'trade.Painting', icon: '🎨' },
+  { key: 'trade.Carpentry', icon: '🪚' },
+  { key: 'trade.Flooring', icon: '🪵' },
+  { key: 'trade.PressureWashing', icon: '💦' },
+  { key: 'trade.JunkRemoval', icon: '🚛' },
+  { key: 'trade.WindowInstallation', icon: '🪟' },
+  { key: 'trade.Siding', icon: '🏗️' },
+  { key: 'trade.Masonry', icon: '🧱' },
+  { key: 'trade.Clearing', icon: '🌲' },
+  { key: 'trade.Welding', icon: '🔥' },
+  { key: 'trade.Drywall', icon: '🪨' },
+  { key: 'trade.Barber', icon: '💈' },
+  { key: 'trade.Cosmetology', icon: '💅' },
+  { key: 'trade.Esthetician', icon: '✨' },
+  { key: 'trade.AutoMechanics', icon: '🔧' },
+] as const;
 
-function getFeatures(commissionPct: number) {
+function getFeatures(t: TranslateFn, commissionPct: number) {
   return [
-    { icon: Shield, title: 'Secure Payments', desc: 'Stripe-powered escrow ensures you always get paid for completed work.' },
-    { icon: Clock, title: 'Quick Payouts', desc: 'Commissions deposited directly to your bank within 2-3 business days.' },
-    { icon: TrendingUp, title: 'Passive Income', desc: `Earn ${commissionPct}% on jobs you refer — even while you sleep.` },
-    { icon: Wrench, title: 'All Trades Welcome', desc: 'From HVAC to landscaping — every licensed contractor can join.' },
+    { icon: Shield, title: t('home.features.secure.title'), desc: t('home.features.secure.desc') },
+    { icon: Clock, title: t('home.features.payouts.title'), desc: t('home.features.payouts.desc') },
+    { icon: TrendingUp, title: t('home.features.passive.title'), desc: t('home.features.passive.desc', { pct: commissionPct }) },
+    { icon: Wrench, title: t('home.features.trades.title'), desc: t('home.features.trades.desc') },
   ];
 }
 
-function getFAQ(commissionPct: number, signupFee: string, subscriptionFee: string) {
+function getFAQ(t: TranslateFn, commissionPct: number, signupFee: string, subscriptionFee: string) {
   return [
-    { q: 'How does the referral commission work?', a: `When you refer a job and another contractor completes it, you earn ${commissionPct}% of the job's total value. Payment is processed automatically through Stripe.` },
-    { q: 'What does it cost to join?', a: `There is a one-time signup fee of $${signupFee} plus a monthly subscription of $${subscriptionFee}/mo to access the full platform. First month is free!` },
-    { q: 'How do I get paid?', a: 'Commissions are deposited directly into your bank account via Stripe Connect within 2-3 business days of job completion.' },
-    { q: 'What trades are supported?', a: 'We support all major trade categories including Landscaping, Roofing, HVAC, Plumbing, Electrical, Painting, Carpentry, Flooring, Masonry, Cleaning, Pressure Washing, Junk Removal, Window Installation, Siding, Clearing, General Contracting, Welding, Drywall Installation, Barber, Cosmetology, and Esthetician.' },
-    { q: 'Can I both refer and claim jobs?', a: 'Absolutely! You can post referral jobs for leads you can\'t handle, and claim jobs from other contractors that match your skills.' },
+    { q: t('home.faq.commission.q'), a: t('home.faq.commission.a', { pct: commissionPct }) },
+    { q: t('home.faq.cost.q'), a: t('home.faq.cost.a', { signupFee, subscriptionFee }) },
+    { q: t('home.faq.paid.q'), a: t('home.faq.paid.a') },
+    { q: t('home.faq.trades.q'), a: t('home.faq.trades.a') },
+    { q: t('home.faq.both.q'), a: t('home.faq.both.a') },
   ];
 }
 
@@ -82,6 +83,7 @@ export default function HomePage() {
 }
 
 function HeroSection({ commission, signupFee }: { commission: number; signupFee: string }) {
+  const t = useT();
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
       {/* Background glow */}
@@ -96,7 +98,7 @@ function HeroSection({ commission, signupFee }: { commission: number; signupFee:
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium mb-6">
             <Zap className="w-4 h-4" />
-            The Contractor Referral Platform
+            {t('home.badge')}
           </div>
         </motion.div>
 
@@ -106,9 +108,9 @@ function HeroSection({ commission, signupFee }: { commission: number; signupFee:
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.7 }}
         >
-          Refer a Job.{' '}
-          <span className="gradient-text">Earn {commission}%</span>{' '}
-          Commission.
+          {t('home.hero.titleLead')}{' '}
+          <span className="gradient-text">{t('home.hero.titleAccent', { pct: commission })}</span>{' '}
+          {t('home.hero.titleTrail')}
         </motion.h1>
 
         <motion.p
@@ -117,7 +119,7 @@ function HeroSection({ commission, signupFee }: { commission: number; signupFee:
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
         >
-          Turn every lead you can&apos;t handle into cash. Post a referral, let another contractor complete the job, and get paid automatically.
+          {t('home.hero.subtitle')}
         </motion.p>
 
         <motion.div
@@ -128,11 +130,11 @@ function HeroSection({ commission, signupFee }: { commission: number; signupFee:
         >
           <Link href="/signup">
             <Button size="lg">
-              Start Earning Today <ArrowRight className="w-4 h-4" />
+              {t('home.hero.ctaPrimary')} <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
           <Link href="/how-it-works">
-            <Button variant="outline" size="lg">See How It Works</Button>
+            <Button variant="outline" size="lg">{t('home.hero.ctaSecondary')}</Button>
           </Link>
         </motion.div>
 
@@ -144,9 +146,9 @@ function HeroSection({ commission, signupFee }: { commission: number; signupFee:
           transition={{ delay: 0.7, duration: 0.8 }}
         >
           {[
-            { value: `${commission}%`, label: 'Commission Rate' },
-            { value: `$${signupFee}`, label: 'One-Time Signup' },
-            { value: '10+', label: 'Trade Categories' },
+            { value: `${commission}%`, label: t('home.hero.stat.commission') },
+            { value: `$${signupFee}`, label: t('home.hero.stat.signup') },
+            { value: '10+', label: t('home.hero.stat.trades') },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <p className="text-2xl sm:text-3xl font-heading font-bold gradient-text">{stat.value}</p>
@@ -160,10 +162,11 @@ function HeroSection({ commission, signupFee }: { commission: number; signupFee:
 }
 
 function HowItWorksSection({ commission }: { commission: number }) {
+  const t = useT();
   const steps = [
-    { icon: Send, title: 'Post a Referral', desc: 'Got a lead you can\'t take? Post it as a referral with budget, trade type, and location.' },
-    { icon: UserCheck, title: 'Another Contractor Claims It', desc: 'A qualified contractor in the right area claims the job and completes the work.' },
-    { icon: DollarSign, title: 'You Get Paid', desc: `Once the job is marked complete, you earn a ${commission}% commission — deposited directly to your bank.` },
+    { icon: Send, title: t('home.steps.post.title'), desc: t('home.steps.post.desc') },
+    { icon: UserCheck, title: t('home.steps.claim.title'), desc: t('home.steps.claim.desc') },
+    { icon: DollarSign, title: t('home.steps.paid.title'), desc: t('home.steps.paid.desc', { pct: commission }) },
   ];
 
   return (
@@ -171,10 +174,10 @@ function HowItWorksSection({ commission }: { commission: number }) {
       <div className="container-wide">
         <motion.div className="text-center mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <motion.h2 variants={fadeUp} custom={0} className="text-3xl sm:text-4xl font-heading font-bold text-white mb-4">
-            How It Works
+            {t('home.steps.title')}
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="text-surface-muted max-w-2xl mx-auto">
-            Three simple steps to start earning commissions on referrals
+            {t('home.steps.subtitle')}
           </motion.p>
         </motion.div>
 
@@ -194,7 +197,7 @@ function HowItWorksSection({ commission }: { commission: number }) {
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mx-auto mb-5">
                   <Icon className="w-7 h-7 text-navy-950" />
                 </div>
-                <div className="text-xs font-bold text-amber-500 mb-2">Step {i + 1}</div>
+                <div className="text-xs font-bold text-amber-500 mb-2">{t('home.steps.label', { n: i + 1 })}</div>
                 <h3 className="text-xl font-semibold text-white mb-3">{step.title}</h3>
                 <p className="text-sm text-surface-muted leading-relaxed">{step.desc}</p>
               </motion.div>
@@ -207,15 +210,16 @@ function HowItWorksSection({ commission }: { commission: number }) {
 }
 
 function TradeShowcase() {
+  const t = useT();
   return (
     <section className="section bg-navy-900/50">
       <div className="container-wide">
         <motion.div className="text-center mb-12" initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <motion.h2 variants={fadeUp} custom={0} className="text-3xl sm:text-4xl font-heading font-bold text-white mb-4">
-            All Trades, One Platform
+            {t('home.trades.title')}
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="text-surface-muted max-w-2xl mx-auto">
-            Whatever your trade, Tradelink has referral opportunities waiting
+            {t('home.trades.subtitle')}
           </motion.p>
         </motion.div>
 
@@ -227,13 +231,13 @@ function TradeShowcase() {
         >
           {TRADE_CATEGORIES.map((trade, i) => (
             <motion.div
-              key={trade.name}
+              key={trade.key}
               className="glass-card p-5 text-center hover-lift cursor-pointer"
               variants={fadeUp}
               custom={i}
             >
               <span className="text-3xl mb-3 block">{trade.icon}</span>
-              <p className="text-sm font-medium text-slate-200">{trade.name}</p>
+              <p className="text-sm font-medium text-slate-200">{t(trade.key)}</p>
             </motion.div>
           ))}
         </motion.div>
@@ -243,20 +247,21 @@ function TradeShowcase() {
 }
 
 function FeaturesSection({ commission }: { commission: number }) {
+  const t = useT();
   return (
     <section className="section bg-navy-950">
       <div className="container-wide">
         <motion.div className="text-center mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <motion.h2 variants={fadeUp} custom={0} className="text-3xl sm:text-4xl font-heading font-bold text-white mb-4">
-            Built for Contractors
+            {t('home.features.title')}
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="text-surface-muted max-w-2xl mx-auto">
-            Everything you need to monetize your network
+            {t('home.features.subtitle')}
           </motion.p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {getFeatures(commission).map((feat, i) => {
+          {getFeatures(t, commission).map((feat, i) => {
             const Icon = feat.icon;
             return (
               <motion.div
@@ -286,18 +291,19 @@ function FeaturesSection({ commission }: { commission: number }) {
 
 function FAQSection({ commission, signupFee, subscriptionFee }: { commission: number; signupFee: string; subscriptionFee: string }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const t = useT();
 
   return (
     <section className="section bg-navy-900/50">
       <div className="container-narrow">
         <motion.div className="text-center mb-12" initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <motion.h2 variants={fadeUp} custom={0} className="text-3xl sm:text-4xl font-heading font-bold text-white mb-4">
-            Frequently Asked Questions
+            {t('home.faq.title')}
           </motion.h2>
         </motion.div>
 
         <div className="space-y-3">
-          {getFAQ(commission, signupFee, subscriptionFee).map((item, i) => (
+          {getFAQ(t, commission, signupFee, subscriptionFee).map((item, i) => (
             <motion.div
               key={i}
               className="glass-card overflow-hidden"
@@ -332,6 +338,7 @@ function FAQSection({ commission, signupFee, subscriptionFee }: { commission: nu
 }
 
 function CTASection() {
+  const t = useT();
   return (
     <section className="section">
       <motion.div
@@ -345,14 +352,14 @@ function CTASection() {
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
           <div className="relative z-10">
             <h2 className="text-3xl sm:text-4xl font-heading font-bold text-white mb-4">
-              Ready to Start Earning?
+              {t('home.cta.title')}
             </h2>
             <p className="text-surface-muted max-w-lg mx-auto mb-8">
-              Join Tradelink today and turn every lead you can&apos;t handle into passive income.
+              {t('home.cta.subtitle')}
             </p>
             <Link href="/signup">
               <Button size="lg">
-                Create Your Account <ArrowRight className="w-4 h-4" />
+                {t('home.cta.button')} <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>

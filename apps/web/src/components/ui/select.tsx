@@ -3,6 +3,7 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { forwardRef } from 'react';
+import { useT } from '../../i18n';
 
 const EMPTY_SENTINEL = '__none__';
 
@@ -22,7 +23,9 @@ interface SelectProps {
 }
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
-  ({ label, error, placeholder = 'Select...', options, value, onChange, className }, ref) => {
+  ({ label, error, placeholder, options, value, onChange, className }, ref) => {
+    const t = useT();
+    const resolvedPlaceholder = placeholder ?? t('ui.select.placeholder');
     // Radix doesn't allow empty-string values — map to sentinel
     const safeValue = value === '' || value === undefined ? EMPTY_SENTINEL : value;
     const safeOptions = options.map((opt) => ({
@@ -47,7 +50,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
               className
             )}
           >
-            <SelectPrimitive.Value placeholder={placeholder} />
+            <SelectPrimitive.Value placeholder={resolvedPlaceholder} />
             <SelectPrimitive.Icon>
               <ChevronDown className="w-4 h-4 text-surface-muted" />
             </SelectPrimitive.Icon>

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -10,20 +10,25 @@ import { Input } from '../../../components/ui/input';
 import { useAuthStore } from '../../../store/auth.store';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
+import { apiErrorMessage, useT, type TranslateFn } from '../../../i18n';
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-  rememberMe: z.boolean().optional(),
-});
+function buildLoginSchema(t: TranslateFn) {
+  return z.object({
+    email: z.string().email(t('auth.validation.email')),
+    password: z.string().min(1, t('auth.validation.passwordRequired')),
+    rememberMe: z.boolean().optional(),
+  });
+}
 
-type LoginInput = z.infer<typeof loginSchema>;
+type LoginInput = z.infer<ReturnType<typeof buildLoginSchema>>;
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const t = useT();
+  const loginSchema = useMemo(() => buildLoginSchema(t), [t]);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -36,7 +41,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(data.email, data.password, data.rememberMe);
-      toast.success('Welcome back!');
+      toast.success(t('login.toast.success'));
       // Check if onboarding needed
       const store = useAuthStore.getState();
       if (store.needsOnboarding()) {
@@ -45,13 +50,13 @@ export default function LoginPage() {
         router.push('/dashboard');
       }
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'Login failed.';
       const code = err.response?.data?.code;
+      const msg = apiErrorMessage(err, t, t('login.toast.failed'));
       if (code === 'EMAIL_NOT_VERIFIED') {
         toast.error(msg);
         router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
       } else if (code === 'ACCOUNT_INACTIVE') {
-        toast.error('Please complete your signup payment first.');
+        toast.error(t('login.toast.inactive'));
       } else {
         toast.error(msg);
       }
@@ -62,22 +67,22 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-heading font-bold text-white mb-1">Welcome back</h1>
-      <p className="text-sm text-surface-muted mb-8">Log in to your Tradelink account.</p>
+      <h1 className="text-2xl font-heading font-bold text-white mb-1">{t('login.title')}</h1>
+      <p className="text-sm text-surface-muted mb-8">{t('login.subtitle')}</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
-          label="Email Address"
+          label={t('auth.field.email')}
           type="email"
-          placeholder="john@example.com"
+          placeholder={t('auth.field.emailPlaceholder')}
           error={errors.email?.message}
           {...register('email')}
         />
         <div className="relative">
           <Input
-            label="Password"
+            label={t('auth.field.password')}
             type={showPw ? 'text' : 'password'}
-            placeholder="Enter your password"
+            placeholder={t('auth.field.passwordPlaceholder')}
             error={errors.password?.message}
             {...register('password')}
           />
@@ -97,22 +102,22 @@ export default function LoginPage() {
               className="w-4 h-4 rounded border-surface-border bg-navy-900 text-amber-500 focus:ring-amber-500/20"
               {...register('rememberMe')}
             />
-            <span className="text-sm text-slate-300">Remember me</span>
+            <span className="text-sm text-slate-300">{t('login.rememberMe')}</span>
           </label>
           <Link href="/forgot-password" className="text-sm text-amber-400 hover:text-amber-300 transition-colors">
-            Forgot password?
+            {t('login.forgotPassword')}
           </Link>
         </div>
 
         <Button type="submit" loading={loading} className="w-full" size="lg">
-          Log In
+          {t('login.submit')}
         </Button>
       </form>
 
       <p className="text-sm text-surface-muted text-center mt-6">
-        Don&apos;t have an account?{' '}
+        {t('login.noAccount')}{' '}
         <Link href="/signup" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
-          Sign up
+          {t('login.signUpLink')}
         </Link>
       </p>
     </div>

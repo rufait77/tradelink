@@ -8,39 +8,21 @@ import { cn } from '../../lib/utils';
 import { usePlatformSettings } from '../../lib/useSettings';
 import { MockDashboard } from './mock-dashboard';
 import type { MockRole } from './mock-data';
+import { useT, type TranslationKey } from '../../i18n';
 
-// ─── Display strings ──────────────────────────────────────────────────────────
-export const MOCK_SECTION_STRINGS = {
-  eyebrow: 'Live preview',
-  title: 'See your dashboard before you sign up',
-  subtitle: 'Sample data, real interface. Switch between what a contractor and a referrer see.',
-  toggle: {
-    contractor: 'Contractor view',
-    referrer: 'Referrer view',
-  },
-  caption: {
-    contractor: (pct: number) => `Contractors post referrals, claim jobs, send quotes and earn ${pct}% on every referral they hand off.`,
-    referrer: (pct: number, fee: string) => `Referrers are everyday people. Pay a one-time $${fee}, post leads from your network, pick the contractor, and earn ${pct}% when the job completes.`,
-  },
-  ctaContractor: 'Join as a contractor',
-  ctaReferrer: 'Join as a referrer',
-  fullDemo: 'Open full-screen demo',
-  roleTablistLabel: 'Dashboard role',
-  browserUrl: 'tradelink · dashboard',
-} as const;
-
-const ROLE_OPTIONS: { role: MockRole; label: string; icon: typeof HardHat }[] = [
-  { role: 'contractor', label: MOCK_SECTION_STRINGS.toggle.contractor, icon: HardHat },
-  { role: 'referrer', label: MOCK_SECTION_STRINGS.toggle.referrer, icon: UserRound },
+const ROLE_OPTIONS: { role: MockRole; labelKey: TranslationKey; icon: typeof HardHat }[] = [
+  { role: 'contractor', labelKey: 'mockSection.toggle.contractor', icon: HardHat },
+  { role: 'referrer', labelKey: 'mockSection.toggle.referrer', icon: UserRound },
 ];
 
 export function MockDashboardSection() {
   const [role, setRole] = useState<MockRole>('contractor');
   const { commissionPct, referrerCommissionPct, referrerSignupFee } = usePlatformSettings();
+  const t = useT();
 
   const caption = role === 'contractor'
-    ? MOCK_SECTION_STRINGS.caption.contractor(commissionPct)
-    : MOCK_SECTION_STRINGS.caption.referrer(referrerCommissionPct, referrerSignupFee);
+    ? t('mockSection.caption.contractor', { pct: commissionPct })
+    : t('mockSection.caption.referrer', { pct: referrerCommissionPct, fee: referrerSignupFee });
 
   return (
     <section className="section bg-navy-900/50 relative overflow-hidden" aria-labelledby="mock-dashboard-heading">
@@ -53,16 +35,16 @@ export function MockDashboardSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-500 mb-3">{MOCK_SECTION_STRINGS.eyebrow}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-500 mb-3">{t('mockSection.eyebrow')}</p>
           <h2 id="mock-dashboard-heading" className="text-3xl sm:text-4xl font-heading font-bold text-white mb-4">
-            {MOCK_SECTION_STRINGS.title}
+            {t('mockSection.title')}
           </h2>
-          <p className="text-surface-muted max-w-2xl mx-auto">{MOCK_SECTION_STRINGS.subtitle}</p>
+          <p className="text-surface-muted max-w-2xl mx-auto">{t('mockSection.subtitle')}</p>
         </motion.div>
 
         {/* Role toggle */}
         <div className="flex justify-center mb-6">
-          <div role="tablist" aria-label={MOCK_SECTION_STRINGS.roleTablistLabel} className="inline-flex p-1 rounded-2xl bg-navy-950 border border-surface-border/60">
+          <div role="tablist" aria-label={t('mockSection.roleTablistLabel')} className="inline-flex p-1 rounded-2xl bg-navy-950 border border-surface-border/60">
             {ROLE_OPTIONS.map((opt) => {
               const Icon = opt.icon;
               const active = role === opt.role;
@@ -79,7 +61,7 @@ export function MockDashboardSection() {
                       : 'text-slate-400 hover:text-slate-200',
                   )}
                 >
-                  <Icon className="w-4 h-4" /> {opt.label}
+                  <Icon className="w-4 h-4" /> {t(opt.labelKey)}
                 </button>
               );
             })}
@@ -103,7 +85,7 @@ export function MockDashboardSection() {
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
                 <span className="ml-3 flex-1 max-w-xs h-5 rounded-md bg-navy-950 border border-surface-border/40 text-[10px] text-surface-muted flex items-center px-2 truncate">
-                  {MOCK_SECTION_STRINGS.browserUrl}
+                  {t('mockSection.browserUrl')}
                 </span>
               </div>
               <MockDashboard role={role} className="rounded-none border-0 shadow-none" />
@@ -123,16 +105,16 @@ export function MockDashboardSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/signup?role=contractor">
               <Button size="md">
-                {MOCK_SECTION_STRINGS.ctaContractor} <ArrowRight className="w-4 h-4" />
+                {t('mockSection.ctaContractor')} <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <Link href="/signup?role=referrer">
               <Button variant="outline" size="md">
-                {MOCK_SECTION_STRINGS.ctaReferrer} <ArrowRight className="w-4 h-4" />
+                {t('mockSection.ctaReferrer')} <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <Link href="/demo" className="text-sm text-amber-400 hover:text-amber-300 transition-colors sm:ml-2">
-              {MOCK_SECTION_STRINGS.fullDemo}
+              {t('mockSection.fullDemo')}
             </Link>
           </div>
         </motion.div>
