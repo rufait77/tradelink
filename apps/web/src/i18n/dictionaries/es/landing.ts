@@ -167,7 +167,7 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
   'mockSection.ctaReferrer': 'Únete como referidor',
   'mockSection.fullDemo': 'Abrir demo en pantalla completa',
   'mockSection.roleTablistLabel': 'Rol del panel',
-  'mockSection.browserUrl': 'tradelink · panel',
+  'mockSection.browserUrl': 'tradelinkpro · panel',
 
   // ─── Página de demostración ─────────────────────────────────────────────
   'demo.back': 'Volver al inicio',

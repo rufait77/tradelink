@@ -168,7 +168,7 @@ export const enLanding = {
   'mockSection.ctaReferrer': 'Join as a referrer',
   'mockSection.fullDemo': 'Open full-screen demo',
   'mockSection.roleTablistLabel': 'Dashboard role',
-  'mockSection.browserUrl': 'tradelink · dashboard',
+  'mockSection.browserUrl': 'tradelinkpro · dashboard',
 
   // ─── Demo page ──────────────────────────────────────────────────────────
   'demo.back': 'Back to home',
