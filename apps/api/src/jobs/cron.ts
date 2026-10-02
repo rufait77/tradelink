@@ -78,7 +78,7 @@ async function checkSubscriptionRenewals() {
             userId: sub.userId,
             type: 'subscription_expiring' as any,
             title: 'Subscription Ending Soon',
-            message: `Your Tradelink subscription ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Renew to keep access to the job board.`,
+            message: `Your TradelinkPRO subscription ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Renew to keep access to the job board.`,
             link: '/dashboard/billing',
           },
         });

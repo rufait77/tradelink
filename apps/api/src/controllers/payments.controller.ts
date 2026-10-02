@@ -45,7 +45,7 @@ export async function createSignupIntent(req: AuthRequest, res: Response, next: 
       currency: 'usd',
       customer: customerId,
       metadata: { userId: user.id, type: 'signup_fee', role: user.role },
-      description: 'Tradelink one-time platform signup fee',
+      description: 'TradelinkPRO one-time platform signup fee',
     });
 
     res.json({ success: true, data: { clientSecret: pi.client_secret, amount: signupFee.toFixed(2) } });
@@ -108,7 +108,7 @@ export async function createSubscription(req: AuthRequest, res: Response, next: 
       unit_amount: amountCents,
       currency: 'usd',
       recurring: { interval: 'month' },
-      product_data: { name: 'Tradelink Monthly Subscription' },
+      product_data: { name: 'TradelinkPRO Monthly Subscription' },
     });
 
     const subscription = await stripe.subscriptions.create({
@@ -365,7 +365,7 @@ export async function processJobPayment(req: AuthRequest, res: Response, next: N
       confirm: true,
       customer: user?.stripeCustomerId ?? undefined,
       metadata: { jobId, type: 'job_payment', postedById: job.postedById },
-      description: `Tradelink job payment: ${job.title}`,
+      description: `TradelinkPRO job payment: ${job.title}`,
       application_fee_amount: Math.round(platformFee * 100),
     });
 

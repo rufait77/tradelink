@@ -138,7 +138,7 @@ export const esDashboard: Record<keyof typeof enDashboard, string> = {
   'billing.sub.cancel': 'Cancelar suscripción',
   'billing.sub.cancelConfirm': '¿Seguro que quieres cancelar tu suscripción? Conservarás el acceso hasta el final de tu periodo de facturación.',
   'billing.sub.cancelSuccess': 'La suscripción se cancelará al final del periodo.',
-  'billing.sub.prompt': 'Suscríbete para desbloquear todas las funciones de Tradelink, incluidas la publicación de referidos y la toma de trabajos.',
+  'billing.sub.prompt': 'Suscríbete para desbloquear todas las funciones de TradelinkPRO, incluidas la publicación de referidos y la toma de trabajos.',
   'billing.sub.submit': 'Suscribirme — primer mes gratis, luego ${fee}/mes',
   'billing.sub.cardMissing': 'No se encontró el campo de la tarjeta',
   'billing.sub.cardInvalid': 'Los datos de la tarjeta no son válidos',

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/auth.store';
 import { Button } from '../ui/button';
+import { BrandWordmark } from '../ui/brand-wordmark';
 import { Zap, Menu, X } from 'lucide-react';
 import { useT } from '../../i18n';
 import { LanguageSwitcher } from './language-switcher';
@@ -28,7 +29,7 @@ export function Navbar() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center transition-transform group-hover:scale-110">
               <Zap className="w-4.5 h-4.5 text-navy-950" />
             </div>
-            <span className="text-lg font-heading font-bold text-white">Tradelink</span>
+            <BrandWordmark className="text-lg" />
           </Link>
 
           {/* Desktop nav */}

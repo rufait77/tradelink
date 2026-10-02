@@ -25,7 +25,7 @@ export const esMessages: Record<keyof typeof enMessages, string> = {
   'dm.react': 'Reaccionar',
   'dm.report': 'Reportar',
   'dm.report.title': 'Reportar mensaje',
-  'dm.report.body': 'Este reporte se enviará a los administradores de Tradelink para su revisión. Describe el problema.',
+  'dm.report.body': 'Este reporte se enviará a los administradores de TradelinkPRO para su revisión. Describe el problema.',
   'dm.report.placeholder': 'Describe por qué estás reportando este mensaje...',
   'dm.report.submit': 'Enviar reporte',
 };

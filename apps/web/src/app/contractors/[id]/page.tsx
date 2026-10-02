@@ -9,6 +9,7 @@ import {
   ShieldCheck, FileCheck,
 } from 'lucide-react';
 import { useT, useLabels, useFormat, type TranslateFn } from '../../../i18n';
+import { BrandWordmark } from '../../../components/ui/brand-wordmark';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.tradelinkpro.net';
 // Base URL for static assets (uploads). If API_BASE uses a subdomain (api.xxx), use it directly.
@@ -177,10 +178,7 @@ export default function PublicProfilePage() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
               <span className="text-xs font-black text-[#050d1a]">TL</span>
             </div>
-            <span className="text-lg font-bold text-white group-hover:text-amber-400 transition"
-              style={{ fontFamily: 'Sora, sans-serif' }}>
-              Tradelink
-            </span>
+            <BrandWordmark className="text-lg group-hover:text-amber-400 transition" />
           </Link>
           <div className="flex items-center gap-3">
             {isLoggedIn ? (

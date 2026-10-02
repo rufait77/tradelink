@@ -1,4 +1,4 @@
-// Locale configuration for the Tradelink web app.
+// Locale configuration for the TradelinkPRO web app.
 // Locale is pure client state — there are no locale-prefixed routes.
 
 export const LOCALES = ['en', 'es'] as const;

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Zap } from 'lucide-react';
 import { usePlatformSettings } from '../../lib/useSettings';
 import { useT } from '../../i18n';
+import { BrandWordmark } from '../ui/brand-wordmark';
 
 const FOOTER_GROUPS = [
   {
@@ -50,7 +51,7 @@ export function Footer() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
                 <Zap className="w-4.5 h-4.5 text-navy-950" />
               </div>
-              <span className="text-lg font-heading font-bold text-white">Tradelink</span>
+              <BrandWordmark className="text-lg" />
             </Link>
             <p className="text-sm text-surface-muted leading-relaxed">
               {t('footer.tagline', { pct: commissionPct })}

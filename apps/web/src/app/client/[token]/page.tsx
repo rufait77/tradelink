@@ -5,6 +5,7 @@ import { Card } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { PageLoader } from '../../../components/ui/spinner';
+import { BrandWordmark } from '../../../components/ui/brand-wordmark';
 import { formatCurrency, getStatusClass } from '../../../lib/utils';
 import clientApi from '../../../lib/clientApi';
 import { toast } from 'sonner';
@@ -438,7 +439,7 @@ export default function ClientDashboardPage() {
 
       {/* Footer note */}
       <p className="text-center text-xs text-surface-muted py-4">
-        {t('client.footerLead')} <span className="text-amber-400 font-medium">Tradelink</span>.{' '}
+        {t('client.footerLead')} <BrandWordmark className="font-sans font-medium text-amber-400" />.{' '}
         {t('client.footerRest')} <a href="mailto:support@tradelinkpro.net" className="text-amber-400 hover:underline">{t('client.footerSupport')}</a>.
       </p>
     </div>

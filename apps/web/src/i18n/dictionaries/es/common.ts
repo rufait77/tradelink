@@ -1,6 +1,6 @@
 import type { enCommon } from '../en/common';
 
-// Neutral Latin-American Spanish. "Tradelink" is never translated.
+// Neutral Latin-American Spanish. "TradelinkPRO" is never translated.
 export const esCommon: Record<keyof typeof enCommon, string> = {
   // ─── Acciones / palabras generales ──────────────────────────────────────
   'common.save': 'Guardar',
@@ -76,7 +76,7 @@ export const esCommon: Record<keyof typeof enCommon, string> = {
   'footer.link.contact': 'Contacto',
   'footer.link.terms': 'Términos del servicio',
   'footer.link.privacy': 'Política de privacidad',
-  'footer.copyright': '© {year} Tradelink. Todos los derechos reservados.',
+  'footer.copyright': '© {year} TradelinkPRO. Todos los derechos reservados.',
   'footer.builtBy': 'Creado por',
 
   // ─── Barra lateral del panel ────────────────────────────────────────────

@@ -27,7 +27,7 @@ export const esAuth: Record<keyof typeof enAuth, string> = {
 
   // ─── Inicio de sesión ───────────────────────────────────────────────────
   'login.title': 'Hola de nuevo',
-  'login.subtitle': 'Inicia sesión en tu cuenta de Tradelink.',
+  'login.subtitle': 'Inicia sesión en tu cuenta de TradelinkPRO.',
   'login.rememberMe': 'Recordarme',
   'login.forgotPassword': '¿Olvidaste tu contraseña?',
   'login.submit': 'Iniciar sesión',
@@ -133,6 +133,6 @@ export const esAuth: Record<keyof typeof enAuth, string> = {
   'onboarding.validation.zip': 'El código postal debe tener 5 dígitos',
   'onboarding.toast.pickTrade': 'Elige al menos un tipo de oficio',
   'onboarding.toast.pickState': 'Elige tu estado',
-  'onboarding.toast.success': '¡Perfil completo! Te damos la bienvenida a Tradelink.',
+  'onboarding.toast.success': '¡Perfil completo! Te damos la bienvenida a TradelinkPRO.',
   'onboarding.toast.failed': 'No se pudo guardar el perfil.',
 };

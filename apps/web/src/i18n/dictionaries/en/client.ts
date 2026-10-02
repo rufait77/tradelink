@@ -207,7 +207,7 @@ export const enClient = {
   'clientReport.type.notResponding': 'Contractor Not Responding',
   'clientReport.type.notRespondingDesc': 'No contact for 48+ hours after assignment',
   'clientReport.type.offPlatform': 'Off-Platform Activity',
-  'clientReport.type.offPlatformDesc': 'Contractor asked to negotiate or pay outside Tradelink',
+  'clientReport.type.offPlatformDesc': 'Contractor asked to negotiate or pay outside TradelinkPRO',
   'clientReport.type.quality': 'Quality Concern',
   'clientReport.type.qualityDesc': 'Work quality does not meet expectations',
   'clientReport.type.unprofessional': 'Unprofessional Conduct',
