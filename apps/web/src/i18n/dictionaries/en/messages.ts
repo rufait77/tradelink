@@ -25,7 +25,7 @@ export const enMessages = {
   'dm.react': 'React',
   'dm.report': 'Report',
   'dm.report.title': 'Report Message',
-  'dm.report.body': 'This report will be sent to Tradelink admins for review. Please describe the issue.',
+  'dm.report.body': 'This report will be sent to TradelinkPRO admins for review. Please describe the issue.',
   'dm.report.placeholder': 'Describe why you\'re reporting this message...',
   'dm.report.submit': 'Submit Report',
 } as const;

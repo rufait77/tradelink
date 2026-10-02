@@ -140,7 +140,7 @@ export const enDashboard = {
   'billing.sub.cancel': 'Cancel Subscription',
   'billing.sub.cancelConfirm': 'Are you sure you want to cancel your subscription? You\'ll retain access until the end of your billing period.',
   'billing.sub.cancelSuccess': 'Subscription will cancel at period end.',
-  'billing.sub.prompt': 'Subscribe to unlock all Tradelink features including posting referrals and claiming jobs.',
+  'billing.sub.prompt': 'Subscribe to unlock all TradelinkPRO features including posting referrals and claiming jobs.',
   'billing.sub.submit': 'Subscribe — First Month Free, then ${fee}/mo',
   'billing.sub.cardMissing': 'Card element not found',
   'billing.sub.cardInvalid': 'Invalid card details',

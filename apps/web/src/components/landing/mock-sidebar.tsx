@@ -6,8 +6,7 @@ import {
 } from 'lucide-react';
 import type { MockRole } from './mock-data';
 import { useT, type TranslationKey } from '../../i18n';
-
-const BRAND = 'Tradelink';
+import { BrandWordmark } from '../ui/brand-wordmark';
 
 type NavItem = { key: string; labelKey: TranslationKey; icon: typeof LayoutDashboard; contractorOnly?: boolean; dot?: boolean; badge?: number };
 
@@ -39,7 +38,7 @@ export function MockSidebar({ role, name, email }: MockSidebarProps) {
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
           <Zap className="w-4 h-4 text-navy-950" />
         </div>
-        <span className="text-base font-heading font-bold text-white">{BRAND}</span>
+        <BrandWordmark className="text-base" />
       </div>
 
       <nav className="flex-1 px-2.5 py-3 space-y-0.5">

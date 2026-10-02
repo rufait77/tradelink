@@ -5,21 +5,21 @@ import { I18nProvider } from '../i18n/provider';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Tradelink — Earn Commissions on Every Referral',
-    template: '%s | Tradelink',
+    default: 'TradelinkPRO — Earn Commissions on Every Referral',
+    template: '%s | TradelinkPRO',
   },
   description:
-    'Tradelink is the contractor referral platform that pays you. Refer a job, earn 20% commission when it\'s completed. Built for US contractors.',
+    'TradelinkPRO is the contractor referral platform that pays you. Refer a job, earn 20% commission when it\'s completed. Built for US contractors.',
   keywords: ['contractor', 'referral', 'commission', 'landscaping', 'roofing', 'HVAC', 'plumbing'],
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-icon.png',
   },
   openGraph: {
-    title: 'Tradelink — Earn Commissions on Every Referral',
+    title: 'TradelinkPRO — Earn Commissions on Every Referral',
     description: 'The contractor referral platform that pays you 20% commission on every completed job.',
     url: 'https://tradelinkpro.net',
-    siteName: 'Tradelink',
+    siteName: 'TradelinkPRO',
     type: 'website',
   },
 };

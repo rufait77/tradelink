@@ -27,7 +27,7 @@ export const enAuth = {
 
   // ─── Login ──────────────────────────────────────────────────────────────
   'login.title': 'Welcome back',
-  'login.subtitle': 'Log in to your Tradelink account.',
+  'login.subtitle': 'Log in to your TradelinkPRO account.',
   'login.rememberMe': 'Remember me',
   'login.forgotPassword': 'Forgot password?',
   'login.submit': 'Log In',
@@ -133,6 +133,6 @@ export const enAuth = {
   'onboarding.validation.zip': 'ZIP must be 5 digits',
   'onboarding.toast.pickTrade': 'Select at least one trade type',
   'onboarding.toast.pickState': 'Select your state',
-  'onboarding.toast.success': 'Profile complete! Welcome to Tradelink.',
+  'onboarding.toast.success': 'Profile complete! Welcome to TradelinkPRO.',
   'onboarding.toast.failed': 'Failed to save profile.',
 } as const;

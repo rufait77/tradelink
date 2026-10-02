@@ -26,7 +26,7 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
 
   // ─── Inicio: oficios ────────────────────────────────────────────────────
   'home.trades.title': 'Todos los oficios, una sola plataforma',
-  'home.trades.subtitle': 'Sea cual sea tu oficio, en Tradelink hay oportunidades de referidos esperándote',
+  'home.trades.subtitle': 'Sea cual sea tu oficio, en TradelinkPRO hay oportunidades de referidos esperándote',
 
   // ─── Inicio: ventajas ───────────────────────────────────────────────────
   'home.features.title': 'Hecho para contratistas',
@@ -55,11 +55,11 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
 
   // ─── Inicio: llamada final ──────────────────────────────────────────────
   'home.cta.title': '¿Listo para empezar a ganar?',
-  'home.cta.subtitle': 'Únete a Tradelink hoy y convierte en ingresos pasivos cada contacto que no puedas atender.',
+  'home.cta.subtitle': 'Únete a TradelinkPRO hoy y convierte en ingresos pasivos cada contacto que no puedas atender.',
   'home.cta.button': 'Crea tu cuenta',
 
   // ─── Página "Cómo funciona" ─────────────────────────────────────────────
-  'howItWorks.title': 'Cómo funciona Tradelink',
+  'howItWorks.title': 'Cómo funciona TradelinkPRO',
   'howItWorks.subtitle': 'Del registro al pago en cinco pasos simples',
   'howItWorks.cta': 'Comenzar ahora',
   'howItWorks.s1.title': 'Crea tu cuenta',
@@ -127,7 +127,7 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
 
   // ─── Página de contacto ─────────────────────────────────────────────────
   'contact.title': 'Ponte en contacto',
-  'contact.subtitle': '¿Tienes preguntas sobre Tradelink? Nos encantaría saber de ti.',
+  'contact.subtitle': '¿Tienes preguntas sobre TradelinkPRO? Nos encantaría saber de ti.',
   'contact.email': 'Correo electrónico',
   'contact.phone': 'Teléfono',
   'contact.location': 'Ubicación',
@@ -195,7 +195,7 @@ export const esLanding: Record<keyof typeof enLanding, string> = {
   'mockDash.pipelineJob': 'Reemplazo de calentador de agua',
   'mockDash.pipelineNote': 'Los fondos se liberan automáticamente 5 días después de que el contratista lo marca como terminado.',
   'mockDash.demoBadge': 'Demo · datos de ejemplo',
-  'mockDash.ariaLabel': 'Vista previa del panel de Tradelink',
+  'mockDash.ariaLabel': 'Vista previa del panel de TradelinkPRO',
   'mockDash.chart.tooltip': 'Ganado',
 
   // ─── Datos de ejemplo: métricas ─────────────────────────────────────────

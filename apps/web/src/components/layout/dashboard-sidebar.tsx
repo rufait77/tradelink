@@ -11,6 +11,7 @@ import {
   Zap, LogOut,
 } from 'lucide-react';
 import { useT } from '../../i18n';
+import { BrandWordmark } from '../ui/brand-wordmark';
 
 const NAV_ITEMS = [
   { href: '/dashboard', labelKey: 'sidebar.dashboard', icon: LayoutDashboard },
@@ -60,7 +61,7 @@ export function DashboardSidebar() {
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center transition-transform group-hover:scale-105">
             <Zap className="w-5 h-5 text-navy-950" />
           </div>
-          <span className="text-lg font-heading font-bold text-white">Tradelink</span>
+          <BrandWordmark className="text-lg" />
         </Link>
       </div>
 

@@ -206,7 +206,7 @@ export const esClient: Record<keyof typeof enClient, string> = {
   'clientReport.type.notResponding': 'El contratista no responde',
   'clientReport.type.notRespondingDesc': 'Sin contacto por más de 48 horas desde la asignación',
   'clientReport.type.offPlatform': 'Actividad fuera de la plataforma',
-  'clientReport.type.offPlatformDesc': 'El contratista pidió negociar o pagar fuera de Tradelink',
+  'clientReport.type.offPlatformDesc': 'El contratista pidió negociar o pagar fuera de TradelinkPRO',
   'clientReport.type.quality': 'Problema de calidad',
   'clientReport.type.qualityDesc': 'La calidad del trabajo no cumple con lo esperado',
   'clientReport.type.unprofessional': 'Conducta poco profesional',

@@ -76,7 +76,7 @@ export const enCommon = {
   'footer.link.contact': 'Contact',
   'footer.link.terms': 'Terms of Service',
   'footer.link.privacy': 'Privacy Policy',
-  'footer.copyright': '© {year} Tradelink. All rights reserved.',
+  'footer.copyright': '© {year} TradelinkPRO. All rights reserved.',
   'footer.builtBy': 'Built by',
 
   // ─── Dashboard sidebar ──────────────────────────────────────────────────

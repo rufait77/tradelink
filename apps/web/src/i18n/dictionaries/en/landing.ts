@@ -27,7 +27,7 @@ export const enLanding = {
 
   // ─── Home: trades ───────────────────────────────────────────────────────
   'home.trades.title': 'All Trades, One Platform',
-  'home.trades.subtitle': 'Whatever your trade, Tradelink has referral opportunities waiting',
+  'home.trades.subtitle': 'Whatever your trade, TradelinkPRO has referral opportunities waiting',
 
   // ─── Home: features ─────────────────────────────────────────────────────
   'home.features.title': 'Built for Contractors',
@@ -56,11 +56,11 @@ export const enLanding = {
 
   // ─── Home: closing CTA ──────────────────────────────────────────────────
   'home.cta.title': 'Ready to Start Earning?',
-  'home.cta.subtitle': 'Join Tradelink today and turn every lead you can\'t handle into passive income.',
+  'home.cta.subtitle': 'Join TradelinkPRO today and turn every lead you can\'t handle into passive income.',
   'home.cta.button': 'Create Your Account',
 
   // ─── How it works page ──────────────────────────────────────────────────
-  'howItWorks.title': 'How Tradelink Works',
+  'howItWorks.title': 'How TradelinkPRO Works',
   'howItWorks.subtitle': 'From sign-up to payout in five simple steps',
   'howItWorks.cta': 'Get Started Now',
   'howItWorks.s1.title': 'Create Your Account',
@@ -128,7 +128,7 @@ export const enLanding = {
 
   // ─── Contact page ───────────────────────────────────────────────────────
   'contact.title': 'Get In Touch',
-  'contact.subtitle': 'Have questions about Tradelink? We\'d love to hear from you.',
+  'contact.subtitle': 'Have questions about TradelinkPRO? We\'d love to hear from you.',
   'contact.email': 'Email',
   'contact.phone': 'Phone',
   'contact.location': 'Location',
@@ -196,7 +196,7 @@ export const enLanding = {
   'mockDash.pipelineJob': 'Water heater replacement',
   'mockDash.pipelineNote': 'Funds release automatically 5 days after the contractor marks it done.',
   'mockDash.demoBadge': 'Demo · sample data',
-  'mockDash.ariaLabel': 'Tradelink dashboard preview',
+  'mockDash.ariaLabel': 'TradelinkPRO dashboard preview',
   'mockDash.chart.tooltip': 'Earned',
 
   // ─── Mock data: stats ───────────────────────────────────────────────────

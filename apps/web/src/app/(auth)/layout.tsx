@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePlatformSettings } from '../../lib/useSettings';
 import { useT } from '../../i18n';
 import { LanguageSwitcher } from '../../components/layout/language-switcher';
+import { BrandWordmark } from '../../components/ui/brand-wordmark';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { commissionPct, signupFee } = usePlatformSettings();
@@ -25,7 +26,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center transition-transform group-hover:scale-105">
               <Zap className="w-5 h-5 text-navy-950" />
             </div>
-            <span className="text-xl font-heading font-bold text-white">Tradelink</span>
+            <BrandWordmark className="text-xl" />
           </Link>
 
           <h2 className="text-3xl font-heading font-bold text-white leading-tight mb-4">
@@ -59,7 +60,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
               <Zap className="w-4 h-4 text-navy-950" />
             </div>
-            <span className="text-lg font-heading font-bold text-white">Tradelink</span>
+            <BrandWordmark className="text-lg" />
           </div>
           {children}
         </div>
