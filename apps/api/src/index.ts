@@ -167,7 +167,7 @@ try {
 }
 
 server.listen(env.PORT, () => {
-  logger.info(`🚀 Tradelink API running on port ${env.PORT} [${env.NODE_ENV}]`);
+  logger.info(`🚀 TradelinkPRO API running on port ${env.PORT} [${env.NODE_ENV}]`);
 
   // Start background jobs
   import('./jobs/commission-processor').catch((err) => logger.error('Failed to start commission processor:', err));

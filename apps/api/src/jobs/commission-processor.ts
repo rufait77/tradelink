@@ -43,7 +43,7 @@ commissionQueue.process(async (job) => {
       amount: Math.round(amount * 100), // cents
       currency: 'usd',
       destination: referrer.stripeConnectId,
-      description: `Tradelink referral commission for job ${jobId}`,
+      description: `TradelinkPRO referral commission for job ${jobId}`,
       metadata: { jobId, referrerId, commissionId: commission.id },
     });
 

@@ -91,8 +91,8 @@ export async function register(req: Request, res: Response, next: NextFunction) 
         customer: customer.id,
         metadata: { userId: user.id, type: 'signup_fee', role },
         description: role === 'referrer'
-          ? 'Tradelink one-time referrer signup fee'
-          : 'Tradelink one-time signup fee',
+          ? 'TradelinkPRO one-time referrer signup fee'
+          : 'TradelinkPRO one-time signup fee',
       });
 
       // Update user with Stripe customer id
