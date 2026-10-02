@@ -58,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="text-lg">⚡</span>
             </div>
             <div>
-              <p className="font-bold text-white text-sm">Tradelink</p>
+              <p className="font-bold text-white text-sm tracking-tight">Tradelink<span className="font-black text-amber-500">PRO</span></p>
               <p className="text-xs text-slate-500">Admin Panel</p>
             </div>
           </div>

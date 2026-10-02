@@ -3,10 +3,10 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Tradelink Admin',
-    template: '%s | Tradelink Admin',
+    default: 'TradelinkPRO Admin',
+    template: '%s | TradelinkPRO Admin',
   },
-  description: 'Tradelink Platform Admin Dashboard',
+  description: 'TradelinkPRO Platform Admin Dashboard',
   robots: { index: false, follow: false }, // Never index admin
 };
 

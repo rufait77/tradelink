@@ -37,8 +37,8 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl px-5 py-3 mb-4">
-            <span className="text-2xl font-black text-[#050d1a]">⚡ Tradelink</span>
+          <div className="inline-flex items-center gap-2 bg-[#0f172a] border border-slate-800 rounded-2xl px-5 py-3 mb-4">
+            <span className="text-2xl font-black text-white tracking-tight">⚡ Tradelink<span className="font-black text-amber-500">PRO</span></span>
           </div>
           <p className="text-slate-400 text-sm mt-2">Admin Control Panel</p>
         </div>
@@ -92,7 +92,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-slate-600 text-xs mt-6">
-          Tradelink Admin v1.0 · Restricted Access
+          TradelinkPRO Admin v1.0 · Restricted Access
         </p>
       </motion.div>
     </div>

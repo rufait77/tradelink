@@ -49,7 +49,7 @@ export default function DashboardPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">Platform Overview</h1>
-        <p className="text-slate-400 text-sm mt-1">Real-time stats across the Tradelink platform</p>
+        <p className="text-slate-400 text-sm mt-1">Real-time stats across the TradelinkPRO platform</p>
       </div>
 
       {/* Stats grid */}
