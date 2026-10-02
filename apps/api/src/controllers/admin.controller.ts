@@ -920,7 +920,7 @@ export async function adminVerifyUser(req: AuthRequest, res: Response, next: Nex
         type: 'interest_received' as any,
         title: verified ? 'Profile Verified ✅' : 'Verification Removed',
         message: verified
-          ? 'Your profile has been verified by TradeLink. You now have a verified badge.'
+          ? 'Your profile has been verified by TradelinkPRO. You now have a verified badge.'
           : 'Your profile verification has been removed. Please contact support.',
         link: '/dashboard/profile',
       },
