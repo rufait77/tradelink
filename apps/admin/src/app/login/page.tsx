@@ -38,7 +38,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-[#0f172a] border border-slate-800 rounded-2xl px-5 py-3 mb-4">
-            <span className="text-2xl font-black text-white tracking-tight">⚡ Tradelink<span className="font-black text-amber-500">PRO</span></span>
+            <span className="text-2xl font-black text-white tracking-tight">⚡ Tradelink<span className="font-black italic text-amber-500 text-[1.08em] pr-0.5">PRO</span></span>
           </div>
           <p className="text-slate-400 text-sm mt-2">Admin Control Panel</p>
         </div>

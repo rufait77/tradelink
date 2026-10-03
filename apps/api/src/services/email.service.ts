@@ -55,7 +55,7 @@ function baseTemplate(content: string, previewText: string = '') {
               <table cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="background-color:#0f172a;border:1px solid #334155;border-radius:12px;padding:10px 20px;">
-                    <span style="font-size:22px;font-weight:800;color:#f1f5f9;letter-spacing:-0.5px;">⚡ Tradelink<span style="color:#f59e0b;font-weight:800;">PRO</span></span>
+                    <span style="font-size:22px;font-weight:800;color:#f1f5f9;letter-spacing:-0.5px;">⚡ Tradelink<span style="color:#f59e0b;font-weight:800;font-style:italic;font-size:1.08em;padding-right:2px;">PRO</span></span>
                   </td>
                 </tr>
               </table>
